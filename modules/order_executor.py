@@ -1,9 +1,16 @@
-"""Sweeper Bot V2 - Order Builder with GTC Post-Only + Queued Positions"""
+"""
+Sweeper Bot V2 - Order Builder with GTC Post-Only + Queued Positions
+
+FIX #2: Standardized fill probability logic (35% fill, 25% partial, 5% ghost, 35% expired)
+FIX #3: Gas cost standardized to 0.001/share
+FIX #5: V2 SDK migration: chain_id=137 -> chain=137
+FIX #9: Added 425 exponential backoff retry (1s->2s->4s...->30s, max 10 retries)
+"""
 import json, time, random, logging
 from dataclasses import dataclass, field, asdict
-from typing import Optional, Callable
+from typing import Optional, Callable, Tuple
 from enum import Enum
-from config.settings import fee_per_share, fee_total, net_edge_per_share
+from config.settings import fee_per_share, fee_total, net_edge_per_share, GAS_PER_SHARE
 
 logger = logging.getLogger("sweeper.orders")
 
@@ -72,9 +79,9 @@ class OrderBuilder:
         try:
             from py_clob_client_v2 import ClobClient, ApiCreds
             creds = ApiCreds(api_key=self.config.clob_api_key, api_secret=self.config.clob_api_secret, api_passphrase=self.config.clob_api_passphrase)
-            self._client = ClobClient(host="https://clob.polymarket.com", key=self.config.private_key, chain_id=137, creds=creds)
-            logger.info("CLOB client initialized for live trading")
-        except Exception as e: logger.error(f"Failed to init CLOB client: {e}")
+            self._client = ClobClient(host="https://clob.polymarket.com", key=self.config.private_key, chain=137, creds=creds)
+            logger.info("CLOB V2 client initialized for live trading")
+        except Exception as e: logger.error(f"Failed to init CLOB V2 client: {e}")
         return self._client
 
     def reserved_collateral(self): return sum(self._reserved.values())
@@ -122,23 +129,37 @@ class OrderBuilder:
     def _paper_place(self, order, is_maker, size, price):
         order.is_paper = True
         if is_maker:
-            if self._rng.random() > self.config.fill_probability:
+            roll = self._rng.random()
+            if roll < self.config.fill_probability:
+                shares = size
+                ghost = self._rng.random() < self.config.ghost_probability
+                order.filled_shares = float(shares); order.avg_fill_price = price
+                order.tx_hash = None if ghost else f"paper_tx_{int(time.time())}"
+                order.status = OrderStatus.FILLED if not ghost else OrderStatus.LIVE
+                self._resting[order.order_id] = order
+                self._reserved[order.order_id] = 0.0
+                logger.info(f"[PAPER] GTC maker FILL: {shares} @ {price} {'GHOST' if ghost else 'OK'} for {order.market_question[:40]}")
+                return True, order
+            elif roll < self.config.fill_probability + self.config.partial_fill_probability:
+                shares = max(1.0, int(size * self.config.partial_fill_ratio))
+                order.filled_shares = float(shares); order.avg_fill_price = price
+                order.tx_hash = f"paper_tx_{int(time.time())}"
+                order.status = OrderStatus.PARTIAL
+                self._resting[order.order_id] = order
+                self._reserved[order.order_id] = (size - shares) * price
+                logger.info(f"[PAPER] Partial maker fill: {shares}/{size}")
+                return True, order
+            elif roll < self.config.fill_probability + self.config.partial_fill_probability + self.config.ghost_probability:
+                order.filled_shares = float(size); order.avg_fill_price = price
+                order.tx_hash = None; order.status = OrderStatus.LIVE
+                self._resting[order.order_id] = order
+                self._reserved[order.order_id] = size * price
+                logger.info(f"[PAPER] GHOST fill for {order.market_question[:40]}")
+                return True, order
+            else:
                 order.status = OrderStatus.LIVE; self._resting[order.order_id] = order; self._reserved[order.order_id] = size * price
                 logger.info(f"[PAPER] GTC post-only RESTING: BUY {size} @ {price} for {order.market_question[:40]} - queued")
                 return True, order
-            shares = size
-            if self._rng.random() < self.config.partial_fill_probability:
-                shares = max(1.0, size * self.config.partial_fill_ratio); shares = int(shares)
-                logger.info(f"[PAPER] Partial maker fill: {shares}/{size}")
-            ghost = self._rng.random() < self.config.ghost_probability
-            order.filled_shares = float(shares); order.avg_fill_price = price
-            order.tx_hash = None if ghost else f"paper_tx_{int(time.time())}"
-            order.status = OrderStatus.MATCHED if not ghost else OrderStatus.LIVE
-            if not ghost: order.status = OrderStatus.FILLED if shares >= size else OrderStatus.PARTIAL
-            self._resting[order.order_id] = order
-            self._reserved[order.order_id] = 0.0 if shares >= size else (size - shares) * price
-            logger.info(f"[PAPER] GTC maker FILL: {shares} @ {price} {'GHOST' if ghost else 'OK'} for {order.market_question[:40]}")
-            return True, order
         else:
             order.status = OrderStatus.SIGNED; order.submitted_at = time.time(); order.matched_at = time.time()
             order.fill_amount = size; order.tx_hash = f"paper_tx_{int(time.time())}"
@@ -147,34 +168,53 @@ class OrderBuilder:
 
     def _live_place(self, order, is_maker, post_only, order_type):
         client = self._get_client()
-        if not client: order.status = OrderStatus.FAILED; order.error = "CLOB client not available"; return False, order
-        try:
-            from py_clob_client_v2 import OrderArgs, PartialCreateOrderOptions
-            from py_clob_client_v2.order_builder.constants import BUY
-            order_args = OrderArgs(token_id=order.token_id, price=order.price, size=order.shares if isinstance(order, RestingOrder) else order.size, side=BUY)
-            options = PartialCreateOrderOptions(tick_size=order.tick_size, neg_risk=order.neg_risk)
-            signed = client.create_order(order_args, options)
-            if post_only: response = client.post_order(signed, order_type="GTC", post_only=True)
-            else: response = client.post_order(signed, order_type="FAK")
-            order.submitted_at = time.time()
-            if isinstance(response, dict):
-                if response.get("status") == "matched":
-                    order.status = OrderStatus.MATCHED; order.matched_at = time.time()
-                    order.tx_hash = response.get("txHash", "")
-                    fill = float(response.get("size_matched", 0))
-                    if isinstance(order, RestingOrder): order.filled_shares = fill; order.avg_fill_price = order.price
-                    else: order.fill_amount = fill
-                    logger.info(f"[LIVE] Order MATCHED: {fill} shares")
-                elif response.get("orderID"):
-                    order.order_id = response.get("orderID", order.order_id); order.status = OrderStatus.LIVE
-                    logger.info(f"[LIVE] GTC post-only RESTING: {order.order_id}")
-                elif response.get("error"): self._handle_rejection(order, response.get("error", ""), response)
-            else: order.status = OrderStatus.SUBMITTED
-            if order.status in (OrderStatus.LIVE, OrderStatus.MATCHED, OrderStatus.FILLED, OrderStatus.PARTIAL):
-                if isinstance(order, RestingOrder) and order.status == OrderStatus.LIVE:
-                    self._resting[order.order_id] = order; self._reserved[order.order_id] = order.shares * order.price
-            return True, order
-        except Exception as e: self._handle_rejection(order, str(e), None); return False, order
+        if not client: order.status = OrderStatus.FAILED; order.error = "CLOB V2 client not available"; return False, order
+        max_retries = 10
+        backoff = 1.0
+        for attempt in range(max_retries + 1):
+            try:
+                from py_clob_client_v2 import OrderArgs, PartialCreateOrderOptions
+                from py_clob_client_v2.order_builder.constants import BUY
+                order_args = OrderArgs(token_id=order.token_id, price=order.price, size=order.shares if isinstance(order, RestingOrder) else order.size, side=BUY)
+                options = PartialCreateOrderOptions(tick_size=order.tick_size, neg_risk=order.neg_risk)
+                signed = client.create_order(order_args, options)
+                if post_only: response = client.post_order(signed, order_type="GTC", post_only=True)
+                else: response = client.post_order(signed, order_type="FAK")
+                order.submitted_at = time.time()
+                if isinstance(response, dict):
+                    if response.get("status") == "matched":
+                        order.status = OrderStatus.MATCHED; order.matched_at = time.time()
+                        order.tx_hash = response.get("txHash", "")
+                        fill = float(response.get("size_matched", 0))
+                        if isinstance(order, RestingOrder): order.filled_shares = fill; order.avg_fill_price = order.price
+                        else: order.fill_amount = fill
+                        logger.info(f"[LIVE] Order MATCHED: {fill} shares")
+                    elif response.get("orderID"):
+                        order.order_id = response.get("orderID", order.order_id); order.status = OrderStatus.LIVE
+                        logger.info(f"[LIVE] GTC post-only RESTING: {order.order_id}")
+                    elif response.get("error"):
+                        err = response.get("error", "")
+                        if "425" in str(err).lower() and attempt < max_retries:
+                            logger.warning(f"425 retry {attempt+1}/{max_retries}, backing off {backoff:.1f}s")
+                            time.sleep(backoff)
+                            backoff = min(backoff * 2, 30.0)
+                            continue
+                        self._handle_rejection(order, err, response)
+                else: order.status = OrderStatus.SUBMITTED
+                if order.status in (OrderStatus.LIVE, OrderStatus.MATCHED, OrderStatus.FILLED, OrderStatus.PARTIAL):
+                    if isinstance(order, RestingOrder) and order.status == OrderStatus.LIVE:
+                        self._resting[order.order_id] = order; self._reserved[order.order_id] = order.shares * order.price
+                return True, order
+            except Exception as e:
+                err_msg = str(e)
+                if "425" in err_msg and attempt < max_retries:
+                    logger.warning(f"425 retry {attempt+1}/{max_retries}, backing off {backoff:.1f}s")
+                    time.sleep(backoff)
+                    backoff = min(backoff * 2, 30.0)
+                    continue
+                self._handle_rejection(order, err_msg, None); return False, order
+        order.status = OrderStatus.FAILED; order.error = f"Max retries ({max_retries}) exceeded for 425"
+        return False, order
 
     def _handle_rejection(self, order, err_msg, response):
         e = err_msg.lower()
@@ -190,7 +230,7 @@ class OrderBuilder:
             order.status = OrderStatus.REJECTED; order.error = RejectCode.RATE_LIMITED.value
             retry = response.get("retry_after") if response and isinstance(response, dict) else None
             order.retry_after = float(retry) if retry else 5.0; logger.warning(f"429 Rate limited, retry={order.retry_after}s")
-        elif "post_only_would_cross" in e or "would cross" in e:
+        elif "post_only_would_cross" in e or "would cross" in e or "crosses book" in e:
             order.status = OrderStatus.REJECTED; order.error = RejectCode.POST_ONLY_WOULD_CROSS.value; logger.warning("Post-only would cross")
         elif "not_enough_balance" in e:
             order.status = OrderStatus.FAILED; order.error = RejectCode.NOT_ENOUGH_BALANCE.value; logger.error("Insufficient balance")
@@ -251,7 +291,7 @@ class OrderBuilder:
         count = self.cancel_all(); logger.info(f"Shutdown: cancelled {count} resting orders"); return count
 
     def calculate_order_size(self, available_capital, gas_cost, is_maker=False):
-        edge = net_edge_per_share(self.config.buy_price, self.config.loser_max_price, gas_cost / 100, is_maker=is_maker)
+        edge = net_edge_per_share(self.config.buy_price, self.config.loser_max_price, GAS_PER_SHARE, is_maker=is_maker)
         if edge <= 0: return 0.0
         max_size = available_capital / self.config.buy_price
         min_size = gas_cost / edge
