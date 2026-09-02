@@ -1,4 +1,7 @@
-"""Sweeper Bot V2 - Fill Confirmation"""
+"""Sweeper Bot V2 - Fill Confirmation
+
+FIX #5: V2 SDK migration — chain=137 (not chain_id=137)
+"""
 import time
 import logging
 from dataclasses import dataclass
@@ -35,9 +38,10 @@ class FillConfirmer:
         try:
             from py_clob_client_v2 import ClobClient, ApiCreds
             creds = ApiCreds(api_key=self.config.clob_api_key, api_secret=self.config.clob_api_secret, api_passphrase=self.config.clob_api_passphrase)
-            self._client = ClobClient(host="https://clob.polymarket.com", key=self.config.private_key, chain_id=137, creds=creds)
+            # FIX #5: V2 migration — chain=137 (not chain_id=137)
+            self._client = ClobClient(host="https://clob.polymarket.com", key=self.config.private_key, chain=137, creds=creds)
         except Exception as e:
-            logger.error(f"CLOB client init failed: {e}")
+            logger.error(f"CLOB V2 client init failed: {e}")
         return self._client
 
     def _get_web3(self):
