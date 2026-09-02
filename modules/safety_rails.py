@@ -1,4 +1,8 @@
-"""Sweeper Bot V2 - Safety Rails (Updated)"""
+"""Sweeper Bot V2 - Safety Rails (Updated)
+
+FIX #7: Removed duplicate BotState — now imports from config.settings
+FIX #16: from_dict() no longer pops rate_limit_429_count (persists across restarts)
+"""
 import json, os, time, logging
 from datetime import datetime, timezone
 from typing import Optional
@@ -6,8 +10,11 @@ from dataclasses import dataclass, field, asdict
 
 logger = logging.getLogger("sweeper.safety")
 
+from config.settings import BotState as ConfigBotState
+
 @dataclass
-class BotState:
+class SafetyBotState:
+    """FIX #7: Renamed to SafetyBotState to avoid confusion with config.BotState."""
     started_at: float = field(default_factory=time.time)
     is_running: bool = False
     is_killed: bool = False
@@ -36,17 +43,16 @@ class BotState:
         return d
 
     @classmethod
-    def from_dict(cls, d: dict) -> 'BotState':
+    def from_dict(cls, d: dict) -> 'SafetyBotState':
         d = d.copy()
         d['worked_markets'] = set(d.get('worked_markets', []))
-        for k in ('open_orders', 'reserved_collateral', 'rate_limit_429_count'):
-            d.pop(k, None)
+        # FIX #16: Preserve rate_limit_429_count instead of popping it
         return cls(**d)
 
 class SafetyRails:
     def __init__(self, config):
         self.config = config
-        self.state = BotState()
+        self.state = SafetyBotState()
         self._state_file = getattr(config, 'state_file', 'data/bot_state.json')
         self._log_dir = getattr(config, 'log_dir', 'logs')
         os.makedirs(os.path.dirname(self._state_file), exist_ok=True)
@@ -143,7 +149,7 @@ class SafetyRails:
         if os.path.exists(self._state_file):
             try:
                 with open(self._state_file, 'r') as f: data = json.load(f)
-                self.state = BotState.from_dict(data)
+                self.state = SafetyBotState.from_dict(data)
                 logger.info(f"State loaded: {len(self.state.worked_markets)} worked, {len(self.state.open_positions)} positions")
                 return True
             except Exception as e: logger.error(f"State load failed: {e}")
