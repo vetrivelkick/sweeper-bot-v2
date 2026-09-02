@@ -1,8 +1,14 @@
-"""Sweeper Bot V2 - Advanced Dry Run with GTC Post-Only Maker Orders"""
+"""Sweeper Bot V2 - Advanced Dry Run with GTC Post-Only Maker Orders
+
+FIX #2: Standardized fill probability logic (35% fill, 25% partial, 5% ghost, 35% expired)
+         Removed extra 30% second-chance fill that made total ~49%
+FIX #10: Removed unused net_edge_per_share import
+FIX #3: Gas cost uses GAS_PER_SHARE constant (0.001)
+"""
 import sys, os, time, json, logging, random
 from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config import SweeperConfig, fee_per_share, net_edge_per_share
+from config import SweeperConfig, fee_per_share, GAS_PER_SHARE, get_fee_rate  # FIX #10: removed unused net_edge_per_share
 from modules.safety_rails import SafetyRails
 from modules.market_discovery import MarketDiscovery
 from modules.resolution_detection import ResolutionDetector
@@ -59,7 +65,7 @@ class AdvancedDryRunner:
         self.log(""); self.log("[MARKET DATA] Top 5 candidates:")
         for i, m in enumerate(sorted(candidates, key=lambda m: m.sweep_score, reverse=True)[:5], 1):
             self.log(f"  {i}. {m.question[:60]}")
-            self.log(f"     Vol: ${m.volume_24hr:,.0f} | YES={m.yes_price} | NO={m.no_price} | Score: {m.sweep_score:.4f}")
+            self.log(f"     Vol: ${m.volume_24hr:,.0f} | YES={m.yes_price} | NO={m.no_price} | Score: {m.sweep_score:.4f} | Cat: {getattr(m, 'category', 'other')}")
             self.log_market(f"MARKET|{m.condition_id}|{m.question}|{m.volume_24hr}|{m.end_date}|{m.neg_risk}|{m.sweep_score:.4f}")
         self.log(""); self.log("[DETECTION] Running resolution detection...")
         sweepable = []
@@ -74,6 +80,9 @@ class AdvancedDryRunner:
             self.log(f"  {i}. {det.question[:60]}")
             self.log(f"     Win: {det.winning_side} @ {det.winning_price} | Lose @ {det.losing_price} | Spread: {det.winning_price - det.losing_price:.4f}")
             self.log(f"     Certainty: {det.certainty} | Confidence: {det.confidence_score:.2f}% | Reason: {det.detection_reason}")
+            cat = getattr(det, 'category', 'other')
+            fee_rate = get_fee_rate(cat)
+            self.log(f"     Category: {cat} | Taker Fee Rate: {fee_rate} | Maker Fee: $0 (ZERO)")
             self.log_market(f"PRICE_ACTION|{det.condition_id}|{det.winning_side}|{det.winning_price}|{det.losing_price}|{det.winning_price - det.losing_price:.4f}|{det.certainty}|{det.confidence_score:.2f}%")
         self.log(""); sweeps = 0
         for det in sweepable:
@@ -104,8 +113,12 @@ class AdvancedDryRunner:
             self.log("  PRICE ACTION:")
             self.log(f"    Winning: {det.winning_side} @ {det.winning_price} | Losing @ {det.losing_price} | Spread: {det.winning_price - det.losing_price:.4f}")
             self.log(f"    Certainty: {det.certainty} | Confidence: {det.confidence_score:.2f}% | Detection: {det.detection_reason}")
-            if best_ask_price: self.log(f"    Best Ask: {best_ask_price} | Best Bid: {best_bid_price}")
+            if best_ask_price:
+                bid_str = f"{best_bid_price}" if best_bid_price else "N/A"
+                self.log(f"    Best Ask: {best_ask_price} | Best Bid: {bid_str}")
             self.log(f"    Order Book: {book_depth_asks} asks, {book_depth_bids} bids")
+            cat = getattr(det, 'category', 'other')
+            self.log(f"    Category: {cat} | Taker Fee Rate: {get_fee_rate(cat)} | Maker Fee: $0 (ZERO)")
             self.log(""); self.log("  ORDER EXECUTION:")
             if is_maker:
                 self.log("    Method: GTC POST-ONLY MAKER (zero fees)")
@@ -154,25 +167,27 @@ class AdvancedDryRunner:
             r = self.reconciler.reconcile(); self.log(f"  [RECONCILE] {r.total_positions} pos, {r.phantom_positions} phantoms")
         except Exception as e: self.log(f"  [RECONCILE] Error: {e}")
         resting = self.order_builder.list_open_orders(); exp = self.safety.get_exposure(resting)
-        self.log(f"  [EXPOSURE] Pos: ${exp['position_exposure']} | Resting: ${exp['resting_exposure']} | Total: ${exp['total_exposure']}")
+        self.log(f"  [EXPOSURE] Pos: ${exp['position_exposure']} | Resting: ${exp['resting_exposure']} | Total: ${exp['total_exposure']} | Max: ${exp['max_portfolio']}")
         self.safety.dump_state(); return True
 
     def _simulate_resting_fill(self, order, det):
+        """FIX #2: Standardized fill probability logic.
+        Single random roll: 35% fill, 25% partial, 5% ghost, 35% expired.
+        Removed extra 30% second-chance fill that made total fill ~49%."""
         rng = random.Random()
-        if rng.random() < self.config.fill_probability:
+        roll = rng.random()
+        if roll < self.config.fill_probability:
             order.filled_shares = order.shares; order.avg_fill_price = order.price
             order.tx_hash = f"paper_tx_{int(time.time())}"; order.status = OrderStatus.FILLED; return "filled"
-        if rng.random() < self.config.ghost_probability:
-            order.filled_shares = order.shares; order.avg_fill_price = order.price
-            order.tx_hash = None; order.status = OrderStatus.LIVE; return "ghost"
-        if rng.random() < self.config.partial_fill_probability:
+        elif roll < self.config.fill_probability + self.config.partial_fill_probability:
             p = max(1, int(order.shares * self.config.partial_fill_ratio))
             order.filled_shares = float(p); order.avg_fill_price = order.price
             order.tx_hash = f"paper_tx_{int(time.time())}"; order.status = OrderStatus.PARTIAL; return "partial"
-        if rng.random() < 0.3:
+        elif roll < self.config.fill_probability + self.config.partial_fill_probability + self.config.ghost_probability:
             order.filled_shares = order.shares; order.avg_fill_price = order.price
-            order.tx_hash = f"paper_tx_{int(time.time())}"; order.status = OrderStatus.FILLED; return "filled"
-        order.status = OrderStatus.EXPIRED; return "expired"
+            order.tx_hash = None; order.status = OrderStatus.LIVE; return "ghost"
+        else:
+            order.status = OrderStatus.EXPIRED; return "expired"
 
     def _complete_trade(self, det, order, is_maker, filled_shares, fill_price):
         self.total_trades += 1; self.log(""); self.log("  FILL CONFIRMATION:")
@@ -180,23 +195,33 @@ class AdvancedDryRunner:
             self.log(f"    Confirmed: {filled_shares} shares | TX: {order.tx_hash} | On-chain: True")
         else: self.log("    GHOST FILL: No settlement"); self.ghost_fills += 1; return
         self.winning_trades += 1; self.log(""); self.log("  CAPITAL RECYCLE:")
+        neg_risk = getattr(det, 'neg_risk', False)
+        adapter = "NegRiskCtfCollateralAdapter" if neg_risk else "CtfCollateralAdapter"
         self.log(f"    Buying loser @ ${self.config.loser_max_price}/share | Merging: {filled_shares} YES + {filled_shares} NO -> {filled_shares} pUSD")
-        try: self.recycler.recycle(det, filled_shares)
+        self.log(f"    Adapter: {adapter}")
+        try:
+            result = self.recycler.recycle(det, filled_shares)
+            if result.success:
+                self.log(f"    Recycle: SUCCESS | {filled_shares} shares -> ${result.usdc_recovered:.2f} pUSD")
+            else:
+                self.log(f"    Recycle: FAILED | {result.error}")
         except Exception as e: self.log(f"    Recycle error: {e}")
         recycled_usd = filled_shares * 1.0; loser_cost = filled_shares * self.config.loser_max_price
-        self.log(f"    Recycled: ${recycled_usd:.2f} USDC | Loser cost: ${loser_cost:.4f}")
+        self.log(f"    Recycled: ${recycled_usd:.2f} pUSD | Loser cost: ${loser_cost:.4f}")
         self.total_recycled += recycled_usd; self.recycle_count += 1
         self.log(""); self.log("  PNL BREAKDOWN:")
         gross = (1.0 - fill_price) * filled_shares; fee = fee_per_share(fill_price, is_maker=is_maker) * filled_shares
-        gas_cost = 0.001 * filled_shares; net_pnl = gross - fee - loser_cost - gas_cost
+        gas_cost = GAS_PER_SHARE * filled_shares
+        net_pnl = gross - fee - loser_cost - gas_cost
         self.log(f"    Type: {'GTC POST-ONLY MAKER' if is_maker else 'FAK TAKER'}")
-        self.log(f"    Gross Edge: ${gross:.4f} | Fee: ${fee:.4f} ({'ZERO' if is_maker else 'taker'}) | Loser: ${loser_cost:.4f} | Gas: ${gas_cost:.4f}")
+        self.log(f"    Gross Edge: ${gross:.4f} | Fee: ${fee:.4f} ({'ZERO - MAKER' if is_maker else 'taker'}) | Loser: ${loser_cost:.4f} | Gas: ${gas_cost:.4f}")
         self.log(f"    Net PnL: +${net_pnl:.4f}")
         self.cumulative_pnl += net_pnl; self.daily_pnl += net_pnl
-        self.log(f"    Cumulative: ${self.cumulative_pnl:.4f} | Daily: ${self.daily_pnl:.4f} / Max: ${self.config.max_daily_loss}")
+        self.log(f"    Cumulative: ${self.cumulative_pnl:.4f} | Daily: ${self.daily_pnl:.4f} / Max Loss: ${self.config.max_daily_loss}")
         self.log(f"    Win Rate: {self.winning_trades}/{self.total_trades}" + (f" = {self.winning_trades/self.total_trades*100:.1f}%" if self.total_trades > 0 else ""))
         self.safety.update_scoreboard(buys=[{}], redeems=[{}], merges=[{"amount": recycled_usd}])
-        self.log_trade(f"TRADE|{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}|{det.condition_id[:16]}|{det.winning_side}|{det.winning_price}|{det.losing_price}|{filled_shares}|{fill_price}|{gross:.4f}|{loser_cost:.4f}|{fee:.4f}|{net_pnl:.4f}|{self.cumulative_pnl:.4f}|{self.daily_pnl:.4f}|{self.winning_trades}/{self.total_trades}|{'MAKER' if is_maker else 'TAKER'}")
+        cat = getattr(det, 'category', 'other')
+        self.log_trade(json.dumps({"trade_num": self.total_trades, "timestamp": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'), "condition_id": det.condition_id[:16], "question": det.question, "winning_side": det.winning_side, "winning_price": det.winning_price, "losing_price": det.losing_price, "filled_shares": filled_shares, "fill_price": fill_price, "gross_edge": gross, "loser_cost": loser_cost, "fee": fee, "gas_cost": gas_cost, "net_pnl": net_pnl, "cumulative_pnl": self.cumulative_pnl, "daily_pnl": self.daily_pnl, "win_rate": f"{self.winning_trades}/{self.total_trades}", "order_type": "MAKER" if is_maker else "TAKER", "category": cat, "fee_rate": get_fee_rate(cat)}))
         self.log(""); self.log(f"  TRADE #{self.total_trades} COMPLETE - {'MAKER (ZERO FEES)' if is_maker else 'TAKER'}"); self.log("-" * 60)
 
     def run(self, cycles=3, max_sweeps=10):
@@ -204,6 +229,10 @@ class AdvancedDryRunner:
         self.log(f"Mode: PAPER | Buy: ${self.config.buy_price} | Method: GTC POST-ONLY MAKER (zero fees)")
         self.log(f"Taker Fallback: DISABLED | Resting Timeout: {self.config.resting_order_timeout:.0f}s | Reconcile: {self.config.order_reconcile_interval:.0f}s")
         self.log(f"Fill Prob: {self.config.fill_probability*100:.0f}% | Ghost: {self.config.ghost_probability*100:.0f}% | Partial: {self.config.partial_fill_probability*100:.0f}%")
+        self.log(f"Gas Cost: ${GAS_PER_SHARE}/share | Loser Max: ${self.config.loser_max_price}/share")
+        maker_edge = self.config.net_edge(is_maker=True)
+        taker_edge = self.config.net_edge(is_maker=False)
+        self.log(f"Maker Edge: ${maker_edge:.6f}/share | Taker Edge: ${taker_edge:.6f}/share")
         self.log(f"Logs: {MAIN_LOG}"); self.log("=" * 80)
         self.log(""); self.log("[PREFLIGHT] Running pre-flight checks...")
         ok, checks = self.safety.preflight_check()
@@ -223,14 +252,24 @@ class AdvancedDryRunner:
         self.log(f"  Resting: {self.resting_orders} | Expired: {self.expired_orders} | Partial: {self.partial_fills} | Ghost: {self.ghost_fills}")
         self.log(f"  Cumulative PnL: ${self.cumulative_pnl:.4f} | Daily PnL: ${self.daily_pnl:.4f}")
         tp = self.safety.get_true_pnl(); self.log(f"  True PnL (scoreboard): ${tp['true_pnl']:.4f}")
-        self.log(f"  Total recycled: ${self.total_recycled:.2f} | Recycles: {self.recycle_count}")
+        self.log(f"  Total recycled: ${self.total_recycled:.2f} pUSD | Recycles: {self.recycle_count}")
         self.log(f"  Ghost fills: {self.ghost_fills} | Failed claims: {self.safety.state.total_failed_claims}")
         self.log(f"  Kill switch: {self.safety.state.is_killed} | 429s: {self.safety.state.rate_limit_429_count}/{self.config.max_429_before_trip}")
         for b in ["order", "book", "gamma", "api_key", "relayer"]: self.log(f"    {b}: {self.rate_limiter.remaining(b)} remaining")
         gs = self.gas.check_balance(); self.log(f"  Gas: {gs.balance_pol} POL | Worked markets: {len(self.safety.state.worked_markets)}")
-        self.log(f"  Logs: {MAIN_LOG} | {TRADE_LOG} | {MARKET_LOG}")
+        self.log(f"  Logs: {MAIN_LOG}"); self.log(f"  Trade Log: {TRADE_LOG}"); self.log(f"  Market Log: {MARKET_LOG}")
         self.log("=" * 80); self.log("DRY RUN COMPLETE"); self.log("=" * 80)
         if self.errors: self.log(f"ERRORS: {len(self.errors)}"); [self.log(f"  {e}") for e in self.errors]
+        summary_path = os.path.join(LOG_DIR, f"summary_{TS}.json")
+        summary = {"cycles": self.cycle_num, "total_trades": self.total_trades, "winning_trades": self.winning_trades,
+            "win_rate": f"{self.winning_trades/self.total_trades*100:.1f}%" if self.total_trades > 0 else "0.0%",
+            "maker_fills": self.maker_fills, "taker_fills": self.taker_fills, "resting_orders": self.resting_orders,
+            "expired_orders": self.expired_orders, "partial_fills": self.partial_fills, "ghost_fills": self.ghost_fills,
+            "cumulative_pnl": self.cumulative_pnl, "daily_pnl": self.daily_pnl, "true_pnl": tp['true_pnl'],
+            "total_recycled_pusd": self.total_recycled, "recycle_count": self.recycle_count,
+            "kill_switch": self.safety.state.is_killed, "errors": self.errors}
+        with open(summary_path, "w") as f: json.dump(summary, f, indent=2)
+        self.log(f"  Summary: {summary_path}")
 
 if __name__ == "__main__":
     bot = AdvancedDryRunner()

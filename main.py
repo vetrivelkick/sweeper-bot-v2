@@ -1,8 +1,12 @@
-"""Sweeper Bot V2 - Main Orchestrator with GTC Post-Only"""
+"""Sweeper Bot V2 - Main Orchestrator with GTC Post-Only
+
+FIX #2: Standardized fill probability logic (35% fill, 25% partial, 5% ghost, 35% expired)
+FIX #3: Gas cost standardized to GAS_PER_SHARE (0.001/share)
+"""
 import sys, os, time, json, signal, logging, threading
 from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config import SweeperConfig, fee_per_share, net_edge_per_share
+from config import SweeperConfig, fee_per_share, net_edge_per_share, GAS_PER_SHARE, get_fee_rate
 from modules.safety_rails import SafetyRails
 from modules.market_discovery import MarketDiscovery
 from modules.resolution_detection import ResolutionDetector
@@ -84,17 +88,20 @@ class SweeperBot:
         logger.info(f"Cycle {self._cycle_count}: {placed} orders placed"); return True
 
     def _paper_fill(self, order, det):
+        """FIX #2: Standardized fill probability — 35% fill, 25% partial, 5% ghost, 35% expired.
+        Uses single random roll for consistent probability distribution."""
         import random; rng = random.Random()
-        if rng.random() < self.config.fill_probability:
+        roll = rng.random()
+        if roll < self.config.fill_probability:
             order.filled_shares = order.shares; order.avg_fill_price = order.price
             order.tx_hash = f"paper_tx_{int(time.time())}"; order.status = OrderStatus.FILLED
             logger.info(f"[PAPER] Maker fill: {order.shares} @ {order.price}"); self._complete_trade(det, order, True, order.filled_shares, order.price)
-        elif rng.random() < self.config.partial_fill_probability:
+        elif roll < self.config.fill_probability + self.config.partial_fill_probability:
             partial = max(1, int(order.shares * self.config.partial_fill_ratio))
             order.filled_shares = float(partial); order.avg_fill_price = order.price
             order.tx_hash = f"paper_tx_{int(time.time())}"; order.status = OrderStatus.PARTIAL
             logger.info(f"[PAPER] Partial fill: {partial}/{order.shares}"); self._complete_trade(det, order, True, order.filled_shares, order.price)
-        elif rng.random() < self.config.ghost_probability:
+        elif roll < self.config.fill_probability + self.config.partial_fill_probability + self.config.ghost_probability:
             order.tx_hash = None; order.status = OrderStatus.LIVE; logger.warning("[PAPER] Ghost fill detected")
         else:
             order.status = OrderStatus.EXPIRED; logger.info("[PAPER] Order expired"); self.safety.unmark_worked(det.condition_id)
@@ -106,7 +113,8 @@ class SweeperBot:
         except Exception as e: logger.error(f"Recycle error: {e}")
         gross = (1.0 - fill_price) * filled_shares
         fee = fee_per_share(fill_price, is_maker=is_maker) * filled_shares
-        net = gross - fee - (self.config.loser_max_price * filled_shares) - (0.001 * filled_shares)
+        gas_cost = GAS_PER_SHARE * filled_shares
+        net = gross - fee - (self.config.loser_max_price * filled_shares) - gas_cost
         self.safety.state.daily_pnl += net
         logger.info(f"Trade complete: {'MAKER' if is_maker else 'TAKER'} | PnL: ${net:.4f} | Daily: ${self.safety.state.daily_pnl:.4f}")
 
