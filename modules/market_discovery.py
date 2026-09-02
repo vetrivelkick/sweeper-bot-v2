@@ -1,15 +1,35 @@
-"""Sweeper Bot V2 - Market Discovery Module"""
-import json
-import time
-import logging
-import requests
-from datetime import datetime, timezone
+"""
+Sweeper Bot V2 - Market Discovery (Gamma API)
+
+FIX #11: Added category detection (crypto, sports, politics, finance, geopolitics)
+FIX #12: Added verify_trade_history() using DATA_API endpoint
+"""
+import requests, time, logging
+from dataclasses import dataclass
 from typing import Optional
-from dataclasses import dataclass, field
+from config.settings import GAMMA_API, DATA_API, get_fee_rate
 
 logger = logging.getLogger("sweeper.discovery")
-GAMMA_API = "https://gamma-api.polymarket.com"
-CLOB_API = "https://clob.polymarket.com"
+
+# FIX #11: Category mapping for fee rate lookup
+CATEGORY_MAP = {
+    "crypto": ["bitcoin", "btc", "ethereum", "eth", "crypto", "token", "defi", "solana", "xrp"],
+    "sports": ["nba", "nfl", "mlb", "nhl", "soccer", "football", "basketball", "baseball", "hockey", "lakers", "warriors", "celtics"],
+    "politics": ["election", "president", "congress", "senate", "governor", "political", "democrat", "republican", "primary"],
+    "finance": ["fed", "rate", "interest", "gdp", "inflation", "cpi", "economic", "financial", "market", "stock", "bond"],
+    "geopolitics": ["war", "ceasefire", "treaty", "sanction", "geopolitical", "conflict", "peace", "invasion", "nato"],
+}
+
+def detect_category(question: str, tags: list = None) -> str:
+    q = (question or "").lower()
+    if tags:
+        for tag in tags:
+            q += " " + str(tag).lower()
+    for category, keywords in CATEGORY_MAP.items():
+        for kw in keywords:
+            if kw in q:
+                return category
+    return "other"
 
 @dataclass
 class CandidateMarket:
@@ -20,83 +40,102 @@ class CandidateMarket:
     no_token_id: str
     yes_price: float
     no_price: float
-    end_date: str
+    end_date: Optional[str]
     volume_24hr: float
     liquidity: float
     neg_risk: bool
     accepting_orders: bool
-    sweep_score: float = 0.0
-    raw: dict = field(default_factory=dict)
+    sweep_score: float
+    category: str = "other"  # FIX #11: Added category field
+    raw: dict = None
 
 class MarketDiscovery:
     def __init__(self, config):
         self.config = config
-
-    def fetch_active_markets(self, limit=100, offset=0):
-        url = f"{GAMMA_API}/markets"
-        params = {"active": "true", "closed": "false", "limit": limit, "offset": offset, "order": "volume24hr", "ascending": "false"}
-        resp = requests.get(url, params=params, timeout=10)
-        resp.raise_for_status()
-        return resp.json()
-
-    def parse_market(self, raw):
-        try:
-            condition_id = raw.get("conditionId", raw.get("condition_id", ""))
-            if not condition_id: return None
-            clob_ids = raw.get("clobTokenIds", "[]")
-            if isinstance(clob_ids, str): clob_ids = json.loads(clob_ids)
-            if len(clob_ids) < 2: return None
-            outcomes = raw.get("outcomes", '["Yes", "No"]')
-            if isinstance(outcomes, str): outcomes = json.loads(outcomes)
-            prices = raw.get("outcomePrices", raw.get("outcome_prices", "[]"))
-            if isinstance(prices, str): prices = json.loads(prices)
-            if len(prices) < 2: prices = [0.5, 0.5]
-            yes_price = float(prices[0]) if outcomes[0].lower() == "yes" else float(prices[1])
-            no_price = float(prices[1]) if outcomes[0].lower() == "yes" else float(prices[0])
-            yes_idx = 0 if outcomes[0].lower() == "yes" else 1
-            no_idx = 1 - yes_idx
-            return CandidateMarket(condition_id=condition_id, question=raw.get("question", ""),
-                slug=raw.get("slug", ""), yes_token_id=clob_ids[yes_idx], no_token_id=clob_ids[no_idx],
-                yes_price=yes_price, no_price=no_price, end_date=raw.get("endDate", raw.get("end_date", "")),
-                volume_24hr=float(raw.get("volume24hr", 0) or 0), liquidity=float(raw.get("liquidity", 0) or 0),
-                neg_risk=bool(raw.get("negRisk", False)), accepting_orders=bool(raw.get("acceptingOrders", True)), raw=raw)
-        except Exception as e:
-            logger.debug(f"Parse error: {e}")
-            return None
-
-    def score_market(self, market):
-        score = 0.0
-        max_price = max(market.yes_price, market.no_price)
-        if max_price >= 0.999: score += 50.0
-        elif max_price >= 0.99: score += 30.0
-        elif max_price >= 0.95: score += 10.0
-        score += min(market.volume_24hr / 10000, 20)
-        score += min(market.liquidity / 10000, 5)
-        if market.accepting_orders: score += 5.0
-        return round(score, 4)
+        self._session = requests.Session()
 
     def discover_candidates(self, max_markets=200):
-        all_markets = []
-        offset = 0
-        while len(all_markets) < max_markets:
-            batch = self.fetch_active_markets(limit=100, offset=offset)
-            if not batch: break
-            for raw in batch:
-                market = self.parse_market(raw)
-                if market:
-                    market.sweep_score = self.score_market(market)
-                    all_markets.append(market)
-            offset += 100
-            if len(batch) < 100: break
-        all_markets.sort(key=lambda m: m.sweep_score, reverse=True)
-        return all_markets[:max_markets]
+        markets = []
+        try:
+            url = f"{GAMMA_API}/markets?limit={max_markets}&order=volume24hr&ascending=false&active=true"
+            resp = self._session.get(url, timeout=10)
+            if resp.status_code == 200:
+                data = resp.json()
+                for m in data:
+                    try:
+                        yes_price = float(m.get("outcomePrices", "[\"0.5\",\"0.5\"]").split('"')[1] if isinstance(m.get("outcomePrices"), str) else m.get("outcomePrices", [0.5, 0.5])[0])
+                        no_price = 1.0 - yes_price
+                        neg_risk = m.get("negRisk", False)
+                        tokens = m.get("clobTokenIds", ["", ""])
+                        if isinstance(tokens, str):
+                            import json; tokens = json.loads(tokens)
+                        category = detect_category(m.get("question", ""), m.get("tags", []))  # FIX #11
+                        markets.append(CandidateMarket(
+                            condition_id=m.get("conditionId", ""),
+                            question=m.get("question", ""),
+                            slug=m.get("slug", ""),
+                            yes_token_id=tokens[0] if len(tokens) > 0 else "",
+                            no_token_id=tokens[1] if len(tokens) > 1 else "",
+                            yes_price=yes_price, no_price=no_price,
+                            end_date=m.get("endDate"),
+                            volume_24hr=float(m.get("volume24hr", 0)),
+                            liquidity=float(m.get("liquidity", 0)),
+                            neg_risk=neg_risk,
+                            accepting_orders=m.get("acceptingOrders", True),
+                            sweep_score=self._compute_score(yes_price, no_price, float(m.get("volume24hr", 0)), m.get("endDate")),
+                            category=category,  # FIX #11
+                            raw=m,
+                        ))
+                    except Exception as e:
+                        logger.debug(f"Parse error for market: {e}")
+                        continue
+            else:
+                logger.error(f"Gamma API returned {resp.status_code}")
+        except Exception as e:
+            logger.error(f"Gamma API error: {e}")
+        markets.sort(key=lambda x: x.sweep_score, reverse=True)
+        logger.info(f"[DISCOVERY] Found {len(markets)} candidate markets")
+        return markets
+
+    def _compute_score(self, yes_price, no_price, volume_24hr, end_date):
+        max_price = max(yes_price, no_price)
+        if max_price < 0.90: return 0.0
+        score = (max_price - 0.90) * 100
+        if volume_24hr > 10000: score += 20
+        elif volume_24hr > 5000: score += 10
+        if end_date:
+            try:
+                from datetime import datetime, timezone
+                dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+                days_left = (dt - datetime.now(timezone.utc)).days
+                if 0 <= days_left <= 7: score += 15
+                elif days_left < 0: score += 25
+            except Exception: pass
+        return score
 
     def get_market_book(self, token_id):
-        url = f"{CLOB_API}/book"
-        resp = requests.get(url, params={"token_id": token_id}, timeout=10)
-        resp.raise_for_status()
-        return resp.json()
+        from config.settings import CLOB_API
+        try:
+            url = f"{CLOB_API}/book?token_id={token_id}"
+            resp = self._session.get(url, timeout=5)
+            if resp.status_code == 200:
+                return resp.json()
+        except Exception as e:
+            logger.debug(f"Book fetch error: {e}")
+        return {"asks": [], "bids": []}
 
-    def find_sweepable_asks(self, book, min_price=0.99):
-        asks = book.get("asks", [])
-        return [a for a in asks if float(a.get("price", 0)) >= min_price]
+    # FIX #12: Added verify_trade_history using DATA_API
+    def verify_trade_history(self, condition_id, token_id):
+        """Verify trade history using the Polymarket DATA API."""
+        try:
+            url = f"{DATA_API}/trades?condition_id={condition_id}&token_id={token_id}&limit=10"
+            resp = self._session.get(url, timeout=5)
+            if resp.status_code == 200:
+                trades = resp.json()
+                logger.info(f"[DATA_API] {len(trades)} trades found for {condition_id[:16]}")
+                return trades
+            else:
+                logger.debug(f"DATA_API returned {resp.status_code}")
+        except Exception as e:
+            logger.debug(f"DATA_API error: {e}")
+        return []
