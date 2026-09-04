@@ -3,6 +3,8 @@ Sweeper Bot V2 - Market Discovery (Gamma API)
 
 FIX #11: Added category detection (crypto, sports, politics, finance, geopolitics)
 FIX #12: Added verify_trade_history() using DATA_API endpoint
+P1: Parse actual NO price from outcomePrices (was computing 1-YES)
+P1: Enforce accepting_orders filter (was including markets not accepting orders)
 """
 import requests, time, logging, json
 from dataclasses import dataclass
@@ -69,7 +71,8 @@ class MarketDiscovery:
                         if isinstance(prices, str):
                             prices = json.loads(prices)
                         yes_price = float(prices[0])
-                        no_price = 1.0 - yes_price
+                        # P1: Parse actual NO price from outcomePrices instead of computing 1-YES
+                        no_price = float(prices[1]) if len(prices) > 1 else 1.0 - yes_price
                         neg_risk = m.get("negRisk", False)
                         tokens = m.get("clobTokenIds", ["", ""])
                         if isinstance(tokens, str):
@@ -100,8 +103,10 @@ class MarketDiscovery:
                 logger.error(f"Gamma API returned {resp.status_code}")
         except Exception as e:
             logger.error(f"Gamma API error: {e}")
+        # P1: Filter out markets that are not accepting orders
+        markets = [m for m in markets if m.accepting_orders]
         markets.sort(key=lambda x: x.sweep_score, reverse=True)
-        logger.info(f"[DISCOVERY] Found {len(markets)} candidate markets")
+        logger.info(f"[DISCOVERY] Found {len(markets)} candidate markets (accepting orders only)")
         return markets
 
     def _compute_score(self, yes_price, no_price, volume_24hr, end_date):
