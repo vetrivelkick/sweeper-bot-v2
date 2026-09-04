@@ -10,21 +10,23 @@ P0 #1 FIX: Demoted price from certainty signal to secondary context.
   - Fixed is_sweepable missing return False in live branch
 
 FIX #11: Added category field to DetectionResult for fee rate lookup
+FIX: Changed CertaintyLevel from Enum to IntEnum to fix TypeError on
+     '<' comparison that silently broke all live market detection.
 """
 import logging, json
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, IntEnum
 from typing import Optional, List
 from datetime import datetime, timezone
 
 logger = logging.getLogger("sweeper.detection")
 
 
-class CertaintyLevel(Enum):
-    UNCERTAIN = "uncertain"
-    WEAK = "weak"
-    STRONG = "strong"
-    CERTAIN = "certain"
+class CertaintyLevel(IntEnum):
+    UNCERTAIN = 0
+    WEAK = 1
+    STRONG = 2
+    CERTAIN = 3
 
 class FinalityStatus(Enum):
     """P0 #1: Finality gate status for resolution"""
@@ -68,7 +70,6 @@ class DetectionResult:
     is_final: bool = False
     finality_reason: str = ""
     resolution_rules: Optional[ResolutionRule] = None
-
 
 class ResolutionDetector:
     def __init__(self, config):
@@ -269,7 +270,7 @@ class ResolutionDetector:
         result.is_final = is_final
         result.finality_reason = finality_reason
 
-        logger.debug(f"[DETECT] {market.question[:50]} | side={winning_side} | cert={certainty.value} "
+        logger.debug(f"[DETECT] {market.question[:50]} | side={winning_side} | cert={certainty.name} "
                      f"| sources={outcome_sources} | final={is_final} ({finality_status.value})")
 
         return result
