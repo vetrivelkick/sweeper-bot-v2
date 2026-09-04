@@ -4,7 +4,7 @@ Sweeper Bot V2 - Market Discovery (Gamma API)
 FIX #11: Added category detection (crypto, sports, politics, finance, geopolitics)
 FIX #12: Added verify_trade_history() using DATA_API endpoint
 """
-import requests, time, logging
+import requests, time, logging, json
 from dataclasses import dataclass
 from typing import Optional
 from config.settings import GAMMA_API, DATA_API, get_fee_rate
@@ -14,7 +14,7 @@ logger = logging.getLogger("sweeper.discovery")
 # FIX #11: Category mapping for fee rate lookup
 CATEGORY_MAP = {
     "crypto": ["bitcoin", "btc", "ethereum", "eth", "crypto", "token", "defi", "solana", "xrp"],
-    "sports": ["nba", "nfl", "mlb", "nhl", "soccer", "football", "basketball", "baseball", "hockey", "lakers", "warriors", "celtics"],
+    "sports": ["nba", "nfl", "mlb", "nhl", "soccer", "football", "basketball", "baseball", "hockey", "lakers", "warriors", "celtics", "calcio", "serie a", "premier league", "tennis", "golf", "mma", "ufc", "boxing", "cricket", "rugby", "f1", "formula 1", "la liga", "champions league", "win on"],
     "politics": ["election", "president", "congress", "senate", "governor", "political", "democrat", "republican", "primary"],
     "finance": ["fed", "rate", "interest", "gdp", "inflation", "cpi", "economic", "financial", "market", "stock", "bond"],
     "geopolitics": ["war", "ceasefire", "treaty", "sanction", "geopolitical", "conflict", "peace", "invasion", "nato"],
@@ -47,6 +47,8 @@ class CandidateMarket:
     accepting_orders: bool
     sweep_score: float
     category: str = "other"  # FIX #11: Added category field
+    tick_size: float = 0.01
+    min_order_size: float = 5.0
     raw: dict = None
 
 class MarketDiscovery:
@@ -63,12 +65,15 @@ class MarketDiscovery:
                 data = resp.json()
                 for m in data:
                     try:
-                        yes_price = float(m.get("outcomePrices", "[\"0.5\",\"0.5\"]").split('"')[1] if isinstance(m.get("outcomePrices"), str) else m.get("outcomePrices", [0.5, 0.5])[0])
+                        prices = m.get("outcomePrices", "[\"0.5\",\"0.5\"]")
+                        if isinstance(prices, str):
+                            prices = json.loads(prices)
+                        yes_price = float(prices[0])
                         no_price = 1.0 - yes_price
                         neg_risk = m.get("negRisk", False)
                         tokens = m.get("clobTokenIds", ["", ""])
                         if isinstance(tokens, str):
-                            import json; tokens = json.loads(tokens)
+                            tokens = json.loads(tokens)
                         category = detect_category(m.get("question", ""), m.get("tags", []))  # FIX #11
                         markets.append(CandidateMarket(
                             condition_id=m.get("conditionId", ""),
@@ -84,6 +89,8 @@ class MarketDiscovery:
                             accepting_orders=m.get("acceptingOrders", True),
                             sweep_score=self._compute_score(yes_price, no_price, float(m.get("volume24hr", 0)), m.get("endDate")),
                             category=category,  # FIX #11
+                            tick_size=float(m.get("orderPriceMinTickSize", 0.01)),
+                            min_order_size=float(m.get("orderMinSize", 5)),
                             raw=m,
                         ))
                     except Exception as e:

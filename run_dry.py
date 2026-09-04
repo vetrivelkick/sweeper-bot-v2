@@ -97,14 +97,14 @@ class AdvancedDryRunner:
                 book = self.discovery.get_market_book(det.winning_token_id)
                 asks = book.get("asks", []); bids = book.get("bids", [])
                 book_depth_asks = len(asks); book_depth_bids = len(bids)
-                if asks: best_ask = max(float(a.get("price", 0)) for a in asks); best_ask_price = best_ask
+                if asks: best_ask = min(float(a.get("price", 0)) for a in asks); best_ask_price = best_ask
                 if bids: best_bid_price = max(float(b.get("price", 0)) for b in bids)
             except Exception: pass
-            tick_size = 0.001 if det.winning_price >= 0.999 else 0.01
+            tick_size = getattr(det, 'tick_size', 0.001 if det.winning_price >= 0.999 else 0.01)
             entry_plan = None
             if self.config.prefer_maker and best_ask is not None:
                 entry_plan = plan_entry(best_ask, tick_size, 0.985, self.config.buy_price, self.config.prefer_maker, self.config.allow_taker_fallback)
-            is_maker = (entry_plan is not None and entry_plan[1]) or (self.config.prefer_maker and best_ask is None)
+            is_maker = (entry_plan is not None and entry_plan[1]) or (self.config.prefer_maker and best_ask is None) or (self.config.prefer_maker and not self.config.allow_taker_fallback)
             order_price = entry_plan[0] if entry_plan else self.config.buy_price
             order_detail = entry_plan[2] if entry_plan else "maker bid at buy_price"
             self.log(""); self.log("-" * 60); self.log(f"TRADE #{self.total_trades + 1}"); self.log("-" * 60)
@@ -219,7 +219,7 @@ class AdvancedDryRunner:
         self.cumulative_pnl += net_pnl; self.daily_pnl += net_pnl
         self.log(f"    Cumulative: ${self.cumulative_pnl:.4f} | Daily: ${self.daily_pnl:.4f} / Max Loss: ${self.config.max_daily_loss}")
         self.log(f"    Win Rate: {self.winning_trades}/{self.total_trades}" + (f" = {self.winning_trades/self.total_trades*100:.1f}%" if self.total_trades > 0 else ""))
-        self.safety.update_scoreboard(buys=[{}], redeems=[{}], merges=[{"amount": recycled_usd}])
+        self.safety.update_scoreboard(buys=[{}], redeems=[{}], merges=[{"amount": recycled_usd}], net_pnl=net_pnl)
         cat = getattr(det, 'category', 'other')
         self.log_trade(json.dumps({"trade_num": self.total_trades, "timestamp": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'), "condition_id": det.condition_id[:16], "question": det.question, "winning_side": det.winning_side, "winning_price": det.winning_price, "losing_price": det.losing_price, "filled_shares": filled_shares, "fill_price": fill_price, "gross_edge": gross, "loser_cost": loser_cost, "fee": fee, "gas_cost": gas_cost, "net_pnl": net_pnl, "cumulative_pnl": self.cumulative_pnl, "daily_pnl": self.daily_pnl, "win_rate": f"{self.winning_trades}/{self.total_trades}", "order_type": "MAKER" if is_maker else "TAKER", "category": cat, "fee_rate": get_fee_rate(cat)}))
         self.log(""); self.log(f"  TRADE #{self.total_trades} COMPLETE - {'MAKER (ZERO FEES)' if is_maker else 'TAKER'}"); self.log("-" * 60)

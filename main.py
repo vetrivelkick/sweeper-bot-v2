@@ -73,9 +73,9 @@ class SweeperBot:
             try:
                 book = self.discovery.get_market_book(det.winning_token_id)
                 asks = book.get("asks", [])
-                if asks: best_ask = max(float(a.get("price", 0)) for a in asks)
+                if asks: best_ask = min(float(a.get("price", 0)) for a in asks)
             except Exception: pass
-            tick_size = 0.001 if det.winning_price >= 0.999 else 0.01
+            tick_size = getattr(det, 'tick_size', 0.001 if det.winning_price >= 0.999 else 0.01)
             success, order = self.order_builder.build_and_place(detection_result=det, size=100.0, best_ask=best_ask, tick_size=tick_size, neg_risk=getattr(det, 'neg_risk', False))
             if success and order:
                 self.rate_limiter.record_request("order"); self.safety.mark_worked(det.condition_id); placed += 1
@@ -108,13 +108,13 @@ class SweeperBot:
 
     def _complete_trade(self, det, order, is_maker, filled_shares, fill_price):
         if not order.tx_hash: logger.warning("Ghost fill - no on-chain settlement"); return
-        self.safety.update_scoreboard(buys=[{}], redeems=[{}], merges=[{"amount": filled_shares}])
         try: self.recycler.recycle(det, filled_shares)
         except Exception as e: logger.error(f"Recycle error: {e}")
         gross = (1.0 - fill_price) * filled_shares
         fee = fee_per_share(fill_price, is_maker=is_maker) * filled_shares
         gas_cost = GAS_PER_SHARE * filled_shares
         net = gross - fee - (self.config.loser_max_price * filled_shares) - gas_cost
+        self.safety.update_scoreboard(buys=[{}], redeems=[{}], merges=[{"amount": filled_shares}], net_pnl=net)
         self.safety.state.daily_pnl += net
         logger.info(f"Trade complete: {'MAKER' if is_maker else 'TAKER'} | PnL: ${net:.4f} | Daily: ${self.safety.state.daily_pnl:.4f}")
 

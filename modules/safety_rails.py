@@ -36,6 +36,7 @@ class SafetyBotState:
     open_orders: list = field(default_factory=list)
     reserved_collateral: float = 0.0
     rate_limit_429_count: int = 0
+    tracked_net_pnl: float = 0.0
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -155,7 +156,7 @@ class SafetyRails:
             except Exception as e: logger.error(f"State load failed: {e}")
         return False
 
-    def update_scoreboard(self, buys=None, redeems=None, merges=None):
+    def update_scoreboard(self, buys=None, redeems=None, merges=None, net_pnl=None):
         if buys:
             for buy in buys:
                 self.state.total_buys += 1
@@ -168,11 +169,13 @@ class SafetyRails:
             for merge in merges:
                 self.state.total_merges += 1
                 self.state.total_recycled_usd += merge.get('amount', 0)
+        if net_pnl is not None:
+            self.state.tracked_net_pnl += net_pnl
 
     def get_true_pnl(self):
         total_in = self.state.total_buys * self.config.buy_price
         total_out = self.state.total_redeems * 1.0
-        true_pnl = total_out - total_in
+        true_pnl = self.state.tracked_net_pnl
         true_win_rate = (self.state.total_redeems / self.state.total_buys if self.state.total_buys > 0 else 0.0)
         return {'total_buys': self.state.total_buys, 'total_redeems': self.state.total_redeems,
                 'total_merges': self.state.total_merges, 'total_recycled_usd': round(self.state.total_recycled_usd, 4),

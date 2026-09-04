@@ -33,6 +33,7 @@ class DetectionResult:
     end_date: Optional[str]
     signals: list = field(default_factory=list)
     category: str = "other"  # FIX #11: Added category field
+    tick_size: float = 0.01
 
 class ResolutionDetector:
     def __init__(self, config):
@@ -70,6 +71,7 @@ class ResolutionDetector:
             winning_price=winning_price, losing_price=losing_price, neg_risk=market.neg_risk,
             end_date=market.end_date, signals=signals,
             category=getattr(market, 'category', 'other'),  # FIX #11
+            tick_size=getattr(market, 'tick_size', 0.01),
         )
 
     def is_sweepable(self, result):
