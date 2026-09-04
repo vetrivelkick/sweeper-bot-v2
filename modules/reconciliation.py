@@ -3,7 +3,8 @@ Sweeper Bot V2 - Reconciliation Engine (Updated)
 
 P0 #8: Added _create_position_from_fill() to populate open_positions
 P0 #10: Added process_fills() to handle partial fills and create positions
-
+SECTION 11 AUDIT: Settlement reconciliation, PnL tracking, stale position cleanup,
+                 settlement history persistence
 """
 import time
 import logging
@@ -61,9 +62,10 @@ class ReconciliationEngine:
         logger.info(f"Position created: {condition_id[:16]}... | {shares} shares @ ${price}")
         return position
 
-    def process_fills(self, fills):
-        """P0 #10: Process confirmed fills and create positions in open_positions."""
-        for fill in fills:
+    def process_fills(self, fills, orders=None):
+        """P0 #10: Process confirmed fills and create positions in open_positions.
+        SECTION 11 AUDIT: Also realize settlements and track PnL."""
+        for i, fill in enumerate(fills):
             condition_id = getattr(fill, 'condition_id', '')
             tx_hash = getattr(fill, 'tx_hash', '')
             fill_amount = getattr(fill, 'fill_amount', getattr(fill, 'filled_shares', 0))
@@ -71,6 +73,11 @@ class ReconciliationEngine:
             side = getattr(fill, 'side', 'BUY')
             if condition_id and tx_hash:
                 self._create_position_from_fill(condition_id, tx_hash, fill_amount, price, side)
+                # SECTION 11 AUDIT: Realize settlement if we have the corresponding order
+                if orders and hasattr(self.confirmer, 'realize_settlement'):
+                    order = orders[i] if i < len(orders) else None
+                    if order:
+                        self.confirmer.realize_settlement(order, fill)
 
     def reconcile(self) -> ReconciliationResult:
         positions = self.safety.state.open_positions
@@ -126,6 +133,10 @@ class ReconciliationEngine:
 
     def get_reconciliation_status(self) -> dict:
         """AUDIT FIX #21: Return detailed reconciliation status for monitoring."""
+        # SECTION 11 AUDIT: Include settlement metrics if available
+        settlement_metrics = {}
+        if hasattr(self.confirmer, 'get_settlement_metrics'):
+            settlement_metrics = self.confirmer.get_settlement_metrics()
         return {
             'total_runs': self._total_runs,
             'total_phantoms_found': self._total_phantoms_found,
@@ -136,6 +147,7 @@ class ReconciliationEngine:
             'last_position_run': self._last_run,
             'last_order_run': self._last_order_run,
             'stale_threshold': self._stale_position_threshold,
+            'settlement_metrics': settlement_metrics,
         }
 
     def get_stale_positions(self) -> List[str]:
