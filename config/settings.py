@@ -13,6 +13,7 @@ P1 #6: All strategy parameters now load from .env via os.getenv with module cons
 P1: .env support via os.getenv for sensitive fields; atomic BotState.save
 P1: Added min_entry_price parameter (was hardcoded 0.985 in order_executor.py and run_dry.py)
 SECTION 1 AUDIT: Strategy specification - MAX_ENTRY_PRICE, finality policies, merge/redeem rules
+SECTION 2 AUDIT: Unsafe production execution guards - MAX_CANARY_FUNDED_USD, APPROVED_SDK_VERSION
 
 """
 from dataclasses import dataclass, field
@@ -104,6 +105,10 @@ MAX_RESOLUTION_DISPUTE_RISK = 0.02  # 2% max
 MERGE_THRESHOLD_SPREAD = 0.02  # If losing-side ask <= this, merge now
 PREFER_MERGE_OVER_REDEEM = True  # Merge is cheaper when both sides available
 REDEMPTION_MIN_WAIT_BLOCKS = 128  # Min blocks after resolution before redemption
+
+# === SECTION 2 AUDIT: UNSAFE PRODUCTION EXECUTION GUARDS ===
+MAX_CANARY_FUNDED_USD = 50.0  # Max wallet balance in canary/live-test mode
+APPROVED_SDK_VERSION = "1.1.0"  # Must match requirements.txt py-clob-client-v2
 
 # === FIX #1: DYNAMIC FEE RATES PER CATEGORY ===
 DEFAULT_FEE_RATE = 0.04
@@ -207,6 +212,8 @@ class SweeperConfig:
     require_source_agreement: bool = field(default_factory=lambda: os.getenv("REQUIRE_SOURCE_AGREEMENT", "true").lower() == "true")
     merge_threshold_spread: float = field(default_factory=lambda: float(os.getenv("MERGE_THRESHOLD_SPREAD", str(MERGE_THRESHOLD_SPREAD))))
     prefer_merge_over_redeem: bool = field(default_factory=lambda: os.getenv("PREFER_MERGE_OVER_REDEEM", "true").lower() == "true")
+    # SECTION 2 AUDIT: Production execution guards
+    max_canary_funded_usd: float = field(default_factory=lambda: float(os.getenv("MAX_CANARY_FUNDED_USD", str(MAX_CANARY_FUNDED_USD))))
 
     def validate(self) -> list:
         """AUDIT FIX #30 + SECTION 1: Comprehensive config validation with detailed error messages."""
@@ -222,6 +229,8 @@ class SweeperConfig:
             errors.append(f"max_daily_loss {self.max_daily_loss} must be > 0")
         if self.gas_floor <= 0:
             errors.append(f"gas_floor {self.gas_floor} must be > 0")
+        if self.max_canary_funded_usd <= 0:
+            errors.append(f"max_canary_funded_usd {self.max_canary_funded_usd} must be > 0")
         # Probability validation
         total_prob = self.fill_probability + self.partial_fill_probability + self.ghost_probability
         if total_prob > 1.0:
