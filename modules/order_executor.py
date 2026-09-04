@@ -23,6 +23,7 @@ P1 #2: 429 handling now wired to rate limiter via handle_429()
 P1 #3: Duplicate order prevention on 425 retries via is_duplicate_order()/record_order_id()
 
 AUDIT FIX #13: Pass condition_id to check_exposure_before_order for per-market enforcement
+AUDIT FIX #24: Order metrics, latency, slippage tracking
 """
 import json, time, random, logging
 from decimal import Decimal, ROUND_DOWN
@@ -82,14 +83,14 @@ def plan_entry(best_ask, tick_size, min_entry, max_entry, prefer_maker=True, all
         maker_ceiling = ask_d - tick
         desired = max(maker_ceiling, min_d)
         price = min(desired, maker_ceiling, max_d)
-        price = (price // tick) * tick  # exact tick grid alignment
+        price = (price // tick) * tick
         if price >= ask_d:
             price -= tick
         if min_d <= price < ask_d:
             p = float(price)
             return (p, True, f"resting maker bid @ {p} (ask={best_ask}, tick={tick})")
         if not allow_taker:
-            return None  # P0 #16: No hidden taker fallback when disabled
+            return None
     if min_d <= ask_d <= max_d:
         return (float(ask_d), False, f"taker fallback @ best ask {best_ask}")
     return None
@@ -99,16 +100,23 @@ class OrderBuilder:
         self.config = config; self._client = None
         self._resting = {}; self._reserved = {}
         self._rng = random.Random(); self._force_post_only = False; self._cancel_only = False
-        self._safety = safety  # P0 #18: Optional safety ref for kill switch/exposure checks
-        self._rate_limiter = rate_limiter  # P1 #2,#3: Rate limiter for 429/425 handling and duplicate order prevention
+        self._safety = safety
+        self._rate_limiter = rate_limiter
+        # AUDIT FIX #24: Order metrics, latency, slippage tracking
+        self._total_placed = 0
+        self._total_filled = 0
+        self._total_rejected = 0
+        self._total_expired = 0
+        self._total_cancelled = 0
+        self._total_slippage = 0.0
+        self._fill_latencies = []
+        self._max_latency_samples = 100
 
     def _get_client(self):
         if self._client or self.config.paper_mode: return self._client
         try:
             from py_clob_client_v2 import ClobClient, ApiCreds
             creds = ApiCreds(api_key=self.config.clob_api_key, api_secret=self.config.clob_api_secret, api_passphrase=self.config.clob_api_passphrase)
-            # P0 #2: V2 Python SDK uses chain_id, not chain
-            # P0 #3: Added signature_type and funder for proxy/Safe/deposit wallet support
             self._client = ClobClient(
                 host="https://clob.polymarket.com",
                 key=self.config.private_key,
@@ -131,7 +139,6 @@ class OrderBuilder:
         return count
 
     def _cancel_order(self, order_id):
-        # P0 #5: Don't remove from tracking until remote cancel succeeds
         order = self._resting.get(order_id)
         if not order: return True
         if order.is_paper:
@@ -142,7 +149,6 @@ class OrderBuilder:
         client = self._get_client()
         if client:
             try:
-                # P0 #4: V2 SDK uses cancel_orders(list), not cancel(str)
                 client.cancel_orders([order_id])
                 self._resting.pop(order_id, None)
                 self._reserved.pop(order_id, None)
@@ -152,7 +158,6 @@ class OrderBuilder:
             except Exception as e:
                 logger.error(f"Cancel failed {order_id}: {e}")
                 return False
-        # No client available — remove from tracking
         self._resting.pop(order_id, None)
         self._reserved.pop(order_id, None)
         return True
@@ -162,7 +167,6 @@ class OrderBuilder:
         order_type = "GTC" if is_maker else "FAK"
         post_only = is_maker
         if is_maker and best_ask is not None:
-            # P1: Use parameterized min_entry_price instead of hardcoded 0.985
             plan = plan_entry(best_ask, tick_size, self.config.min_entry_price, self.config.buy_price, self.config.prefer_maker, self.config.allow_taker_fallback)
             if plan is None: logger.warning(f"No valid entry for {detection_result.question[:40]}"); return False, None
             price, is_maker, detail = plan; order_type = "GTC" if is_maker else "FAK"; post_only = is_maker
@@ -177,18 +181,22 @@ class OrderBuilder:
         else:
             order = SweepOrder(order_id=order_id, condition_id=detection_result.condition_id, token_id=detection_result.winning_token_id,
                 side="BUY", price=price, size=size, order_type="FAK", tick_size=tick_str, neg_risk=neg_risk, is_maker=False)
-        # P0 #17/#18: Check kill switch and exposure before placing order
         if self._safety and self._safety.state.is_killed:
             logger.warning(f"Order blocked - kill switch: {self._safety.state.kill_reason}")
             return False, None
         if self._safety:
             order_cost = size * price
-            ok_exp, exp_msg = self._safety.check_exposure_before_order(order_cost, self.list_open_orders(), condition_id=detection_result.condition_id)  # AUDIT FIX #13
+            ok_exp, exp_msg = self._safety.check_exposure_before_order(order_cost, self.list_open_orders(), condition_id=detection_result.condition_id)
             if not ok_exp:
                 logger.warning(f"Order blocked - exposure: {exp_msg}")
                 return False, None
-        if self.config.paper_mode: return self._paper_place(order, is_maker, size, price)
-        return self._live_place(order, is_maker, post_only, order_type)
+        if self.config.paper_mode:
+            ok, ord = self._paper_place(order, is_maker, size, price)
+            if ok: self._total_placed += 1
+            return ok, ord
+        ok, ord = self._live_place(order, is_maker, post_only, order_type)
+        if ok: self._total_placed += 1
+        return ok, ord
 
     def place_complementary_buy(self, detection_result, size=100.0, tick_size=0.001):
         """P0 #12: Place a buy order for the complementary (losing) side."""
@@ -206,13 +214,12 @@ class OrderBuilder:
             order_type="FAK", tick_size=tick_str, neg_risk=neg_risk,
             is_maker=False,
         )
-        # P0 #17/#18: Check kill switch and exposure before placing complementary order
         if self._safety and self._safety.state.is_killed:
             logger.warning(f"Complementary buy blocked - kill switch: {self._safety.state.kill_reason}")
             return False, None
         if self._safety:
             order_cost = size * self.config.loser_max_price
-            ok_exp, exp_msg = self._safety.check_exposure_before_order(order_cost, self.list_open_orders(), condition_id=detection_result.condition_id)  # AUDIT FIX #13
+            ok_exp, exp_msg = self._safety.check_exposure_before_order(order_cost, self.list_open_orders(), condition_id=detection_result.condition_id)
             if not ok_exp:
                 logger.warning(f"Complementary buy blocked - exposure: {exp_msg}")
                 return False, None
@@ -267,7 +274,6 @@ class OrderBuilder:
         backoff = 1.0
         for attempt in range(max_retries + 1):
             try:
-                # P0 #6/#7: Use V2 SDK imports (Side, OrderType) and create_and_post_order
                 from py_clob_client_v2 import OrderArgs, OrderType as V2OrderType, PartialCreateOrderOptions, Side
                 order_args = OrderArgs(
                     token_id=order.token_id,
@@ -285,13 +291,11 @@ class OrderBuilder:
                 )
                 order.submitted_at = time.time()
                 if isinstance(response, dict):
-                    # P0 #7: Store the real exchange-assigned orderID
                     real_order_id = response.get("orderID")
                     if real_order_id:
                         order.order_id = real_order_id
                     if response.get("status") == "matched":
                         order.status = OrderStatus.MATCHED; order.matched_at = time.time()
-                        # P0 #6: Parse transactionsHashes (list) instead of txHash (string)
                         tx_hashes = response.get("transactionsHashes", [])
                         order.tx_hash = tx_hashes[0] if tx_hashes else None
                         trade_ids = response.get("tradeIDs", [])
@@ -307,7 +311,6 @@ class OrderBuilder:
                     elif response.get("error"):
                         err = response.get("error", "")
                         if "425" in str(err).lower() and attempt < max_retries:
-                            # P1 #3: Check for duplicate order before retrying
                             if self._rate_limiter and self._rate_limiter.is_duplicate_order(order.order_id):
                                 logger.warning(f"425 retry aborted - duplicate order ID: {order.order_id}")
                                 order.status = OrderStatus.REJECTED
@@ -325,14 +328,12 @@ class OrderBuilder:
                 if order.status in (OrderStatus.LIVE, OrderStatus.MATCHED, OrderStatus.FILLED, OrderStatus.PARTIAL):
                     if isinstance(order, RestingOrder) and order.status == OrderStatus.LIVE:
                         self._resting[order.order_id] = order; self._reserved[order.order_id] = order.shares * order.price
-                    # P1 #3: Record order ID to prevent duplicate submissions on retry
                     if self._rate_limiter and order.order_id:
                         self._rate_limiter.record_order_id(order.order_id)
                 return True, order
             except Exception as e:
                 err_msg = str(e)
                 if "425" in err_msg and attempt < max_retries:
-                    # P1 #3: Check for duplicate order before retrying
                     if self._rate_limiter and self._rate_limiter.is_duplicate_order(order.order_id):
                         logger.warning(f"425 retry aborted - duplicate order ID: {order.order_id}")
                         order.status = OrderStatus.REJECTED
@@ -360,7 +361,6 @@ class OrderBuilder:
             order.status = OrderStatus.REJECTED; order.error = RejectCode.RATE_LIMITED.value
             retry = response.get("retry_after") if response and isinstance(response, dict) else None
             order.retry_after = float(retry) if retry else 5.0; logger.warning(f"429 Rate limited, retry={order.retry_after}s")
-            # P1 #2: Wire 429 handling to rate limiter
             if self._rate_limiter:
                 self._rate_limiter.handle_429("order", order.retry_after)
         elif "post_only_would_cross" in e or "would cross" in e or "crosses book" in e:
@@ -400,7 +400,6 @@ class OrderBuilder:
                         matched = float(status.get("size_matched", 0))
                         if matched > 0:
                             order.filled_shares = matched; order.avg_fill_price = order.price
-                            # P0 #6: V2 uses transactionsHashes (list), not txHash (string)
                             tx_hashes = status.get("transactionsHashes", [])
                             order.tx_hash = tx_hashes[0] if tx_hashes else status.get("txHash", "")
                             if matched >= order.shares: order.status = OrderStatus.FILLED; self._reserved.pop(order_id, None)
@@ -432,3 +431,46 @@ class OrderBuilder:
         min_size = gas_cost / edge
         if max_size < min_size: return 0.0
         return round(max_size * 0.9, 2)
+
+    def record_fill(self, order):
+        """AUDIT FIX #24: Record fill metrics (latency, slippage)."""
+        self._total_filled += 1
+        if hasattr(order, 'submitted_at') and order.submitted_at:
+            latency = time.time() - order.submitted_at
+            self._fill_latencies.append(latency)
+            if len(self._fill_latencies) > self._max_latency_samples:
+                self._fill_latencies = self._fill_latencies[-self._max_latency_samples:]
+        if hasattr(order, 'avg_fill_price') and hasattr(order, 'price'):
+            slippage = abs(order.avg_fill_price - order.price)
+            self._total_slippage += slippage
+
+    def record_rejection(self):
+        """AUDIT FIX #24: Record order rejection."""
+        self._total_rejected += 1
+
+    def record_expiry(self):
+        """AUDIT FIX #24: Record order expiry."""
+        self._total_expired += 1
+
+    def record_cancellation(self):
+        """AUDIT FIX #24: Record order cancellation."""
+        self._total_cancelled += 1
+
+    def get_order_metrics(self) -> dict:
+        """AUDIT FIX #24: Return order metrics for monitoring."""
+        avg_latency = sum(self._fill_latencies) / len(self._fill_latencies) if self._fill_latencies else 0.0
+        fill_rate = self._total_filled / max(1, self._total_placed) * 100
+        avg_slippage = self._total_slippage / max(1, self._total_filled)
+        return {
+            'total_placed': self._total_placed,
+            'total_filled': self._total_filled,
+            'total_rejected': self._total_rejected,
+            'total_expired': self._total_expired,
+            'total_cancelled': self._total_cancelled,
+            'fill_rate': round(fill_rate, 2),
+            'avg_fill_latency_s': round(avg_latency, 3),
+            'avg_slippage': round(avg_slippage, 6),
+            'total_slippage': round(self._total_slippage, 6),
+            'resting_orders': len(self._resting),
+            'reserved_collateral': round(self.reserved_collateral(), 4),
+        }
