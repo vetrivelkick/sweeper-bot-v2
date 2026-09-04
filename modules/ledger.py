@@ -26,6 +26,8 @@ Usage:
     ledger.record_buy_loser(trade_id, price, shares)
     ledger.record_merge(trade_id, shares, winning_cost, loser_cost)
     ledger.dump()
+
+AUDIT FIX #28: Trade history, daily PnL tracking, ledger status
 """
 import json, os, time, logging
 from dataclasses import dataclass, field, asdict
@@ -64,6 +66,10 @@ class DoubleEntryLedger:
         self._log_dir = log_dir
         self._total_recycled = 0.0
         self._recycle_count = 0
+        # AUDIT FIX #28: Trade history and daily PnL tracking
+        self._trade_history: List[dict] = []
+        self._max_history = 500
+        self._daily_pnl: dict = {}  # date_str -> pnl
         os.makedirs(log_dir, exist_ok=True)
         self._ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         self._ledger_file = os.path.join(log_dir, f"ledger_{self._ts}.json")
@@ -136,6 +142,23 @@ class DoubleEntryLedger:
                         f"Gross profit from merge: ${gross_profit:.4f}")
         self._total_recycled += recovered
         self._recycle_count += 1
+        # AUDIT FIX #28: Track trade history
+        net_pnl = gross_profit - self.balances.GAS - self.balances.FEE
+        self._trade_history.append({
+            'trade_id': trade_id,
+            'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+            'shares': shares,
+            'winning_cost': round(winning_cost, 4),
+            'loser_cost': round(loser_cost, 4),
+            'recovered': round(recovered, 4),
+            'gross_profit': round(gross_profit, 4),
+            'net_pnl': round(net_pnl, 4),
+        })
+        if len(self._trade_history) > self._max_history:
+            self._trade_history = self._trade_history[-self._max_history:]
+        # AUDIT FIX #28: Track daily PnL
+        date_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+        self._daily_pnl[date_str] = self._daily_pnl.get(date_str, 0.0) + net_pnl
         logger.info(f"[LEDGER] Trade {trade_id}: MERGE {shares:.0f} pairs -> ${recovered:.4f} pUSD (profit ${gross_profit:.4f})")
 
     def record_pnl(self, trade_id, net_pnl):
@@ -165,6 +188,30 @@ class DoubleEntryLedger:
             "balanced": balanced,
             "balance_diff": round(diff, 6),
             "unique_trades": len(set(e.trade_id for e in self.entries)),
+        }
+
+    def get_trade_history(self, limit: int = 20) -> list:
+        """AUDIT FIX #28: Return recent trade history with per-trade PnL."""
+        return self._trade_history[-limit:]
+
+    def get_daily_pnl(self) -> dict:
+        """AUDIT FIX #28: Return daily PnL breakdown."""
+        return {k: round(v, 4) for k, v in sorted(self._daily_pnl.items())}
+
+    def get_ledger_status(self) -> dict:
+        """AUDIT FIX #28: Return ledger status for monitoring."""
+        balanced, td, tc, diff = self.verify_balanced()
+        return {
+            'total_entries': len(self.entries),
+            'unique_trades': len(set(e.trade_id for e in self.entries)),
+            'total_pnl': round(self.get_pnl(), 4),
+            'total_recycled': round(self._total_recycled, 4),
+            'recycle_count': self._recycle_count,
+            'balanced': balanced,
+            'balance_diff': round(diff, 6),
+            'trade_history_size': len(self._trade_history),
+            'daily_pnl_entries': len(self._daily_pnl),
+            'accounts': asdict(self.balances),
         }
 
     def dump(self):
