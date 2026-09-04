@@ -1,1 +1,9 @@
-cmVxdWVzdHM+PTIuMjguMAp3ZWIzPj02LjAuMApweS1jbG9iLWNsaWVudC12Mj49MS4xLjAKZXRoLWFjY291bnQ+PTAuMTAuMApweWRhbnRpYz49Mi4wLjAKd2Vic29ja2V0LWNsaWVudD49MS42LjAKcHJvbWV0aGV1cy1jbGllbnQ+PTAuMTkuMAo=
+requests>=2.28.0
+web3>=6.0.0
+py-clob-client-v2>=1.1.0
+eth-account>=0.10.0
+pydantic>=2.0.0
+websocket-client>=1.6.0
+prometheus-client>=0.19.0
+pytest>=7.0.0
+python-dotenv>=1.0.0
