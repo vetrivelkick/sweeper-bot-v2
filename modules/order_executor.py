@@ -5,6 +5,9 @@ FIX #2: Standardized fill probability logic (35% fill, 25% partial, 5% ghost, 35
 FIX #3: Gas cost standardized to 0.001/share
 FIX #5: V2 SDK migration: chain_id=137 -> chain=137
 FIX #9: Added 425 exponential backoff retry (1s->2s->4s...->30s, max 10 retries)
+FIX #17: plan_entry uses round() instead of int() for tick alignment
+       Bug: int(price/tick)*tick floors 0.989 to 0.98 (below min_entry 0.985)
+       Fix: round(price/tick)*tick rounds 0.989 to 0.99 (above min_entry 0.985)
 """
 import json, time, random, logging
 from dataclasses import dataclass, field, asdict
@@ -59,7 +62,13 @@ def plan_entry(best_ask, tick_size, min_entry, max_entry, prefer_maker=True, all
         maker_ceiling = best_ask - tick
         desired = max(maker_ceiling, min_entry)
         price = min(desired, maker_ceiling, max_entry)
-        price = int(price / tick) * tick
+        # FIX #17: Use round() instead of int() for tick alignment.
+        # Bug: int(0.989/0.01)*0.01 = 0.98 which is below min_entry 0.985 -> order rejected
+        # Fix: round(0.989/0.01)*0.01 = 0.99 which is above min_entry 0.985 -> order accepted
+        price = round(price / tick) * tick
+        if price >= best_ask:
+            price -= tick
+        price = round(price, 6)
         if min_entry <= price < best_ask:
             return (price, True, f"resting maker bid @ {price} (ask={best_ask}, tick={tick})")
         if not allow_taker:
