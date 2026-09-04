@@ -18,6 +18,7 @@ Usage:
 """
 import sys, os, time, json, logging, random
 from datetime import datetime, timezone
+from decimal import Decimal, ROUND_DOWN
 from dataclasses import dataclass, field, asdict
 from typing import Optional, List
 
@@ -39,29 +40,28 @@ logger = logging.getLogger("sweeper.paper")
 
 def plan_entry_fixed(best_ask, tick_size, min_entry, max_entry,
                      prefer_maker=True, allow_taker=False):
-    """
-    Fixed plan_entry that uses round() for tick alignment.
-    Also includes FIX #18: taker fallback when best_ask <= max_entry.
-    """
-    tick = tick_size if isinstance(tick_size, float) else float(tick_size)
+    """P1: Use Decimal for exact tick alignment. Also includes FIX #18."""
+    tick = Decimal(str(tick_size)) if not isinstance(tick_size, Decimal) else tick_size
+    ask_d = Decimal(str(best_ask))
+    min_d = Decimal(str(min_entry))
+    max_d = Decimal(str(max_entry))
     if prefer_maker:
-        maker_ceiling = best_ask - tick
-        desired = max(maker_ceiling, min_entry)
-        price = min(desired, maker_ceiling, max_entry)
-        price = round(price / tick) * tick
-        if price >= best_ask:
+        maker_ceiling = ask_d - tick
+        desired = max(maker_ceiling, min_d)
+        price = min(desired, maker_ceiling, max_d)
+        price = (price // tick) * tick
+        if price >= ask_d:
             price -= tick
-        price = round(price, 6)
-        if min_entry <= price < best_ask:
-            return (price, True,
-                    f"resting maker bid @ {price} (ask={best_ask}, tick={tick})")
-        # FIX #18: Allow taker fallback when best_ask is within entry range
+        if min_d <= price < ask_d:
+            p = float(price)
+            return (p, True,
+                    f"resting maker bid @ {p} (ask={best_ask}, tick={tick})")
         if not allow_taker:
-            if min_entry <= best_ask <= max_entry:
-                return (best_ask, False, f"taker fallback @ best ask {best_ask} (maker ceiling {maker_ceiling} < min_entry {min_entry})")
+            if min_d <= ask_d <= max_d:
+                return (float(ask_d), False, f"taker fallback @ best ask {best_ask} (maker ceiling {float(maker_ceiling)} < min_entry {min_entry})")
             return None
-    if min_entry <= best_ask <= max_entry:
-        return (best_ask, False, f"taker fallback @ best ask {best_ask}")
+    if min_d <= ask_d <= max_d:
+        return (float(ask_d), False, f"taker fallback @ best ask {best_ask}")
     return None
 
 
@@ -106,7 +106,6 @@ class TradeRecord:
     adapter: str
     neg_risk: bool
     error: Optional[str] = None
-
 
 class AdvancedPaperTrader:
     """Advanced paper trading engine with detailed, human-readable logs."""
@@ -370,7 +369,7 @@ class AdvancedPaperTrader:
                 best_ask, tick_size, 0.985, self.config.buy_price,
                 self.config.prefer_maker, self.config.allow_taker_fallback)
 
-        is_maker = (entry_plan is not None and entry_plan[1]) or \
+        is_maker = (entry_plan is not None and entry_plan[1]) or \\
                    (self.config.prefer_maker and best_ask is None)
 
         order_price = entry_plan[0] if entry_plan else self.config.buy_price
