@@ -2,6 +2,8 @@
 
 FIX #7: Removed duplicate BotState — now imports from config.settings
 FIX #16: from_dict() no longer pops rate_limit_429_count (persists across restarts)
+P0 #18: get_true_pnl now attempts chain-derived P&L reconciliation in live mode
+         (was returning tracked_net_pnl calculated estimate only)
 """
 import json, os, time, logging
 from datetime import datetime, timezone
@@ -252,9 +254,23 @@ class SafetyRails:
             self.state.tracked_net_pnl += net_pnl
 
     def get_true_pnl(self):
-        total_in = self.state.total_buys * self.config.buy_price
-        total_out = self.state.total_redeems * 1.0
         true_pnl = self.state.tracked_net_pnl
+        # P0 #18 FIX: In live mode, attempt chain-derived P&L reconciliation
+        # Was: true_pnl = self.state.tracked_net_pnl (calculated estimate only)
+        # Now: Query on-chain pUSD balance as ground truth in live mode
+        if not self.config.paper_mode and self.config.wallet_address:
+            try:
+                from web3 import Web3
+                from config.settings import PUSD, POLYGON_RPC
+                w3 = Web3(Web3.HTTPProvider(self.config.polygon_rpc or POLYGON_RPC))
+                pUSD_abi = [{"inputs": [{"name": "", "type": "address"}], "name": "balanceOf", "outputs": [{"name": "", "type": "uint256"}], "stateMutability": "view", "type": "function"}]
+                pUSD = w3.eth.contract(address=Web3.to_checksum_address(PUSD), abi=pUSD_abi)
+                chain_balance = pUSD.functions.balanceOf(Web3.to_checksum_address(self.config.wallet_address)).call() / 10**6
+                logger.info(f"[LIVE] Chain pUSD balance: {chain_balance:.2f} | Tracked P&L: {true_pnl:.4f}")
+                # Use chain balance as ground truth for live P&L
+                true_pnl = chain_balance - self.state.total_recycled_usd
+            except Exception as e:
+                logger.warning(f"Chain P&L reconciliation failed, using tracked: {e}")
         true_win_rate = (self.state.total_redeems / self.state.total_buys if self.state.total_buys > 0 else 0.0)
         return {'total_buys': self.state.total_buys, 'total_redeems': self.state.total_redeems,
                 'total_merges': self.state.total_merges, 'total_recycled_usd': round(self.state.total_recycled_usd, 4),
