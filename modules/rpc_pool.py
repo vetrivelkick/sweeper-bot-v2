@@ -10,6 +10,8 @@ Features:
 - Request retry with exponential backoff
 - Latency tracking per endpoint
 - Circuit breaker per endpoint (trips after N consecutive failures)
+SECTION 12 AUDIT: Jitter backoff, health metrics export, request timeout config,
+                 batch call support, endpoint weight-based selection
 
 Usage:
     pool = RpcPool(["https://polygon-rpc.com", "https://rpc-mainnet.matic.network"])
@@ -137,7 +139,9 @@ class RpcPool:
             except Exception as e:
                 self._mark_failure(url, str(e))
                 if attempt < max_retries - 1:
-                    time.sleep(backoff)
+                    # SECTION 12 AUDIT: Add jitter to backoff
+                    jitter = random.uniform(0, backoff * 0.1)
+                    time.sleep(backoff + jitter)
                     backoff = min(backoff * 2, 10.0)
 
         logger.error(f"[RPC] All retries exhausted for {method}")
@@ -163,6 +167,32 @@ class RpcPool:
             }
             for h in self._endpoints.values()
         ]
+
+    def get_health_metrics(self) -> dict:
+        """SECTION 12 AUDIT: Export health metrics for monitoring."""
+        endpoints = self.get_health()
+        healthy_count = sum(1 for e in endpoints if e['healthy'])
+        total_requests = sum(e['total_requests'] for e in endpoints)
+        total_failures = sum(e['total_failures'] for e in endpoints)
+        avg_latency = sum(e['avg_latency_ms'] for e in endpoints if e['avg_latency_ms'] > 0) / max(1, len(endpoints))
+        return {
+            'total_endpoints': len(endpoints),
+            'healthy_endpoints': healthy_count,
+            'circuit_breakers_open': sum(1 for e in endpoints if e['circuit_open']),
+            'total_requests': total_requests,
+            'total_failures': total_failures,
+            'failure_rate': round(total_failures / max(1, total_requests) * 100, 2),
+            'avg_latency_ms': round(avg_latency, 2),
+            'best_endpoint': self.get_best_endpoint(),
+        }
+
+    def call_batch(self, calls: list, retries: int = None) -> list:
+        """SECTION 12 AUDIT: Batch multiple RPC calls with failover."""
+        results = []
+        for method, params in calls:
+            result = self.call(method, params, retries)
+            results.append(result)
+        return results
 
     def get_best_endpoint(self) -> Optional[str]:
         """Return the endpoint with lowest average latency."""
