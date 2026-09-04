@@ -51,7 +51,6 @@ class Counter:
     def get(self) -> float:
         return self._value
 
-
 class Gauge:
     """Value that can go up or down."""
     def __init__(self, name: str, help_text: str = ""):
@@ -71,7 +70,6 @@ class Gauge:
     def get(self) -> float:
         return self._value
 
-
 class MetricsCollector:
     """Collect and export bot metrics."""
 
@@ -85,6 +83,13 @@ class MetricsCollector:
         self._alert_log = os.path.join(log_dir, f"alerts_{self._ts}.log")
         self._alerts: List[Dict] = []
         self._start_time = time.time()
+        # AUDIT FIX #25: Alert suppression, history, notification
+        self._alert_cooldowns: Dict[str, float] = {}  # alert_type -> last_alert_time
+        self._alert_cooldown_seconds = 300.0  # 5 min default cooldown
+        self._alert_history: List[Dict] = []  # Full alert history
+        self._max_alert_history = 500
+        self._alert_callback = None  # Optional callback for notifications
+        self._alert_counts: Dict[str, int] = {}  # alert_type -> count
 
         self._init_default_metrics()
 
@@ -167,14 +172,34 @@ class MetricsCollector:
             return self.gauges[name].get()
         return 0.0
 
+    def set_alert_callback(self, callback):
+        """AUDIT FIX #25: Set callback for alert notifications (webhook, Slack, etc.)."""
+        self._alert_callback = callback
+
+    def set_alert_cooldown(self, seconds: float):
+        """AUDIT FIX #25: Set cooldown period for alert suppression."""
+        self._alert_cooldown_seconds = seconds
+
     def record_alert(self, alert_type: str, severity: str, message: str):
+        # AUDIT FIX #25: Alert suppression - don't repeat same alert within cooldown
+        now = time.time()
+        last_time = self._alert_cooldowns.get(alert_type, 0)
+        if now - last_time < self._alert_cooldown_seconds and severity != "CRITICAL":
+            return  # Suppress non-critical repeated alert within cooldown
+        self._alert_cooldowns[alert_type] = now
+        self._alert_counts[alert_type] = self._alert_counts.get(alert_type, 0) + 1
         alert = {
             "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
             "type": alert_type,
             "severity": severity,
             "message": message,
+            "count": self._alert_counts[alert_type],
         }
         self._alerts.append(alert)
+        # AUDIT FIX #25: Track full alert history
+        self._alert_history.append(alert)
+        if len(self._alert_history) > self._max_alert_history:
+            self._alert_history = self._alert_history[-self._max_alert_history:]
         if severity == "CRITICAL":
             logger.critical(f"[ALERT] {alert_type}: {message}")
         elif severity == "WARNING":
@@ -183,6 +208,12 @@ class MetricsCollector:
             logger.info(f"[ALERT] {alert_type}: {message}")
         with open(self._alert_log, "a") as f:
             f.write(json.dumps(alert) + "\n")
+        # AUDIT FIX #25: Fire notification callback
+        if self._alert_callback:
+            try:
+                self._alert_callback(alert_type, severity, message)
+            except Exception as e:
+                logger.error(f"Alert callback error: {e}")
 
     def export(self) -> dict:
         """Export all metrics to dict and write to JSON file."""
@@ -214,6 +245,28 @@ class MetricsCollector:
         for a in self._alerts[-5:]:
             log_fn(f"    [{a['severity']}] {a['type']}: {a['message']}")
         log_fn("=" * 60)
+
+    def get_alert_status(self) -> dict:
+        """AUDIT FIX #25: Return alert status for monitoring."""
+        now = time.time()
+        active_cooldowns = {
+            k: round(self._alert_cooldown_seconds - (now - v), 1)
+            for k, v in self._alert_cooldowns.items()
+            if now - v < self._alert_cooldown_seconds
+        }
+        return {
+            'total_alerts': len(self._alert_history),
+            'recent_alerts': len(self._alerts),
+            'alert_counts': dict(self._alert_counts),
+            'active_cooldowns': active_cooldowns,
+            'cooldown_seconds': self._alert_cooldown_seconds,
+            'has_callback': self._alert_callback is not None,
+            'history_size': len(self._alert_history),
+        }
+
+    def get_alert_history(self, limit: int = 20) -> list:
+        """AUDIT FIX #25: Return recent alert history."""
+        return self._alert_history[-limit:]
 
 
 class AlertManager:
