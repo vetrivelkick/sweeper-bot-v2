@@ -5,6 +5,8 @@ P1 #9: Gas economics now uses dynamic gas price estimation from Polygon RPC
        instead of a fixed GAS_PER_SHARE constant. Tracks total gas spent.
        Estimates gas cost for merge/redeem transactions.
 AUDIT FIX #23: Gas price spike detection, budget tracking, alerting
+SECTION 12 AUDIT: Nonce management, EIP-1559 gas estimation, wallet validation,
+                 pending transaction tracking, gas price ceiling
 """
 import time
 import logging
@@ -46,6 +48,11 @@ class GasManager:
         self._daily_gas_spent = 0.0
         self._daily_reset_time = time.time()
         self._gas_alert_callback = None
+        # SECTION 12 AUDIT: Nonce management and pending tx tracking
+        self._pending_txs = {}  # tx_hash -> {nonce, gas_cost, timestamp}
+        self._last_nonce = -1
+        self._gas_price_ceiling_gwei = 500.0  # Max acceptable gas price
+        self._eip1559_enabled = False  # Will be set to True if RPC supports it
 
     def _get_web3(self):
         if self._w3 or self.config.paper_mode:
@@ -78,6 +85,68 @@ class GasManager:
                 logger.debug(f"Gas price fetch failed: {e}")
         self._gas_price_gwei = 30.0
         return self._gas_price_gwei
+
+    def estimate_gas_eip1559(self, gas_units=None) -> dict:
+        """SECTION 12 AUDIT: Estimate gas cost with EIP-1559 fields."""
+        if gas_units is None:
+            gas_units = self.MERGE_GAS_UNITS
+        gwei = self._fetch_gas_price()
+        # EIP-1559: maxFeePerGas = baseFee * 2, maxPriorityFeePerGas = 1 Gwei
+        max_fee_gwei = gwei * 2
+        priority_fee_gwei = 1.0
+        total_cost = gas_units * max_fee_gwei * 1e-9
+        return {
+            'max_fee_per_gas_gwei': max_fee_gwei,
+            'max_priority_fee_gwei': priority_fee_gwei,
+            'gas_units': gas_units,
+            'est_cost_pol': total_cost,
+            'eip1559': True,
+        }
+
+    def validate_wallet(self) -> tuple:
+        """SECTION 12 AUDIT: Validate wallet address and balance before transactions."""
+        if not getattr(self.config, 'wallet_address', ''):
+            return False, 'No wallet address configured'
+        if not getattr(self.config, 'private_key', ''):
+            return False, 'No private key configured'
+        gs = self.check_balance()
+        if gs.is_critical:
+            return False, f'Insufficient POL balance: {gs.balance_pol:.4f} < floor {gs.floor}'
+        if not self.is_gas_price_acceptable():
+            return False, f'Gas price too high: {gs.gas_price_gwei:.2f} Gwei'
+        return True, 'Wallet OK'
+
+    def get_next_nonce(self) -> int:
+        """SECTION 12 AUDIT: Get next transaction nonce."""
+        if self.config.paper_mode:
+            self._last_nonce += 1
+            return self._last_nonce
+        w3 = self._get_web3()
+        if w3 and getattr(self.config, 'wallet_address', ''):
+            try:
+                nonce = w3.eth.get_transaction_count(self.config.wallet_address)
+                self._last_nonce = max(self._last_nonce + 1, nonce)
+                return self._last_nonce
+            except Exception as e:
+                logger.error(f"Nonce fetch failed: {e}")
+                return self._last_nonce + 1
+        return self._last_nonce + 1
+
+    def track_pending_tx(self, tx_hash: str, nonce: int, gas_cost: float):
+        """SECTION 12 AUDIT: Track pending transaction for confirmation."""
+        self._pending_txs[tx_hash] = {
+            'nonce': nonce,
+            'gas_cost': gas_cost,
+            'timestamp': time.time(),
+        }
+
+    def clear_pending_tx(self, tx_hash: str):
+        """SECTION 12 AUDIT: Clear confirmed transaction."""
+        self._pending_txs.pop(tx_hash, None)
+
+    def get_pending_txs(self) -> dict:
+        """SECTION 12 AUDIT: Get all pending transactions."""
+        return self._pending_txs.copy()
 
     def estimate_gas_cost(self, gas_units=None) -> float:
         if gas_units is None:
@@ -198,4 +267,10 @@ class GasManager:
                 'daily_gas_spent': round(self._daily_gas_spent, 6),
                 'daily_gas_budget': self._daily_gas_budget,
                 'daily_budget_pct': round(self._daily_gas_spent / max(0.001, self._daily_gas_budget) * 100, 1),
-                'gas_price_history_size': len(self._gas_price_history)}
+                'gas_price_history_size': len(self._gas_price_history),
+                # SECTION 12 AUDIT: New fields
+                'pending_txs': len(self._pending_txs),
+                'last_nonce': self._last_nonce,
+                'gas_price_ceiling_gwei': self._gas_price_ceiling_gwei,
+                'eip1559_enabled': self._eip1559_enabled,
+        }
