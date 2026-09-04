@@ -1,6 +1,8 @@
 """Sweeper Bot V2 - Fill Confirmation
 
-FIX #5: V2 SDK migration — chain=137 (not chain_id=137)
+P0 #2: Fixed V2 constructor: chain=137 -> chain_id=137
+P0 #3: Added signature_type and funder parameters
+P0 #6: Fixed txHash -> transactionsHashes (list) for V2 response format
 """
 import time
 import logging
@@ -38,8 +40,14 @@ class FillConfirmer:
         try:
             from py_clob_client_v2 import ClobClient, ApiCreds
             creds = ApiCreds(api_key=self.config.clob_api_key, api_secret=self.config.clob_api_secret, api_passphrase=self.config.clob_api_passphrase)
-            # FIX #5: V2 migration — chain=137 (not chain_id=137)
-            self._client = ClobClient(host="https://clob.polymarket.com", key=self.config.private_key, chain=137, creds=creds)
+            self._client = ClobClient(
+                host="https://clob.polymarket.com",
+                key=self.config.private_key,
+                chain_id=137,
+                creds=creds,
+                signature_type=self.config.signature_type,
+                funder=self.config.funder if self.config.funder else None,
+            )
         except Exception as e:
             logger.error(f"CLOB V2 client init failed: {e}")
         return self._client
@@ -74,7 +82,8 @@ class FillConfirmer:
                     if isinstance(status, dict):
                         matched = float(status.get('size_matched', 0))
                         if matched > 0:
-                            tx_hash = status.get('txHash', '')
+                            tx_hashes = status.get('transactionsHashes', [])
+                            tx_hash = tx_hashes[0] if tx_hashes else status.get('txHash', '')
                             if self._settled_on_chain(tx_hash):
                                 return FillConfirmation(order.order_id, order.condition_id, FillStatus.CONFIRMED, matched, tx_hash, time.time())
                 except Exception as e:
