@@ -1,1 +1,160 @@
-IiIiU3dlZXBlciBCb3QgVjIgLSBDYXBpdGFsIFJlY3ljbGVyIChNZXJnZSkKClAwICMxMjogQWRkZWQgY29tcGxlbWVudGFyeS10b2tlbiBwdXJjaGFzZSBiZWZvcmUgbWVyZ2UuCiAgICAgICAgQm90IG5vdyBidXlzIHRoZSBsb3Npbmcgc2lkZSBhdCBsb3Nlcl9tYXhfcHJpY2UgYmVmb3JlIG1lcmdpbmcuClAwICMxMzogRml4ZWQgbWVyZ2UgQUJJIHRvIG1hdGNoIEN0ZkNvbGxhdGVyYWxBZGFwdGVyIGludGVyZmFjZS4KICAgICAgICAtIGNvbmRpdGlvbklkIGVuY29kZWQgYXMgYnl0ZXMzMiAod2FzIHVpbnQyNTYpCiAgICAgICAgLSBtZXJnZVBvc2l0aW9ucyB0YWtlcyAoYWRkcmVzcywgYnl0ZXMzMiwgYnl0ZXMzMiwgdWludDI1NltdLCB1aW50MjU2KQogICAgICAgIC0gQWRkZWQgRVJDMTE1NSBzZXRBcHByb3ZhbEZvckFsbCBiZWZvcmUgbWVyZ2UKICAgICAgICAtIEZpeGVkIE5lZ1Jpc2sgYWRhcHRlciBzZWxlY3Rpb24KRklYICM2OiBMaXZlIG1vZGUgbWVyZ2UgdmlhIEN0ZkNvbGxhdGVyYWxBZGFwdGVyIG9uLWNoYWluIChub3QgY2xpZW50Lm1lcmdlX3Bvc2l0aW9ucyB3aGljaCBkb2Vzbid0IGV4aXN0IGluIFYyKSIiIgppbXBvcnQgdGltZQppbXBvcnQgbG9nZ2luZwpmcm9tIGRhdGFjbGFzc2VzIGltcG9ydCBkYXRhY2xhc3MKZnJvbSB0eXBpbmcgaW1wb3J0IE9wdGlvbmFsCgpsb2dnZXIgPSBsb2dnaW5nLmdldExvZ2dlcigic3dlZXBlci5yZWN5Y2xlIikKCgpAZGF0YWNsYXNzCmNsYXNzIFJlY3ljbGVSZXN1bHQ6CiAgICBjb25kaXRpb25faWQ6IHN0cgogICAgc3VjY2VzczogYm9vbAogICAgc2hhcmVzX3JlY3ljbGVkOiBmbG9hdAogICAgdXNkY19yZWNvdmVyZWQ6IGZsb2F0CiAgICBsb3Nlcl9jb3N0OiBmbG9hdAogICAgbmV0X2dhaW46IGZsb2F0CiAgICBpc19wYXBlcjogYm9vbAogICAgY29tcGxlbWVudGFyeV9maWxsZWQ6IGJvb2wgPSBGYWxzZQogICAgZXJyb3I6IE9wdGlvbmFsW3N0cl0gPSBOb25lCiAgICB0aW1lc3RhbXA6IGZsb2F0ID0gMC4wCgoKY2xhc3MgQ2FwaXRhbFJlY3ljbGVyOgogICAgZGVmIF9faW5pdF9fKHNlbGYsIGNvbmZpZywgb3JkZXJfYnVpbGRlciwgc2FmZXR5X3JhaWxzKToKICAgICAgICBzZWxmLmNvbmZpZyA9IGNvbmZpZwogICAgICAgIHNlbGYuYnVpbGRlciA9IG9yZGVyX2J1aWxkZXIKICAgICAgICBzZWxmLnNhZmV0eSA9IHNhZmV0eV9yYWlscwogICAgICAgIHNlbGYuX3RvdGFsX3JlY3ljbGVkID0gMC4wCiAgICAgICAgc2VsZi5fcmVjeWNsZV9jb3VudCA9IDAKICAgICAgICBzZWxmLl9hcHByb3ZhbF9jYWNoZSA9IHNldCgpCgogICAgZGVmIF9idXlfY29tcGxlbWVudGFyeV9wYXBlcihzZWxmLCBkZXRlY3Rpb25fcmVzdWx0LCBzaGFyZXMpOgogICAgICAgIGxvc2luZ190b2tlbiA9IGdldGF0dHIoZGV0ZWN0aW9uX3Jlc3VsdCwgJ2xvc2luZ190b2tlbl9pZCcsICcnKQogICAgICAgIGlmIG5vdCBsb3NpbmdfdG9rZW46CiAgICAgICAgICAgIGxvZ2dlci53YXJuaW5nKCJObyBsb3NpbmdfdG9rZW5faWQgb24gZGV0ZWN0aW9uX3Jlc3VsdDsgY2Fubm90IGJ1eSBjb21wbGVtZW50YXJ5IikKICAgICAgICAgICAgcmV0dXJuIEZhbHNlCiAgICAgICAgbG9zZXJfY29zdCA9IHNlbGYuY29uZmlnLmxvc2VyX21heF9wcmljZSAqIHNoYXJlcwogICAgICAgIGxvZ2dlci5pbmZvKGYiW1BBUEVSXSBCb3VnaHQge3NoYXJlc30gY29tcGxlbWVudGFyeSB0b2tlbnMgQCAke3NlbGYuY29uZmlnLmxvc2VyX21heF9wcmljZX0gPSAke2xvc2VyX2Nvc3Q6LjRmfSIpCiAgICAgICAgcmV0dXJuIFRydWUKCiAgICBkZWYgX2J1eV9jb21wbGVtZW50YXJ5X2xpdmUoc2VsZiwgZGV0ZWN0aW9uX3Jlc3VsdCwgc2hhcmVzKToKICAgICAgICBsb3NpbmdfdG9rZW4gPSBnZXRhdHRyKGRldGVjdGlvbl9yZXN1bHQsICdsb3NpbmdfdG9rZW5faWQnLCAnJykKICAgICAgICBpZiBub3QgbG9zaW5nX3Rva2VuOgogICAgICAgICAgICBsb2dnZXIuZXJyb3IoIk5vIGxvc2luZ190b2tlbl9pZCBvbiBkZXRlY3Rpb25fcmVzdWx0OyBjYW5ub3QgYnV5IGNvbXBsZW1lbnRhcnkiKQogICAgICAgICAgICByZXR1cm4gRmFsc2UKICAgICAgICB0cnk6CiAgICAgICAgICAgIG9rLCBvcmRlciA9IHNlbGYuYnVpbGRlci5wbGFjZV9jb21wbGVtZW50YXJ5X2J1eShkZXRlY3Rpb25fcmVzdWx0LCBzaXplPXNoYXJlcywgdGlja19zaXplPTAuMDAxKQogICAgICAgICAgICBpZiBvayBhbmQgb3JkZXI6CiAgICAgICAgICAgICAgICBzdGF0dXMgPSBnZXRhdHRyKG9yZGVyLCAnc3RhdHVzJywgTm9uZSkKICAgICAgICAgICAgICAgIHN0YXR1c192YWwgPSBzdGF0dXMudmFsdWUgaWYgaGFzYXR0cihzdGF0dXMsICd2YWx1ZScpIGVsc2Ugc3RyKHN0YXR1cykKICAgICAgICAgICAgICAgIGlmIHN0YXR1c192YWwgaW4gKCdmaWxsZWQnLCAnbWF0Y2hlZCcsICdwYXBlcicpOgogICAgICAgICAgICAgICAgICAgIGxvZ2dlci5pbmZvKGYiW0xJVkVdIENvbXBsZW1lbnRhcnkgYnV5IGZpbGxlZDoge3NoYXJlc30gQCAke3NlbGYuY29uZmlnLmxvc2VyX21heF9wcmljZX0iKQogICAgICAgICAgICAgICAgICAgIHJldHVybiBUcnVlCiAgICAgICAgICAgICAgICBlbGlmIHN0YXR1c192YWwgaW4gKCdsaXZlJywgJ3N1Ym1pdHRlZCcpOgogICAgICAgICAgICAgICAgICAgIGxvZ2dlci5pbmZvKGYiW0xJVkVdIENvbXBsZW1lbnRhcnkgYnV5IHJlc3RpbmcgYXQgJHtzZWxmLmNvbmZpZy5sb3Nlcl9tYXhfcHJpY2V9IikKICAgICAgICAgICAgICAgICAgICByZXR1cm4gVHJ1ZQogICAgICAgICAgICAgICAgZWxzZToKICAgICAgICAgICAgICAgICAgICBsb2dnZXIud2FybmluZyhmIkNvbXBsZW1lbnRhcnkgYnV5IHN0YXR1czoge3N0YXR1c192YWx9IikKICAgICAgICAgICAgICAgICAgICByZXR1cm4gRmFsc2UKICAgICAgICAgICAgbG9nZ2VyLndhcm5pbmcoZiJDb21wbGVtZW50YXJ5IGJ1eSBmYWlsZWQ6IHtvcmRlcn0iKQogICAgICAgICAgICByZXR1cm4gRmFsc2UKICAgICAgICBleGNlcHQgRXhjZXB0aW9uIGFzIGU6CiAgICAgICAgICAgIGxvZ2dlci5lcnJvcihmIkNvbXBsZW1lbnRhcnkgYnV5IGVycm9yOiB7ZX0iKQogICAgICAgICAgICByZXR1cm4gRmFsc2UKCiAgICBkZWYgX2Vuc3VyZV9lcmMxMTU1X2FwcHJvdmFsKHNlbGYsIHczLCBjdGZfYWRkciwgYWRhcHRlcl9hZGRyLCB3YWxsZXRfYWRkcik6CiAgICAgICAgaWYgYWRhcHRlcl9hZGRyLmxvd2VyKCkgaW4gc2VsZi5fYXBwcm92YWxfY2FjaGU6CiAgICAgICAgICAgIHJldHVybiBUcnVlCiAgICAgICAgdHJ5OgogICAgICAgICAgICBmcm9tIHdlYjMgaW1wb3J0IFdlYjMKICAgICAgICAgICAgZXJjMTE1NV9hYmkgPSBbCiAgICAgICAgICAgICAgICB7ImlucHV0cyI6IFt7Im5hbWUiOiAib3BlcmF0b3IiLCAidHlwZSI6ICJhZGRyZXNzIn0sIHsibmFtZSI6ICJhcHByb3ZlZCIsICJ0eXBlIjogImJvb2wifV0sICJuYW1lIjogInNldEFwcHJvdmFsRm9yQWxsIiwgIm91dHB1dHMiOiBbXSwgInN0YXRlTXV0YWJpbGl0eSI6ICJub25wYXlhYmxlIiwgInR5cGUiOiAiZnVuY3Rpb24ifSwKICAgICAgICAgICAgICAgIHsiaW5wdXRzIjogW3sibmFtZSI6ICJvd25lciIsICJ0eXBlIjogImFkZHJlc3MifSwgeyJuYW1lIjogIm9wZXJhdG9yIiwgInR5cGUiOiAiYWRkcmVzcyJ9XSwgIm5hbWUiOiAiaXNBcHByb3ZlZEZvckFsbCIsICJvdXRwdXRzIjogW3sibmFtZSI6ICIiLCAidHlwZSI6ICJib29sIn1dLCAic3RhdGVNdXRhYmlsaXR5IjogInZpZXciLCAidHlwZSI6ICJmdW5jdGlvbiJ9CiAgICAgICAgICAgIF0KICAgICAgICAgICAgY3RmID0gdzMuZXRoLmNvbnRyYWN0KGFkZHJlc3M9V2ViMy50b19jaGVja3N1bV9hZGRyZXNzKGN0Zl9hZGRyKSwgYWJpPWVyYzExNTVfYWJpKQogICAgICAgICAgICBhcHByb3ZlZCA9IGN0Zi5mdW5jdGlvbnMuaXNBcHByb3ZlZEZvckFsbChXZWIzLnRvX2NoZWNrc3VtX2FkZHJlc3Mod2FsbGV0X2FkZHIpLCBXZWIzLnRvX2NoZWNrc3VtX2FkZHJlc3MoYWRhcHRlcl9hZGRyKSkuc3RhdGljX2NhbGwoKQogICAgICAgICAgICBpZiBub3QgYXBwcm92ZWQ6CiAgICAgICAgICAgICAgICB0eCA9IGN0Zi5mdW5jdGlvbnMuc2V0QXBwcm92YWxGb3JBbGwoV2ViMy50b19jaGVja3N1bV9hZGRyZXNzKGFkYXB0ZXJfYWRkciksIFRydWUpLnRyYW5zYWN0KHsnZnJvbSc6IHdhbGxldF9hZGRyfSkKICAgICAgICAgICAgICAgIHJlY2VpcHQgPSB3My5ldGgud2FpdF9mb3JfdHJhbnNhY3Rpb25fcmVjZWlwdCh0eCkKICAgICAgICAgICAgICAgIGlmIHJlY2VpcHRbJ3N0YXR1cyddID09IDE6CiAgICAgICAgICAgICAgICAgICAgbG9nZ2VyLmluZm8oZiJFUkMxMTU1IGFwcHJvdmFsIGdyYW50ZWQgdG8gYWRhcHRlciB7YWRhcHRlcl9hZGRyfSIpCiAgICAgICAgICAgICAgICBlbHNlOgogICAgICAgICAgICAgICAgICAgIGxvZ2dlci5lcnJvcigiRVJDMTE1NSBhcHByb3ZhbCB0eCByZXZlcnRlZCIpCiAgICAgICAgICAgICAgICAgICAgcmV0dXJuIEZhbHNlCiAgICAgICAgICAgIHNlbGYuX2FwcHJvdmFsX2NhY2hlLmFkZChhZGFwdGVyX2FkZHIubG93ZXIoKSkKICAgICAgICAgICAgcmV0dXJuIFRydWUKICAgICAgICBleGNlcHQgRXhjZXB0aW9uIGFzIGU6CiAgICAgICAgICAgIGxvZ2dlci5lcnJvcihmIkVSQzExNTUgYXBwcm92YWwgZXJyb3I6IHtlfSIpCiAgICAgICAgICAgIHJldHVybiBGYWxzZQoKICAgIGRlZiByZWN5Y2xlKHNlbGYsIGRldGVjdGlvbl9yZXN1bHQsIHdpbm5pbmdfc2hhcmVzKToKICAgICAgICBjb25kaXRpb25faWQgPSBnZXRhdHRyKGRldGVjdGlvbl9yZXN1bHQsICdjb25kaXRpb25faWQnLCAnJykKICAgICAgICAKICAgICAgICBpZiBzZWxmLmNvbmZpZy5wYXBlcl9tb2RlOgogICAgICAgICAgICBjb21wX2ZpbGxlZCA9IHNlbGYuX2J1eV9jb21wbGVtZW50YXJ5X3BhcGVyKGRldGVjdGlvbl9yZXN1bHQsIHdpbm5pbmdfc2hhcmVzKQogICAgICAgICAgICBpZiBub3QgY29tcF9maWxsZWQ6CiAgICAgICAgICAgICAgICByZXR1cm4gUmVjeWNsZVJlc3VsdChjb25kaXRpb25faWQ9Y29uZGl0aW9uX2lkLCBzdWNjZXNzPUZhbHNlLCBzaGFyZXNfcmVjeWNsZWQ9MCwgdXNkY19yZWNvdmVyZWQ9MCwgbG9zZXJfY29zdD0wLCBuZXRfZ2Fpbj0wLCBpc19wYXBlcj1UcnVlLCBjb21wbGVtZW50YXJ5X2ZpbGxlZD1GYWxzZSwgZXJyb3I9IkNvbXBsZW1lbnRhcnkgYnV5IGZhaWxlZCAocGFwZXIpIiwgdGltZXN0YW1wPXRpbWUudGltZSgpKQogICAgICAgICAgICBsb3Nlcl9jb3N0ID0gc2VsZi5jb25maWcubG9zZXJfbWF4X3ByaWNlICogd2lubmluZ19zaGFyZXMKICAgICAgICAgICAgdXNkY19yZWNvdmVyZWQgPSB3aW5uaW5nX3NoYXJlcwogICAgICAgICAgICBuZXRfZ2FpbiA9IHVzZGNfcmVjb3ZlcmVkIC0gbG9zZXJfY29zdCAtICh3aW5uaW5nX3NoYXJlcyAqIHNlbGYuY29uZmlnLmJ1eV9wcmljZSkKICAgICAgICAgICAgc2VsZi5fdG90YWxfcmVjeWNsZWQgKz0gdXNkY19yZWNvdmVyZWQKICAgICAgICAgICAgc2VsZi5fcmVjeWNsZV9jb3VudCArPSAxCiAgICAgICAgICAgIGxvZ2dlci5pbmZvKGYiW1BBUEVSXSBNZXJnZToge3dpbm5pbmdfc2hhcmVzfSBzaGFyZXMgLT4ge3VzZGNfcmVjb3ZlcmVkfSBwVVNEIChsb3NlciBjb3N0ICR7bG9zZXJfY29zdDouNGZ9KSIpCiAgICAgICAgICAgIHJldHVybiBSZWN5Y2xlUmVzdWx0KGNvbmRpdGlvbl9pZD1jb25kaXRpb25faWQsIHN1Y2Nlc3M9VHJ1ZSwgc2hhcmVzX3JlY3ljbGVkPXdpbm5pbmdfc2hhcmVzLCB1c2RjX3JlY292ZXJlZD11c2RjX3JlY292ZXJlZCwgbG9zZXJfY29zdD1sb3Nlcl9jb3N0LCBuZXRfZ2Fpbj1uZXRfZ2FpbiwgaXNfcGFwZXI9VHJ1ZSwgY29tcGxlbWVudGFyeV9maWxsZWQ9VHJ1ZSwgdGltZXN0YW1wPXRpbWUudGltZSgpKQogICAgICAgIAogICAgICAgIGNvbXBfZmlsbGVkID0gc2VsZi5fYnV5X2NvbXBsZW1lbnRhcnlfbGl2ZShkZXRlY3Rpb25fcmVzdWx0LCB3aW5uaW5nX3NoYXJlcykKICAgICAgICBpZiBub3QgY29tcF9maWxsZWQ6CiAgICAgICAgICAgIHJldHVybiBSZWN5Y2xlUmVzdWx0KGNvbmRpdGlvbl9pZD1jb25kaXRpb25faWQsIHN1Y2Nlc3M9RmFsc2UsIHNoYXJlc19yZWN5Y2xlZD0wLCB1c2RjX3JlY292ZXJlZD0wLCBsb3Nlcl9jb3N0PTAsIG5ldF9nYWluPTAsIGlzX3BhcGVyPUZhbHNlLCBjb21wbGVtZW50YXJ5X2ZpbGxlZD1GYWxzZSwgZXJyb3I9IkNvbXBsZW1lbnRhcnkgYnV5IGZhaWxlZCAobGl2ZSkiLCB0aW1lc3RhbXA9dGltZS50aW1lKCkpCiAgICAgICAgCiAgICAgICAgdHJ5OgogICAgICAgICAgICBmcm9tIHdlYjMgaW1wb3J0IFdlYjMKICAgICAgICAgICAgZnJvbSBjb25maWcuc2V0dGluZ3MgaW1wb3J0IENURl9DT0xMQVRFUkFMX0FEQVBURVIsIE5FR19SSVNLX0NURl9DT0xMQVRFUkFMX0FEQVBURVIsIENURiwgUFVTRCwgUE9MWUdPTl9SUEMKICAgICAgICAgICAgdzMgPSBXZWIzKFdlYjMuSFRUUFByb3ZpZGVyKHNlbGYuY29uZmlnLnBvbHlnb25fcnBjIG9yIFBPTFlHT05fUlBDKSkKICAgICAgICAgICAgbmVnX3Jpc2sgPSBnZXRhdHRyKGRldGVjdGlvbl9yZXN1bHQsICduZWdfcmlzaycsIEZhbHNlKQogICAgICAgICAgICBhZGFwdGVyX2FkZHIgPSBORUdfUklTS19DVEZfQ09MTEFURVJBTF9BREFQVEVSIGlmIG5lZ19yaXNrIGVsc2UgQ1RGX0NPTExBVEVSQUxfQURBUFRFUgogICAgICAgICAgICB3YWxsZXQgPSBzZWxmLmNvbmZpZy53YWxsZXRfYWRkcmVzcwogICAgICAgICAgICAKICAgICAgICAgICAgaWYgbm90IHdhbGxldDoKICAgICAgICAgICAgICAgIHJldHVybiBSZWN5Y2xlUmVzdWx0KGNvbmRpdGlvbl9pZD1jb25kaXRpb25faWQsIHN1Y2Nlc3M9RmFsc2UsIHNoYXJlc19yZWN5Y2xlZD0wLCB1c2RjX3JlY292ZXJlZD0wLCBsb3Nlcl9jb3N0PTAsIG5ldF9nYWluPTAsIGlzX3BhcGVyPUZhbHNlLCBjb21wbGVtZW50YXJ5X2ZpbGxlZD1UcnVlLCBlcnJvcj0iTm8gd2FsbGV0X2FkZHJlc3MgY29uZmlndXJlZCIsIHRpbWVzdGFtcD10aW1lLnRpbWUoKSkKICAgICAgICAgICAgCiAgICAgICAgICAgIGlmIG5vdCBzZWxmLl9lbnN1cmVfZXJjMTE1NV9hcHByb3ZhbCh3MywgQ1RGLCBhZGFwdGVyX2FkZHIsIHdhbGxldCk6CiAgICAgICAgICAgICAgICByZXR1cm4gUmVjeWNsZVJlc3VsdChjb25kaXRpb25faWQ9Y29uZGl0aW9uX2lkLCBzdWNjZXNzPUZhbHNlLCBzaGFyZXNfcmVjeWNsZWQ9MCwgdXNkY19yZWNvdmVyZWQ9MCwgbG9zZXJfY29zdD0wLCBuZXRfZ2Fpbj0wLCBpc19wYXBlcj1GYWxzZSwgY29tcGxlbWVudGFyeV9maWxsZWQ9VHJ1ZSwgZXJyb3I9IkVSQzExNTUgYXBwcm92YWwgZmFpbGVkIiwgdGltZXN0YW1wPXRpbWUudGltZSgpKQogICAgICAgICAgICAKICAgICAgICAgICAgYWRhcHRlcl9hYmkgPSBbeyJpbnB1dHMiOiBbeyJuYW1lIjogIiIsICJ0eXBlIjogImFkZHJlc3MifSwgeyJuYW1lIjogIiIsICJ0eXBlIjogImJ5dGVzMzIifSwgeyJuYW1lIjogIl9jb25kaXRpb25JZCIsICJ0eXBlIjogImJ5dGVzMzIifSwgeyJuYW1lIjogIiIsICJ0eXBlIjogInVpbnQyNTZbXSJ9LCB7Im5hbWUiOiAiX2Ftb3VudCIsICJ0eXBlIjogInVpbnQyNTYifV0sICJuYW1lIjogIm1lcmdlUG9zaXRpb25zIiwgIm91dHB1dHMiOiBbXSwgInN0YXRlTXV0YWJpbGl0eSI6ICJub25wYXlhYmxlIiwgInR5cGUiOiAiZnVuY3Rpb24ifV0KICAgICAgICAgICAgYWRhcHRlciA9IHczLmV0aC5jb250cmFjdChhZGRyZXNzPVdlYjMudG9fY2hlY2tzdW1fYWRkcmVzcyhhZGFwdGVyX2FkZHIpLCBhYmk9YWRhcHRlcl9hYmkpCiAgICAgICAgICAgIAogICAgICAgICAgICBjaWRfaGV4ID0gY29uZGl0aW9uX2lkLnJlcGxhY2UoJzB4JywgJycpCiAgICAgICAgICAgIGNvbmRpdGlvbl9pZF9ieXRlcyA9IGJ5dGVzLmZyb21oZXgoY2lkX2hleCkKICAgICAgICAgICAgYW1vdW50X3dlaSA9IHczLnRvX3dlaSh3aW5uaW5nX3NoYXJlcywgJ2V0aGVyJykKICAgICAgICAgICAgCiAgICAgICAgICAgIHR4ID0gYWRhcHRlci5mdW5jdGlvbnMubWVyZ2VQb3NpdGlvbnMoIjB4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsIGInXHgwMCcgKiAzMiwgY29uZGl0aW9uX2lkX2J5dGVzLCBbXSwgYW1vdW50X3dlaSkudHJhbnNhY3Qoeydmcm9tJzogd2FsbGV0LCAnZ2FzJzogMzAwMDAwfSkKICAgICAgICAgICAgcmVjZWlwdCA9IHczLmV0aC53YWl0X2Zvcl90cmFuc2FjdGlvbl9yZWNlaXB0KHR4KQogICAgICAgICAgICBpZiByZWNlaXB0WydzdGF0dXMnXSA9PSAxOgogICAgICAgICAgICAgICAgbG9zZXJfY29zdCA9IHNlbGYuY29uZmlnLmxvc2VyX21heF9wcmljZSAqIHdpbm5pbmdfc2hhcmVzCiAgICAgICAgICAgICAgICB1c2RjX3JlY292ZXJlZCA9IHdpbm5pbmdfc2hhcmVzCiAgICAgICAgICAgICAgICBuZXRfZ2FpbiA9IHVzZGNfcmVjb3ZlcmVkIC0gbG9zZXJfY29zdCAtICh3aW5uaW5nX3NoYXJlcyAqIHNlbGYuY29uZmlnLmJ1eV9wcmljZSkKICAgICAgICAgICAgICAgIHNlbGYuX3RvdGFsX3JlY3ljbGVkICs9IHVzZGNfcmVjb3ZlcmVkCiAgICAgICAgICAgICAgICBzZWxmLl9yZWN5Y2xlX2NvdW50ICs9IDEKICAgICAgICAgICAgICAgIGxvZ2dlci5pbmZvKGYiTWVyZ2UgU1VDQ0VTUyB2aWEgeydOZWdSaXNrJyBpZiBuZWdfcmlzayBlbHNlICcnfUN0ZkNvbGxhdGVyYWxBZGFwdGVyOiB7d2lubmluZ19zaGFyZXN9IHNoYXJlcyAtPiB7dXNkY19yZWNvdmVyZWR9IHBVU0QiKQogICAgICAgICAgICAgICAgcmV0dXJuIFJlY3ljbGVSZXN1bHQoY29uZGl0aW9uX2lkPWNvbmRpdGlvbl9pZCwgc3VjY2Vzcz1UcnVlLCBzaGFyZXNfcmVjeWNsZWQ9d2lubmluZ19zaGFyZXMsIHVzZGNfcmVjb3ZlcmVkPXVzZGNfcmVjb3ZlcmVkLCBsb3Nlcl9jb3N0PWxvc2VyX2Nvc3QsIG5ldF9nYWluPW5ldF9nYWluLCBpc19wYXBlcj1GYWxzZSwgY29tcGxlbWVudGFyeV9maWxsZWQ9VHJ1ZSwgdGltZXN0YW1wPXRpbWUudGltZSgpKQogICAgICAgICAgICBlbHNlOgogICAgICAgICAgICAgICAgbG9nZ2VyLmVycm9yKGYiTWVyZ2UgdHggZmFpbGVkOiB7cmVjZWlwdH0iKQogICAgICAgICAgICAgICAgcmV0dXJuIFJlY3ljbGVSZXN1bHQoY29uZGl0aW9uX2lkPWNvbmRpdGlvbl9pZCwgc3VjY2Vzcz1GYWxzZSwgc2hhcmVzX3JlY3ljbGVkPTAsIHVzZGNfcmVjb3ZlcmVkPTAsIGxvc2VyX2Nvc3Q9MCwgbmV0X2dhaW49MCwgaXNfcGFwZXI9RmFsc2UsIGNvbXBsZW1lbnRhcnlfZmlsbGVkPVRydWUsIGVycm9yPSJNZXJnZSB0eCByZXZlcnRlZCIsIHRpbWVzdGFtcD10aW1lLnRpbWUoKSkKICAgICAgICBleGNlcHQgRXhjZXB0aW9uIGFzIGU6CiAgICAgICAgICAgIGxvZ2dlci5lcnJvcihmIlJlY3ljbGUgZmFpbGVkOiB7ZX0iKQogICAgICAgICAgICByZXR1cm4gUmVjeWNsZVJlc3VsdChjb25kaXRpb25faWQ9Y29uZGl0aW9uX2lkLCBzdWNjZXNzPUZhbHNlLCBzaGFyZXNfcmVjeWNsZWQ9MCwgdXNkY19yZWNvdmVyZWQ9MCwgbG9zZXJfY29zdD0wLCBuZXRfZ2Fpbj0wLCBpc19wYXBlcj1GYWxzZSwgY29tcGxlbWVudGFyeV9maWxsZWQ9VHJ1ZSwgZXJyb3I9c3RyKGUpLCB0aW1lc3RhbXA9dGltZS50aW1lKCkpCgogICAgZGVmIGdldF9tZXRyaWNzKHNlbGYpOgogICAgICAgIHJldHVybiB7J3RvdGFsX3JlY3ljbGVkJzogc2VsZi5fdG90YWxfcmVjeWNsZWQsICdyZWN5Y2xlX2NvdW50Jzogc2VsZi5fcmVjeWNsZV9jb3VudH0K
+"""Sweeper Bot V2 - Capital Recycler (Merge)
+
+P0 #12: Added complementary-token purchase before merge.
+        Bot now buys the losing side at loser_max_price before merging.
+P0 #13: Fixed merge ABI to match CtfCollateralAdapter interface.
+        - conditionId encoded as bytes32 (was uint256)
+        - mergePositions takes (address, bytes32, bytes32, uint256[], uint256)
+        - Added ERC1155 setApprovalForAll before merge
+        - Fixed NegRisk adapter selection
+FIX #6: Live mode merge via CtfCollateralAdapter on-chain (not client.merge_positions which doesn't exist in V2)
+"""
+import time
+import logging
+from dataclasses import dataclass
+from typing import Optional
+
+logger = logging.getLogger("sweeper.recycle")
+
+
+@dataclass
+class RecycleResult:
+    condition_id: str
+    success: bool
+    shares_recycled: float
+    usdc_recovered: float
+    loser_cost: float
+    net_gain: float
+    is_paper: bool
+    complementary_filled: bool = False
+    error: Optional[str] = None
+    timestamp: float = 0.0
+
+
+class CapitalRecycler:
+    def __init__(self, config, order_builder, safety_rails):
+        self.config = config
+        self.builder = order_builder
+        self.safety = safety_rails
+        self._total_recycled = 0.0
+        self._recycle_count = 0
+        self._approval_cache = set()
+
+    def _buy_complementary_paper(self, detection_result, shares):
+        losing_token = getattr(detection_result, 'losing_token_id', '')
+        if not losing_token:
+            logger.warning("No losing_token_id on detection_result; cannot buy complementary")
+            return False
+        loser_cost = self.config.loser_max_price * shares
+        logger.info(f"[PAPER] Bought {shares} complementary tokens @ ${self.config.loser_max_price} = ${loser_cost:.4f}")
+        return True
+
+    def _buy_complementary_live(self, detection_result, shares):
+        losing_token = getattr(detection_result, 'losing_token_id', '')
+        if not losing_token:
+            logger.error("No losing_token_id on detection_result; cannot buy complementary")
+            return False
+        try:
+            ok, order = self.builder.place_complementary_buy(detection_result, size=shares, tick_size=0.001)
+            if ok and order:
+                status = getattr(order, 'status', None)
+                status_val = status.value if hasattr(status, 'value') else str(status)
+                if status_val in ('filled', 'matched', 'paper'):
+                    logger.info(f"[LIVE] Complementary buy filled: {shares} @ ${self.config.loser_max_price}")
+                    return True
+                elif status_val in ('live', 'submitted'):
+                    logger.info(f"[LIVE] Complementary buy resting at ${self.config.loser_max_price}")
+                    return True
+                else:
+                    logger.warning(f"Complementary buy status: {status_val}")
+                    return False
+            logger.warning(f"Complementary buy failed: {order}")
+            return False
+        except Exception as e:
+            logger.error(f"Complementary buy error: {e}")
+            return False
+
+    def _ensure_erc1155_approval(self, w3, ctf_addr, adapter_addr, wallet_addr):
+        if adapter_addr.lower() in self._approval_cache:
+            return True
+        try:
+            from web3 import Web3
+            erc1155_abi = [
+                {"inputs": [{"name": "operator", "type": "address"}, {"name": "approved", "type": "bool"}], "name": "setApprovalForAll", "outputs": [], "stateMutability": "nonpayable", "type": "function"},
+                {"inputs": [{"name": "owner", "type": "address"}, {"name": "operator", "type": "address"}], "name": "isApprovedForAll", "outputs": [{"name": "", "type": "bool"}], "stateMutability": "view", "type": "function"}
+            ]
+            ctf = w3.eth.contract(address=Web3.to_checksum_address(ctf_addr), abi=erc1155_abi)
+            approved = ctf.functions.isApprovedForAll(Web3.to_checksum_address(wallet_addr), Web3.to_checksum_address(adapter_addr)).static_call()
+            if not approved:
+                tx = ctf.functions.setApprovalForAll(Web3.to_checksum_address(adapter_addr), True).transact({'from': wallet_addr})
+                receipt = w3.eth.wait_for_transaction_receipt(tx)
+                if receipt['status'] == 1:
+                    logger.info(f"ERC1155 approval granted to adapter {adapter_addr}")
+                else:
+                    logger.error("ERC1155 approval tx reverted")
+                    return False
+            self._approval_cache.add(adapter_addr.lower())
+            return True
+        except Exception as e:
+            logger.error(f"ERC1155 approval error: {e}")
+            return False
+
+    def recycle(self, detection_result, winning_shares):
+        condition_id = getattr(detection_result, 'condition_id', '')
+        
+        if self.config.paper_mode:
+            comp_filled = self._buy_complementary_paper(detection_result, winning_shares)
+            if not comp_filled:
+                return RecycleResult(condition_id=condition_id, success=False, shares_recycled=0, usdc_recovered=0, loser_cost=0, net_gain=0, is_paper=True, complementary_filled=False, error="Complementary buy failed (paper)", timestamp=time.time())
+            loser_cost = self.config.loser_max_price * winning_shares
+            usdc_recovered = winning_shares
+            net_gain = usdc_recovered - loser_cost - (winning_shares * self.config.buy_price)
+            self._total_recycled += usdc_recovered
+            self._recycle_count += 1
+            logger.info(f"[PAPER] Merge: {winning_shares} shares -> {usdc_recovered} pUSD (loser cost ${loser_cost:.4f})")
+            return RecycleResult(condition_id=condition_id, success=True, shares_recycled=winning_shares, usdc_recovered=usdc_recovered, loser_cost=loser_cost, net_gain=net_gain, is_paper=True, complementary_filled=True, timestamp=time.time())
+        
+        comp_filled = self._buy_complementary_live(detection_result, winning_shares)
+        if not comp_filled:
+            return RecycleResult(condition_id=condition_id, success=False, shares_recycled=0, usdc_recovered=0, loser_cost=0, net_gain=0, is_paper=False, complementary_filled=False, error="Complementary buy failed (live)", timestamp=time.time())
+        
+        try:
+            from web3 import Web3
+            from config.settings import CTF_COLLATERAL_ADAPTER, NEG_RISK_CTF_COLLATERAL_ADAPTER, CTF, PUSD, POLYGON_RPC
+            w3 = Web3(Web3.HTTPProvider(self.config.polygon_rpc or POLYGON_RPC))
+            neg_risk = getattr(detection_result, 'neg_risk', False)
+            adapter_addr = NEG_RISK_CTF_COLLATERAL_ADAPTER if neg_risk else CTF_COLLATERAL_ADAPTER
+            wallet = self.config.wallet_address
+            
+            if not wallet:
+                return RecycleResult(condition_id=condition_id, success=False, shares_recycled=0, usdc_recovered=0, loser_cost=0, net_gain=0, is_paper=False, complementary_filled=True, error="No wallet_address configured", timestamp=time.time())
+            
+            if not self._ensure_erc1155_approval(w3, CTF, adapter_addr, wallet):
+                return RecycleResult(condition_id=condition_id, success=False, shares_recycled=0, usdc_recovered=0, loser_cost=0, net_gain=0, is_paper=False, complementary_filled=True, error="ERC1155 approval failed", timestamp=time.time())
+            
+            adapter_abi = [{"inputs": [{"name": "", "type": "address"}, {"name": "", "type": "bytes32"}, {"name": "_conditionId", "type": "bytes32"}, {"name": "", "type": "uint256[]"}, {"name": "_amount", "type": "uint256"}], "name": "mergePositions", "outputs": [], "stateMutability": "nonpayable", "type": "function"}]
+            adapter = w3.eth.contract(address=Web3.to_checksum_address(adapter_addr), abi=adapter_abi)
+            
+            cid_hex = condition_id.replace('0x', '')
+            condition_id_bytes = bytes.fromhex(cid_hex)
+            amount_wei = w3.to_wei(winning_shares, 'ether')
+            
+            tx = adapter.functions.mergePositions("0x0000000000000000000000000000000000000000", b'\x00' * 32, condition_id_bytes, [], amount_wei).transact({'from': wallet, 'gas': 300000})
+            receipt = w3.eth.wait_for_transaction_receipt(tx)
+            if receipt['status'] == 1:
+                loser_cost = self.config.loser_max_price * winning_shares
+                usdc_recovered = winning_shares
+                net_gain = usdc_recovered - loser_cost - (winning_shares * self.config.buy_price)
+                self._total_recycled += usdc_recovered
+                self._recycle_count += 1
+                logger.info(f"Merge SUCCESS via {'NegRisk' if neg_risk else ''}CtfCollateralAdapter: {winning_shares} shares -> {usdc_recovered} pUSD")
+                return RecycleResult(condition_id=condition_id, success=True, shares_recycled=winning_shares, usdc_recovered=usdc_recovered, loser_cost=loser_cost, net_gain=net_gain, is_paper=False, complementary_filled=True, timestamp=time.time())
+            else:
+                logger.error(f"Merge tx failed: {receipt}")
+                return RecycleResult(condition_id=condition_id, success=False, shares_recycled=0, usdc_recovered=0, loser_cost=0, net_gain=0, is_paper=False, complementary_filled=True, error="Merge tx reverted", timestamp=time.time())
+        except Exception as e:
+            logger.error(f"Recycle failed: {e}")
+            return RecycleResult(condition_id=condition_id, success=False, shares_recycled=0, usdc_recovered=0, loser_cost=0, net_gain=0, is_paper=False, complementary_filled=True, error=str(e), timestamp=time.time())
+
+    def get_metrics(self):
+        return {'total_recycled': self._total_recycled, 'recycle_count': self._recycle_count}

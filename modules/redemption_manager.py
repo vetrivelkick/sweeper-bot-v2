@@ -1,1 +1,104 @@
-IiIiU3dlZXBlciBCb3QgVjIgLSBSZWRlbXB0aW9uIE1hbmFnZXIKClAwICMxNDogUG9zdC1yZXNvbHV0aW9uIHJlZGVtcHRpb24gb2Ygd2lubmluZyB0b2tlbnMgZm9yIHBVU0QuCiAgICAgICAgIEJ1cm5zIHdpbm5pbmcgb3V0Y29tZSB0b2tlbnMgdmlhIEN0ZkNvbGxhdGVyYWxBZGFwdGVyLnJlZGVlbVBvc2l0aW9ucwogICAgICAgICBhZnRlciB0aGUgbWFya2V0IGhhcyByZXNvbHZlZCBhbmQgcGF5b3V0cyBoYXZlIGJlZW4gcmVwb3J0ZWQuCiIiIgppbXBvcnQgdGltZQppbXBvcnQgbG9nZ2luZwpmcm9tIGRhdGFjbGFzc2VzIGltcG9ydCBkYXRhY2xhc3MKZnJvbSB0eXBpbmcgaW1wb3J0IE9wdGlvbmFsCgpsb2dnZXIgPSBsb2dnaW5nLmdldExvZ2dlcigic3dlZXBlci5yZWRlZW0iKQoKCkBkYXRhY2xhc3MKY2xhc3MgUmVkZWVtUmVzdWx0OgogICAgY29uZGl0aW9uX2lkOiBzdHIKICAgIHN1Y2Nlc3M6IGJvb2wKICAgIHNoYXJlc19yZWRlZW1lZDogZmxvYXQKICAgIHVzZGNfcmVjb3ZlcmVkOiBmbG9hdAogICAgaXNfcGFwZXI6IGJvb2wKICAgIGVycm9yOiBPcHRpb25hbFtzdHJdID0gTm9uZQogICAgdGltZXN0YW1wOiBmbG9hdCA9IDAuMAoKCmNsYXNzIFJlZGVtcHRpb25NYW5hZ2VyOgogICAgZGVmIF9faW5pdF9fKHNlbGYsIGNvbmZpZyk6CiAgICAgICAgc2VsZi5jb25maWcgPSBjb25maWcKICAgICAgICBzZWxmLl90b3RhbF9yZWRlZW1lZCA9IDAuMAogICAgICAgIHNlbGYuX3JlZGVlbV9jb3VudCA9IDAKICAgICAgICBzZWxmLl9hcHByb3ZhbF9jYWNoZSA9IHNldCgpCgogICAgZGVmIF9lbnN1cmVfZXJjMTE1NV9hcHByb3ZhbChzZWxmLCB3MywgY3RmX2FkZHIsIGFkYXB0ZXJfYWRkciwgd2FsbGV0X2FkZHIpOgogICAgICAgIGlmIGFkYXB0ZXJfYWRkci5sb3dlcigpIGluIHNlbGYuX2FwcHJvdmFsX2NhY2hlOgogICAgICAgICAgICByZXR1cm4gVHJ1ZQogICAgICAgIHRyeToKICAgICAgICAgICAgZnJvbSB3ZWIzIGltcG9ydCBXZWIzCiAgICAgICAgICAgIGVyYzExNTVfYWJpID0gWwogICAgICAgICAgICAgICAgeyJpbnB1dHMiOiBbeyJuYW1lIjogIm9wZXJhdG9yIiwgInR5cGUiOiAiYWRkcmVzcyJ9LCB7Im5hbWUiOiAiYXBwcm92ZWQiLCAidHlwZSI6ICJib29sIn1dLCAibmFtZSI6ICJzZXRBcHByb3ZhbEZvckFsbCIsICJvdXRwdXRzIjogW10sICJzdGF0ZU11dGFiaWxpdHkiOiAibm9ucGF5YWJsZSIsICJ0eXBlIjogImZ1bmN0aW9uIn0sCiAgICAgICAgICAgICAgICB7ImlucHV0cyI6IFt7Im5hbWUiOiAib3duZXIiLCAidHlwZSI6ICJhZGRyZXNzIn0sIHsibmFtZSI6ICJvcGVyYXRvciIsICJ0eXBlIjogImFkZHJlc3MifV0sICJuYW1lIjogImlzQXBwcm92ZWRGb3JBbGwiLCAib3V0cHV0cyI6IFt7Im5hbWUiOiAiIiwgInR5cGUiOiAiYm9vbCJ9XSwgInN0YXRlTXV0YWJpbGl0eSI6ICJ2aWV3IiwgInR5cGUiOiAiZnVuY3Rpb24ifQogICAgICAgICAgICBdCiAgICAgICAgICAgIGN0ZiA9IHczLmV0aC5jb250cmFjdChhZGRyZXNzPVdlYjMudG9fY2hlY2tzdW1fYWRkcmVzcyhjdGZfYWRkciksIGFiaT1lcmMxMTU1X2FiaSkKICAgICAgICAgICAgYXBwcm92ZWQgPSBjdGYuZnVuY3Rpb25zLmlzQXBwcm92ZWRGb3JBbGwoV2ViMy50b19jaGVja3N1bV9hZGRyZXNzKHdhbGxldF9hZGRyKSwgV2ViMy50b19jaGVja3N1bV9hZGRyZXNzKGFkYXB0ZXJfYWRkcikpLmNhbGwoKQogICAgICAgICAgICBpZiBub3QgYXBwcm92ZWQ6CiAgICAgICAgICAgICAgICB0eCA9IGN0Zi5mdW5jdGlvbnMuc2V0QXBwcm92YWxGb3JBbGwoV2ViMy50b19jaGVja3N1bV9hZGRyZXNzKGFkYXB0ZXJfYWRkciksIFRydWUpLnRyYW5zYWN0KHsnZnJvbSc6IHdhbGxldF9hZGRyfSkKICAgICAgICAgICAgICAgIHJlY2VpcHQgPSB3My5ldGgud2FpdF9mb3JfdHJhbnNhY3Rpb25fcmVjZWlwdCh0eCkKICAgICAgICAgICAgICAgIGlmIHJlY2VpcHRbJ3N0YXR1cyddID09IDE6CiAgICAgICAgICAgICAgICAgICAgbG9nZ2VyLmluZm8oZiJFUkMxMTU1IGFwcHJvdmFsIGdyYW50ZWQgdG8gYWRhcHRlciB7YWRhcHRlcl9hZGRyfSIpCiAgICAgICAgICAgICAgICBlbHNlOgogICAgICAgICAgICAgICAgICAgIGxvZ2dlci5lcnJvcigiRVJDMTE1NSBhcHByb3ZhbCB0eCByZXZlcnRlZCIpCiAgICAgICAgICAgICAgICAgICAgcmV0dXJuIEZhbHNlCiAgICAgICAgICAgIHNlbGYuX2FwcHJvdmFsX2NhY2hlLmFkZChhZGFwdGVyX2FkZHIubG93ZXIoKSkKICAgICAgICAgICAgcmV0dXJuIFRydWUKICAgICAgICBleGNlcHQgRXhjZXB0aW9uIGFzIGU6CiAgICAgICAgICAgIGxvZ2dlci5lcnJvcihmIkVSQzExNTUgYXBwcm92YWwgZXJyb3I6IHtlfSIpCiAgICAgICAgICAgIHJldHVybiBGYWxzZQoKICAgIGRlZiByZWRlZW0oc2VsZiwgZGV0ZWN0aW9uX3Jlc3VsdCwgc2hhcmVzKToKICAgICAgICBjb25kaXRpb25faWQgPSBnZXRhdHRyKGRldGVjdGlvbl9yZXN1bHQsICdjb25kaXRpb25faWQnLCAnJykKICAgICAgICAKICAgICAgICBpZiBzZWxmLmNvbmZpZy5wYXBlcl9tb2RlOgogICAgICAgICAgICB1c2RjX3JlY292ZXJlZCA9IHNoYXJlcwogICAgICAgICAgICBzZWxmLl90b3RhbF9yZWRlZW1lZCArPSB1c2RjX3JlY292ZXJlZAogICAgICAgICAgICBzZWxmLl9yZWRlZW1fY291bnQgKz0gMQogICAgICAgICAgICBsb2dnZXIuaW5mbyhmIltQQVBFUl0gUmVkZWVtZWQge3NoYXJlc30gd2lubmluZyB0b2tlbnMgLT4ge3VzZGNfcmVjb3ZlcmVkfSBwVVNEIikKICAgICAgICAgICAgcmV0dXJuIFJlZGVlbVJlc3VsdChjb25kaXRpb25faWQ9Y29uZGl0aW9uX2lkLCBzdWNjZXNzPVRydWUsIHNoYXJlc19yZWRlZW1lZD1zaGFyZXMsIHVzZGNfcmVjb3ZlcmVkPXVzZGNfcmVjb3ZlcmVkLCBpc19wYXBlcj1UcnVlLCB0aW1lc3RhbXA9dGltZS50aW1lKCkpCiAgICAgICAgCiAgICAgICAgdHJ5OgogICAgICAgICAgICBmcm9tIHdlYjMgaW1wb3J0IFdlYjMKICAgICAgICAgICAgZnJvbSBjb25maWcuc2V0dGluZ3MgaW1wb3J0IENURl9DT0xMQVRFUkFMX0FEQVBURVIsIE5FR19SSVNLX0NURl9DT0xMQVRFUkFMX0FEQVBURVIsIENURiwgUFVTRCwgUE9MWUdPTl9SUEMKICAgICAgICAgICAgdzMgPSBXZWIzKFdlYjMuSFRUUFByb3ZpZGVyKHNlbGYuY29uZmlnLnBvbHlnb25fcnBjIG9yIFBPTFlHT05fUlBDKSkKICAgICAgICAgICAgbmVnX3Jpc2sgPSBnZXRhdHRyKGRldGVjdGlvbl9yZXN1bHQsICduZWdfcmlzaycsIEZhbHNlKQogICAgICAgICAgICBhZGFwdGVyX2FkZHIgPSBORUdfUklTS19DVEZfQ09MTEFURVJBTF9BREFQVEVSIGlmIG5lZ19yaXNrIGVsc2UgQ1RGX0NPTExBVEVSQUxfQURBUFRFUgogICAgICAgICAgICB3YWxsZXQgPSBzZWxmLmNvbmZpZy53YWxsZXRfYWRkcmVzcwogICAgICAgICAgICAKICAgICAgICAgICAgaWYgbm90IHdhbGxldDoKICAgICAgICAgICAgICAgIHJldHVybiBSZWRlZW1SZXN1bHQoY29uZGl0aW9uX2lkPWNvbmRpdGlvbl9pZCwgc3VjY2Vzcz1GYWxzZSwgc2hhcmVzX3JlZGVlbWVkPTAsIHVzZGNfcmVjb3ZlcmVkPTAsIGlzX3BhcGVyPUZhbHNlLCBlcnJvcj0iTm8gd2FsbGV0X2FkZHJlc3MgY29uZmlndXJlZCIsIHRpbWVzdGFtcD10aW1lLnRpbWUoKSkKICAgICAgICAgICAgCiAgICAgICAgICAgIGlmIG5vdCBzZWxmLl9lbnN1cmVfZXJjMTE1NV9hcHByb3ZhbCh3MywgQ1RGLCBhZGFwdGVyX2FkZHIsIHdhbGxldCk6CiAgICAgICAgICAgICAgICByZXR1cm4gUmVkZWVtUmVzdWx0KGNvbmRpdGlvbl9pZD1jb25kaXRpb25faWQsIHN1Y2Nlc3M9RmFsc2UsIHNoYXJlc19yZWRlZW1lZD0wLCB1c2RjX3JlY292ZXJlZD0wLCBpc19wYXBlcj1GYWxzZSwgZXJyb3I9IkVSQzExNTUgYXBwcm92YWwgZmFpbGVkIiwgdGltZXN0YW1wPXRpbWUudGltZSgpKQogICAgICAgICAgICAKICAgICAgICAgICAgYWRhcHRlcl9hYmkgPSBbeyJpbnB1dHMiOiBbeyJuYW1lIjogIiIsICJ0eXBlIjogImFkZHJlc3MifSwgeyJuYW1lIjogIiIsICJ0eXBlIjogImJ5dGVzMzIifSwgeyJuYW1lIjogIl9jb25kaXRpb25JZCIsICJ0eXBlIjogImJ5dGVzMzIifSwgeyJuYW1lIjogIiIsICJ0eXBlIjogInVpbnQyNTZbXSJ9XSwgIm5hbWUiOiAicmVkZWVtUG9zaXRpb25zIiwgIm91dHB1dHMiOiBbXSwgInN0YXRlTXV0YWJpbGl0eSI6ICJub25wYXlhYmxlIiwgInR5cGUiOiAiZnVuY3Rpb24ifV0KICAgICAgICAgICAgYWRhcHRlciA9IHczLmV0aC5jb250cmFjdChhZGRyZXNzPVdlYjMudG9fY2hlY2tzdW1fYWRkcmVzcyhhZGFwdGVyX2FkZHIpLCBhYmk9YWRhcHRlcl9hYmkpCiAgICAgICAgICAgIAogICAgICAgICAgICBjaWRfaGV4ID0gY29uZGl0aW9uX2lkLnJlcGxhY2UoJzB4JywgJycpCiAgICAgICAgICAgIGNvbmRpdGlvbl9pZF9ieXRlcyA9IGJ5dGVzLmZyb21oZXgoY2lkX2hleCkKICAgICAgICAgICAgCiAgICAgICAgICAgIHR4ID0gYWRhcHRlci5mdW5jdGlvbnMucmVkZWVtUG9zaXRpb25zKCIweDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAiLCBiJ1x4MDAnICogMzIsIGNvbmRpdGlvbl9pZF9ieXRlcywgWzEsIDJdKS50cmFuc2FjdCh7J2Zyb20nOiB3YWxsZXQsICdnYXMnOiAzMDAwMDB9KQogICAgICAgICAgICByZWNlaXB0ID0gdzMuZXRoLndhaXRfZm9yX3RyYW5zYWN0aW9uX3JlY2VpcHQodHgpCiAgICAgICAgICAgIGlmIHJlY2VpcHRbJ3N0YXR1cyddID09IDE6CiAgICAgICAgICAgICAgICB1c2RjX3JlY292ZXJlZCA9IHNoYXJlcwogICAgICAgICAgICAgICAgc2VsZi5fdG90YWxfcmVkZWVtZWQgKz0gdXNkY19yZWNvdmVyZWQKICAgICAgICAgICAgICAgIHNlbGYuX3JlZGVlbV9jb3VudCArPSAxCiAgICAgICAgICAgICAgICBsb2dnZXIuaW5mbyhmIlJlZGVlbSBTVUNDRVNTIHZpYSB7J05lZ1Jpc2snIGlmIG5lZ19yaXNrIGVsc2UgJyd9Q3RmQ29sbGF0ZXJhbEFkYXB0ZXI6IHtzaGFyZXN9IHRva2VucyAtPiB7dXNkY19yZWNvdmVyZWR9IHBVU0QiKQogICAgICAgICAgICAgICAgcmV0dXJuIFJlZGVlbVJlc3VsdChjb25kaXRpb25faWQ9Y29uZGl0aW9uX2lkLCBzdWNjZXNzPVRydWUsIHNoYXJlc19yZWRlZW1lZD1zaGFyZXMsIHVzZGNfcmVjb3ZlcmVkPXVzZGNfcmVjb3ZlcmVkLCBpc19wYXBlcj1GYWxzZSwgdGltZXN0YW1wPXRpbWUudGltZSgpKQogICAgICAgICAgICBlbHNlOgogICAgICAgICAgICAgICAgbG9nZ2VyLmVycm9yKGYiUmVkZWVtIHR4IGZhaWxlZDoge3JlY2VpcHR9IikKICAgICAgICAgICAgICAgIHJldHVybiBSZWRlZW1SZXN1bHQoY29uZGl0aW9uX2lkPWNvbmRpdGlvbl9pZCwgc3VjY2Vzcz1GYWxzZSwgc2hhcmVzX3JlZGVlbWVkPTAsIHVzZGNfcmVjb3ZlcmVkPTAsIGlzX3BhcGVyPUZhbHNlLCBlcnJvcj0iUmVkZWVtIHR4IHJldmVydGVkIiwgdGltZXN0YW1wPXRpbWUudGltZSgpKQogICAgICAgIGV4Y2VwdCBFeGNlcHRpb24gYXMgZToKICAgICAgICAgICAgbG9nZ2VyLmVycm9yKGYiUmVkZWVtIGZhaWxlZDoge2V9IikKICAgICAgICAgICAgcmV0dXJuIFJlZGVlbVJlc3VsdChjb25kaXRpb25faWQ9Y29uZGl0aW9uX2lkLCBzdWNjZXNzPUZhbHNlLCBzaGFyZXNfcmVkZWVtZWQ9MCwgdXNkY19yZWNvdmVyZWQ9MCwgaXNfcGFwZXI9RmFsc2UsIGVycm9yPXN0cihlKSwgdGltZXN0YW1wPXRpbWUudGltZSgpKQoKICAgIGRlZiBnZXRfbWV0cmljcyhzZWxmKToKICAgICAgICByZXR1cm4geyd0b3RhbF9yZWRlZW1lZCc6IHNlbGYuX3RvdGFsX3JlZGVlbWVkLCAncmVkZWVtX2NvdW50Jzogc2VsZi5fcmVkZWVtX2NvdW50fQo=
+"""Sweeper Bot V2 - Redemption Manager
+
+P0 #14: Post-resolution redemption of winning tokens for pUSD.
+         Burns winning outcome tokens via CtfCollateralAdapter.redeemPositions
+         after the market has resolved and payouts have been reported.
+
+"""
+import time
+import logging
+from dataclasses import dataclass
+from typing import Optional
+
+logger = logging.getLogger("sweeper.redeem")
+
+
+@dataclass
+class RedeemResult:
+    condition_id: str
+    success: bool
+    shares_redeemed: float
+    usdc_recovered: float
+    is_paper: bool
+    error: Optional[str] = None
+    timestamp: float = 0.0
+
+class RedemptionManager:
+    def __init__(self, config):
+        self.config = config
+        self._total_redeemed = 0.0
+        self._redeem_count = 0
+        self._approval_cache = set()
+
+    def _ensure_erc1155_approval(self, w3, ctf_addr, adapter_addr, wallet_addr):
+        if adapter_addr.lower() in self._approval_cache:
+            return True
+        try:
+            from web3 import Web3
+            erc1155_abi = [
+                {"inputs": [{"name": "operator", "type": "address"}, {"name": "approved", "type": "bool"}], "name": "setApprovalForAll", "outputs": [], "stateMutability": "nonpayable", "type": "function"},
+                {"inputs": [{"name": "owner", "type": "address"}, {"name": "operator", "type": "address"}], "name": "isApprovedForAll", "outputs": [{"name": "", "type": "bool"}], "stateMutability": "view", "type": "function"}
+            ]
+            ctf = w3.eth.contract(address=Web3.to_checksum_address(ctf_addr), abi=erc1155_abi)
+            approved = ctf.functions.isApprovedForAll(Web3.to_checksum_address(wallet_addr), Web3.to_checksum_address(adapter_addr)).call()
+            if not approved:
+                tx = ctf.functions.setApprovalForAll(Web3.to_checksum_address(adapter_addr), True).transact({'from': wallet_addr})
+                receipt = w3.eth.wait_for_transaction_receipt(tx)
+                if receipt['status'] == 1:
+                    logger.info(f"ERC1155 approval granted to adapter {adapter_addr}")
+                else:
+                    logger.error("ERC1155 approval tx reverted")
+                    return False
+            self._approval_cache.add(adapter_addr.lower())
+            return True
+        except Exception as e:
+            logger.error(f"ERC1155 approval error: {e}")
+            return False
+
+    def redeem(self, detection_result, shares):
+        condition_id = getattr(detection_result, 'condition_id', '')
+        
+        if self.config.paper_mode:
+            usdc_recovered = shares
+            self._total_redeemed += usdc_recovered
+            self._redeem_count += 1
+            logger.info(f"[PAPER] Redeemed {shares} winning tokens -> {usdc_recovered} pUSD")
+            return RedeemResult(condition_id=condition_id, success=True, shares_redeemed=shares, usdc_recovered=usdc_recovered, is_paper=True, timestamp=time.time())
+        
+        try:
+            from web3 import Web3
+            from config.settings import CTF_COLLATERAL_ADAPTER, NEG_RISK_CTF_COLLATERAL_ADAPTER, CTF, PUSD, POLYGON_RPC
+            w3 = Web3(Web3.HTTPProvider(self.config.polygon_rpc or POLYGON_RPC))
+            neg_risk = getattr(detection_result, 'neg_risk', False)
+            adapter_addr = NEG_RISK_CTF_COLLATERAL_ADAPTER if neg_risk else CTF_COLLATERAL_ADAPTER
+            wallet = self.config.wallet_address
+            
+            if not wallet:
+                return RedeemResult(condition_id=condition_id, success=False, shares_redeemed=0, usdc_recovered=0, is_paper=False, error="No wallet_address configured", timestamp=time.time())
+            
+            if not self._ensure_erc1155_approval(w3, CTF, adapter_addr, wallet):
+                return RedeemResult(condition_id=condition_id, success=False, shares_redeemed=0, usdc_recovered=0, is_paper=False, error="ERC1155 approval failed", timestamp=time.time())
+            
+            adapter_abi = [{"inputs": [{"name": "", "type": "address"}, {"name": "", "type": "bytes32"}, {"name": "_conditionId", "type": "bytes32"}, {"name": "", "type": "uint256[]"}], "name": "redeemPositions", "outputs": [], "stateMutability": "nonpayable", "type": "function"}]
+            adapter = w3.eth.contract(address=Web3.to_checksum_address(adapter_addr), abi=adapter_abi)
+            
+            cid_hex = condition_id.replace('0x', '')
+            condition_id_bytes = bytes.fromhex(cid_hex)
+            
+            tx = adapter.functions.redeemPositions("0x0000000000000000000000000000000000000000", b'\x00' * 32, condition_id_bytes, [1, 2]).transact({'from': wallet, 'gas': 300000})
+            receipt = w3.eth.wait_for_transaction_receipt(tx)
+            if receipt['status'] == 1:
+                usdc_recovered = shares
+                self._total_redeemed += usdc_recovered
+                self._redeem_count += 1
+                logger.info(f"Redeem SUCCESS via {'NegRisk' if neg_risk else ''}CtfCollateralAdapter: {shares} tokens -> {usdc_recovered} pUSD")
+                return RedeemResult(condition_id=condition_id, success=True, shares_redeemed=shares, usdc_recovered=usdc_recovered, is_paper=False, timestamp=time.time())
+            else:
+                logger.error(f"Redeem tx failed: {receipt}")
+                return RedeemResult(condition_id=condition_id, success=False, shares_redeemed=0, usdc_recovered=0, is_paper=False, error="Redeem tx reverted", timestamp=time.time())
+        except Exception as e:
+            logger.error(f"Redeem failed: {e}")
+            return RedeemResult(condition_id=condition_id, success=False, shares_redeemed=0, usdc_recovered=0, is_paper=False, error=str(e), timestamp=time.time())
+
+    def get_metrics(self):
+        return {'total_redeemed': self._total_redeemed, 'redeem_count': self._redeem_count}
