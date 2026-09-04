@@ -1,0 +1,35 @@
+# Sweeper Bot V2 - Docker Compose
+# AUDIT FIX #17: Container orchestration
+version: '3.8'
+
+services:
+  sweeper-bot:
+    build: .
+    container_name: sweeper-bot-v2
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    ports:
+      - "9090:9090"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.path.insert(0,'.'); from modules.safety_rails import SafetyRails; from config.settings import SweeperConfig; c=SweeperConfig(); s=SafetyRails(c); hc=s.health_check(); exit(0 if hc['status'] in ('healthy','degraded') else 1)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
