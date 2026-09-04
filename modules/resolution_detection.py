@@ -12,6 +12,12 @@ P0 #1 FIX: Demoted price from certainty signal to secondary context.
 FIX #11: Added category field to DetectionResult for fee rate lookup
 FIX: Changed CertaintyLevel from Enum to IntEnum to fix TypeError on
      '<' comparison that silently broke all live market detection.
+FIX: End date alone no longer upgrades UNCERTAIN to STRONG.
+     Only markets with winning_price >= 0.95 (WEAK) get upgraded when
+     end date passes. Markets with price < 0.95 stay UNCERTAIN even if
+     end date has passed — the outcome is still uncertain.
+FIX: is_sweepable() now rejects markets where winning_price < min_entry_price
+     to prevent order builder rejections on low-priced markets.
 """
 import logging, json
 from dataclasses import dataclass, field
@@ -224,14 +230,21 @@ class ResolutionDetector:
                     detection_reason = (detection_reason + " + " + gamma_reason) if detection_reason else gamma_reason
 
         # End date passed + price hint = STRONG (not CERTAIN) (P0 #1 FIX)
+        # FIX: Only upgrade to STRONG if price already indicates near-certainty (>= 0.95 = WEAK)
+        # End date alone is insufficient — market may still be in progress with uncertain outcome
         end_passed, end_reason = self._check_end_date_source(market)
         if end_passed:
             outcome_sources.append("end_date")
             all_signals.append("expired")
-            if certainty < CertaintyLevel.STRONG:
-                certainty = CertaintyLevel.STRONG
-            confidence = max(confidence, 95.0)
-            detection_reason = (detection_reason + " + " + end_reason) if detection_reason else end_reason
+            if certainty >= CertaintyLevel.WEAK:
+                if certainty < CertaintyLevel.STRONG:
+                    certainty = CertaintyLevel.STRONG
+                confidence = max(confidence, 95.0)
+                detection_reason = (detection_reason + " + " + end_reason) if detection_reason else end_reason
+            else:
+                # End date passed but winning price < 0.95 — outcome still uncertain
+                confidence = max(confidence, 50.0)
+                detection_reason = (detection_reason + " + " + end_reason + " (price too low)") if detection_reason else (end_reason + " (price too low)")
 
         # P0 #1 FIX: Fail-closed for price-only markets in live mode
         if not self.config.paper_mode and outcome_sources == ["price"]:
@@ -277,6 +290,10 @@ class ResolutionDetector:
 
     def is_sweepable(self, result):
         if not result:
+            return False
+        # FIX: Don't sweep markets where winning price is below entry threshold
+        # The bot needs winning_price >= min_entry_price to place a valid maker bid
+        if result.winning_price < self.config.min_entry_price:
             return False
         if self.config.paper_mode:
             if result.certainty in (CertaintyLevel.CERTAIN, CertaintyLevel.STRONG):
