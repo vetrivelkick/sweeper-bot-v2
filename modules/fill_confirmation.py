@@ -1,10 +1,12 @@
-"""Sweeper Bot V2 - Fill Confirmation
+"""
+Sweeper Bot V2 - Fill Confirmation
 
 P0 #2: Fixed V2 constructor: chain=137 -> chain_id=137
 P0 #3: Added signature_type and funder parameters
 P0 #6: Fixed txHash -> transactionsHashes (list) for V2 response format
 
 AUDIT FIX #11: Block confirmation requirement + MATCHED_OFFCHAIN/TRADE_PENDING states
+AUDIT FIX #27: Fill metrics, retry logic, batch confirmation, fill age tracking
 """
 import time
 import logging
@@ -40,6 +42,16 @@ class FillConfirmer:
         self.config = config
         self._client = None
         self._w3 = None
+        # AUDIT FIX #27: Fill metrics tracking
+        self._total_confirmed = 0
+        self._total_ghosts = 0
+        self._total_timeouts = 0
+        self._total_matched_offchain = 0
+        self._total_trade_pending = 0
+        self._total_partial = 0
+        self._fill_ages = []  # Time from order to confirmation
+        self._max_age_samples = 100
+        self._max_fill_retries = 3
 
     def _get_client(self):
         if self._client or self.config.paper_mode:
@@ -71,13 +83,14 @@ class FillConfirmer:
 
     def confirm_fill(self, order, timeout=None) -> FillConfirmation:
         """AUDIT FIX #11: Enhanced fill confirmation with block verification.
-        
+
         States flow: UNCONFIRMED -> MATCHED_OFFCHAIN -> TRADE_PENDING -> CONFIRMED
         Returns MATCHED_OFFCHAIN if order matched but tx not yet on-chain.
         Returns TRADE_PENDING if tx on-chain but not enough block confirmations.
         Returns CONFIRMED only after BLOCK_CONFIRMATIONS_REQUIRED confirmations.
         """
         if self.config.paper_mode:
+            self._total_confirmed += 1
             return FillConfirmation(
                 order_id=getattr(order, 'order_id', ''),
                 condition_id=getattr(order, 'condition_id', ''),
@@ -118,24 +131,31 @@ class FillConfirmer:
                                 except Exception:
                                     pass  # Tx not yet mined, keep polling
                             if self._settled_on_chain(tx_hash):
+                                self._total_confirmed += 1
+                                self._fill_ages.append(time.time() - start)
+                                if len(self._fill_ages) > self._max_age_samples:
+                                    self._fill_ages = self._fill_ages[-self._max_age_samples:]
                                 return FillConfirmation(order.order_id, order.condition_id, FillStatus.CONFIRMED, matched, tx_hash, time.time())
                 except Exception as e:
                     logger.debug(f"Order check error: {e}")
             time.sleep(0.5)
         # Timeout: return best known state
         if matched_amount > 0 and matched_tx_hash:
+            self._total_trade_pending += 1
             return FillConfirmation(getattr(order, 'order_id', ''), getattr(order, 'condition_id', ''), FillStatus.TRADE_PENDING, matched_amount, matched_tx_hash, time.time())
         elif matched_amount > 0:
+            self._total_matched_offchain += 1
             return FillConfirmation(getattr(order, 'order_id', ''), getattr(order, 'condition_id', ''), FillStatus.MATCHED_OFFCHAIN, matched_amount, None, time.time())
+        self._total_timeouts += 1
         return FillConfirmation(getattr(order, 'order_id', ''), getattr(order, 'condition_id', ''), FillStatus.TIMEOUT, 0, None, time.time())
 
     def _settled_on_chain(self, tx_hash: str) -> bool:
         """AUDIT FIX #11: Verify block confirmations before considering settlement final.
-        
+
         A fill is only 'settled' when:
         1. Transaction receipt exists with status == 1 (success)
         2. At least BLOCK_CONFIRMATIONS_REQUIRED blocks have been mined since
-        
+
         Returns False if not enough confirmations yet (caller should retry).
         """
         if not tx_hash:
@@ -162,11 +182,59 @@ class FillConfirmer:
             logger.debug(f"Block confirmation check failed: {e}")
             return False
 
+    def confirm_fill_with_retry(self, order, timeout=None) -> FillConfirmation:
+        """AUDIT FIX #27: Confirm fill with retry logic."""
+        for attempt in range(self._max_fill_retries):
+            result = self.confirm_fill(order, timeout)
+            if result.status in (FillStatus.CONFIRMED, FillStatus.PAPER):
+                return result
+            if result.status == FillStatus.GHOST:
+                self._total_ghosts += 1
+                return result
+            if attempt < self._max_fill_retries - 1:
+                logger.info(f"Fill retry {attempt+1}/{self._max_fill_retries} for {getattr(order, 'order_id', '')}")
+                time.sleep(2)
+        return result
+
+    def confirm_fills_batch(self, orders, timeout=None) -> list:
+        """AUDIT FIX #27: Batch confirm multiple fills."""
+        results = []
+        for order in orders:
+            result = self.confirm_fill(order, timeout)
+            results.append(result)
+        return results
+
+    def get_fill_age(self, order) -> float:
+        """AUDIT FIX #27: Get time since order was placed."""
+        placed_at = getattr(order, 'placed_at', None) or getattr(order, 'submitted_at', None)
+        if placed_at:
+            return time.time() - placed_at
+        return 0.0
+
+    def get_fill_metrics(self) -> dict:
+        """AUDIT FIX #27: Return fill confirmation metrics for monitoring."""
+        avg_age = sum(self._fill_ages) / len(self._fill_ages) if self._fill_ages else 0.0
+        total_attempts = self._total_confirmed + self._total_timeouts + self._total_matched_offchain + self._total_trade_pending
+        confirm_rate = self._total_confirmed / max(1, total_attempts) * 100
+        return {
+            'total_confirmed': self._total_confirmed,
+            'total_ghosts': self._total_ghosts,
+            'total_timeouts': self._total_timeouts,
+            'total_matched_offchain': self._total_matched_offchain,
+            'total_trade_pending': self._total_trade_pending,
+            'total_partial': self._total_partial,
+            'confirm_rate': round(confirm_rate, 2),
+            'avg_fill_age_s': round(avg_age, 3),
+            'block_confirmations_required': BLOCK_CONFIRMATIONS_REQUIRED,
+            'max_fill_retries': self._max_fill_retries,
+        }
+
     def reconcile_position(self, position) -> str:
         if not isinstance(position, dict):
             return 'real'
         tx_hash = position.get('tx_hash', '')
         if not tx_hash:
+            self._total_ghosts += 1
             return 'phantom'
         if self.config.paper_mode:
             return 'real'
