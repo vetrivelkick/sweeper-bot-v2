@@ -3,6 +3,8 @@
 P0 #2: Fixed V2 constructor: chain=137 -> chain_id=137
 P0 #3: Added signature_type and funder parameters
 P0 #6: Fixed txHash -> transactionsHashes (list) for V2 response format
+
+AUDIT FIX #11: Block confirmation requirement + MATCHED_OFFCHAIN/TRADE_PENDING states
 """
 import time
 import logging
@@ -14,10 +16,15 @@ logger = logging.getLogger("sweeper.fillconfirm")
 
 class FillStatus(Enum):
     UNCONFIRMED = "unconfirmed"
+    MATCHED_OFFCHAIN = "matched_offchain"  # AUDIT FIX #11: Order matched but not yet on-chain
+    TRADE_PENDING = "trade_pending"        # AUDIT FIX #11: Trade submitted, awaiting block inclusion
     CONFIRMED = "confirmed"
     GHOST = "ghost"
     TIMEOUT = "timeout"
     PAPER = "paper"
+
+# AUDIT FIX #11: Block confirmations required before considering settlement final
+BLOCK_CONFIRMATIONS_REQUIRED = 3
 
 @dataclass
 class FillConfirmation:
@@ -63,6 +70,13 @@ class FillConfirmer:
         return self._w3
 
     def confirm_fill(self, order, timeout=None) -> FillConfirmation:
+        """AUDIT FIX #11: Enhanced fill confirmation with block verification.
+        
+        States flow: UNCONFIRMED -> MATCHED_OFFCHAIN -> TRADE_PENDING -> CONFIRMED
+        Returns MATCHED_OFFCHAIN if order matched but tx not yet on-chain.
+        Returns TRADE_PENDING if tx on-chain but not enough block confirmations.
+        Returns CONFIRMED only after BLOCK_CONFIRMATIONS_REQUIRED confirmations.
+        """
         if self.config.paper_mode:
             return FillConfirmation(
                 order_id=getattr(order, 'order_id', ''),
@@ -74,6 +88,8 @@ class FillConfirmer:
             )
         timeout = timeout or 8
         start = time.time()
+        matched_amount = 0.0
+        matched_tx_hash = None
         while time.time() - start < timeout:
             client = self._get_client()
             if client:
@@ -82,25 +98,68 @@ class FillConfirmer:
                     if isinstance(status, dict):
                         matched = float(status.get('size_matched', 0))
                         if matched > 0:
+                            matched_amount = matched
                             tx_hashes = status.get('transactionsHashes', [])
                             tx_hash = tx_hashes[0] if tx_hashes else status.get('txHash', '')
+                            matched_tx_hash = tx_hash
+                            if not tx_hash:
+                                # AUDIT FIX #11: Matched but no tx hash yet
+                                logger.info(f"Order {order.order_id} matched off-chain, awaiting tx")
+                                continue
+                            # Check if tx is on-chain with enough confirmations
+                            w3 = self._get_web3()
+                            if w3:
+                                try:
+                                    receipt = w3.eth.get_transaction_receipt(tx_hash)
+                                    if receipt is None:
+                                        # AUDIT FIX #11: Tx submitted but not yet in block
+                                        logger.debug(f"Tx {tx_hash[:16]} pending block inclusion")
+                                        continue
+                                except Exception:
+                                    pass  # Tx not yet mined, keep polling
                             if self._settled_on_chain(tx_hash):
                                 return FillConfirmation(order.order_id, order.condition_id, FillStatus.CONFIRMED, matched, tx_hash, time.time())
                 except Exception as e:
                     logger.debug(f"Order check error: {e}")
             time.sleep(0.5)
+        # Timeout: return best known state
+        if matched_amount > 0 and matched_tx_hash:
+            return FillConfirmation(getattr(order, 'order_id', ''), getattr(order, 'condition_id', ''), FillStatus.TRADE_PENDING, matched_amount, matched_tx_hash, time.time())
+        elif matched_amount > 0:
+            return FillConfirmation(getattr(order, 'order_id', ''), getattr(order, 'condition_id', ''), FillStatus.MATCHED_OFFCHAIN, matched_amount, None, time.time())
         return FillConfirmation(getattr(order, 'order_id', ''), getattr(order, 'condition_id', ''), FillStatus.TIMEOUT, 0, None, time.time())
 
     def _settled_on_chain(self, tx_hash: str) -> bool:
+        """AUDIT FIX #11: Verify block confirmations before considering settlement final.
+        
+        A fill is only 'settled' when:
+        1. Transaction receipt exists with status == 1 (success)
+        2. At least BLOCK_CONFIRMATIONS_REQUIRED blocks have been mined since
+        
+        Returns False if not enough confirmations yet (caller should retry).
+        """
         if not tx_hash:
             return False
         w3 = self._get_web3()
         if not w3:
-            return True
+            return True  # paper mode or no web3 - trust the API
         try:
             receipt = w3.eth.get_transaction_receipt(tx_hash)
-            return receipt is not None and receipt.get('status') == 1
-        except Exception:
+            if receipt is None or receipt.get('status') != 1:
+                return False
+            # AUDIT FIX #11: Check block confirmations
+            tx_block = receipt.get('blockNumber')
+            if tx_block is None:
+                return False
+            current_block = w3.eth.block_number
+            confirmations = current_block - tx_block
+            if confirmations < BLOCK_CONFIRMATIONS_REQUIRED:
+                logger.debug(f"Tx {tx_hash[:16]} has {confirmations}/{BLOCK_CONFIRMATIONS_REQUIRED} confirmations")
+                return False
+            logger.info(f"Tx {tx_hash[:16]} confirmed with {confirmations} block confirmations")
+            return True
+        except Exception as e:
+            logger.debug(f"Block confirmation check failed: {e}")
             return False
 
     def reconcile_position(self, position) -> str:
