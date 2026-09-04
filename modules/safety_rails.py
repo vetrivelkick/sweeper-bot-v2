@@ -16,6 +16,7 @@ AUDIT FIX #26: Risk controls - event exposure, drawdown, risk score, concentrati
 SECTION 1 AUDIT: Fix preflight check for list-returning validate()
 SECTION 2 AUDIT: SDK version check and canary funded amount in preflight
 SECTION 3 AUDIT: Compliance & identity verification (key format, wallet checksum, sig type, API keys)
+SECTION 4 AUDIT: SDK baseline (import verification, method availability check)
 """
 import json, os, time, logging
 from datetime import datetime, timezone
@@ -158,6 +159,13 @@ class SafetyRails:
                 passed = False
         except Exception as e:
             checks.append(f"WARN: SDK version check skipped: {e}")
+        # SECTION 4 AUDIT: SDK import and method verification
+        ok_sdk_imports, sdk_imports_msg = self.verify_sdk_imports()
+        if ok_sdk_imports: checks.append(f"OK: {sdk_imports_msg}")
+        else: checks.append(f"FAIL: {sdk_imports_msg}"); passed = False
+        ok_sdk_methods, sdk_methods_msg = self.verify_sdk_methods()
+        if ok_sdk_methods: checks.append(f"OK: {sdk_methods_msg}")
+        else: checks.append(f"FAIL: {sdk_methods_msg}"); passed = False
         # SECTION 2 AUDIT: Canary funded amount check (live mode only)
         if not self.config.paper_mode:
             canary_max = getattr(self.config, 'max_canary_funded_usd', 50.0)
@@ -284,6 +292,46 @@ class SafetyRails:
         if len(self.config.clob_api_passphrase) < 6:
             return False, f"CLOB API passphrase too short ({len(self.config.clob_api_passphrase)} chars)"
         return True, "CLOB API credentials format valid"
+
+    def verify_sdk_imports(self):
+        """SECTION 4 AUDIT: Verify all SDK imports work correctly."""
+        if self.config.paper_mode:
+            return True, "Paper mode - SDK import check skipped"
+        try:
+            from py_clob_client_v2 import ClobClient, ApiCreds, OrderArgs, OrderType, PartialCreateOrderOptions, Side
+            return True, "All SDK imports successful (py_clob_client_v2)"
+        except ImportError as e:
+            return False, f"SDK import failed: {e}"
+
+    def verify_sdk_methods(self):
+        """SECTION 4 AUDIT: Verify all required SDK methods are available."""
+        if self.config.paper_mode:
+            return True, "Paper mode - SDK method check skipped"
+        try:
+            from py_clob_client_v2 import ClobClient
+            required_methods = [
+                'create_and_post_order',
+                'create_and_post_market_order',
+                'cancel_orders',
+                'cancel_order',
+                'cancel_all',
+                'get_order',
+                'get_open_orders',
+                'get_markets',
+                'get_order_book',
+                'get_balance_allowance',
+                'create_or_derive_api_key',
+                'get_version',
+            ]
+            missing = []
+            for method in required_methods:
+                if not hasattr(ClobClient, method):
+                    missing.append(method)
+            if missing:
+                return False, f"Missing SDK methods: {', '.join(missing)}"
+            return True, f"All {len(required_methods)} required SDK methods available"
+        except Exception as e:
+            return False, f"SDK method check failed: {e}"
 
     def verify_chain(self, w3=None):
         """P0 #15: Fail-closed chain verification."""
