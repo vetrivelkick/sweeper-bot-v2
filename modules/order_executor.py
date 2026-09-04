@@ -18,6 +18,7 @@ P0 #5: Fixed cancel-then-delete ordering: local state removed only AFTER remote 
 P0 #6: Fixed order response parsing: txHash -> transactionsHashes (list), added tradeIDs
        V2 responses use transactionsHashes (list) and tradeIDs, not txHash (string)
 P0 #7: Store real exchange-assigned orderID from response, replacing fabricated local ID
+P1: Parameterized min_entry_price (was hardcoded 0.985) - now uses self.config.min_entry_price
 """
 import json, time, random, logging
 from decimal import Decimal, ROUND_DOWN
@@ -156,7 +157,8 @@ class OrderBuilder:
         order_type = "GTC" if is_maker else "FAK"
         post_only = is_maker
         if is_maker and best_ask is not None:
-            plan = plan_entry(best_ask, tick_size, 0.985, self.config.buy_price, self.config.prefer_maker, self.config.allow_taker_fallback)
+            # P1: Use parameterized min_entry_price instead of hardcoded 0.985
+            plan = plan_entry(best_ask, tick_size, self.config.min_entry_price, self.config.buy_price, self.config.prefer_maker, self.config.allow_taker_fallback)
             if plan is None: logger.warning(f"No valid entry for {detection_result.question[:40]}"); return False, None
             price, is_maker, detail = plan; order_type = "GTC" if is_maker else "FAK"; post_only = is_maker
             logger.info(f"Entry plan: {detail}")

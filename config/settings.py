@@ -8,6 +8,7 @@ FIX #8: Export all contract addresses and constants from __init__.py
 FIX #16: BotState.from_dict() now preserves rate_limit_429_count
 P0 #3: Added signature_type and funder fields to SweeperConfig for V2 SDK compatibility
 P1: .env support via os.getenv for sensitive fields; atomic BotState.save
+P1: Added min_entry_price parameter (was hardcoded 0.985 in order_executor.py and run_dry.py)
 """
 from dataclasses import dataclass, field
 from typing import Optional
@@ -64,6 +65,7 @@ PARTIAL_FILL_RATIO = 0.4
 MAX_EVENT_EXPOSURE_USD = 500.0
 MAX_PORTFOLIO_EXPOSURE_USD = 2000.0
 MAX_429_BEFORE_TRIP = 3
+MIN_ENTRY_PRICE = 0.985  # P1: Parameterized entry floor
 
 # === FIX #1: DYNAMIC FEE RATES PER CATEGORY ===
 DEFAULT_FEE_RATE = 0.04
@@ -134,6 +136,7 @@ class SweeperConfig:
     signature_type: int = field(default_factory=lambda: int(os.getenv("SIGNATURE_TYPE", "0")))  # 0=EOA, 1=POLY_PROXY, 2=POLY_GNOSIS_SAFE, 3=POLY_1271
     funder: str = field(default_factory=lambda: os.getenv("FUNDER", ""))  # Funder address for proxy/Safe/deposit wallets
     fee_rate: float = DEFAULT_FEE_RATE
+    min_entry_price: float = MIN_ENTRY_PRICE  # P1: Parameterized entry floor (was hardcoded 0.985)
 
     def validate(self):
         if not (0.90 <= self.buy_price <= 0.999): return False

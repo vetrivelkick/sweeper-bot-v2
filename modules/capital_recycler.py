@@ -7,6 +7,9 @@ P0 #13: Fixed merge ABI to match CtfCollateralAdapter interface.
         - mergePositions takes (address, bytes32, bytes32, uint256[], uint256)
         - Added ERC1155 setApprovalForAll before merge
         - Fixed NegRisk adapter selection
+        - Fixed 6-decimal pUSD units (was using 18-decimal ether via to_wei)
+        - Fixed unsigned .transact() to use signed transactions with private key
+        - Fixed .static_call() to .call() for view functions
 FIX #6: Live mode merge via CtfCollateralAdapter on-chain (not client.merge_positions which doesn't exist in V2)
 """
 import time
@@ -74,6 +77,27 @@ class CapitalRecycler:
             logger.error(f"Complementary buy error: {e}")
             return False
 
+    def _send_signed_tx(self, w3, contract_fn, wallet, gas=300000):
+        """P0 #13: Build, sign, and send a transaction using the private key.
+        
+        Replaces unsigned .transact({'from': wallet}) calls which only work
+        for nodes with unlocked accounts (e.g., Ganache). Production Polygon
+        requires signed transactions with the private key.
+        """
+        from eth_account import Account
+        from web3 import Web3
+        nonce = w3.eth.get_transaction_count(Web3.to_checksum_address(wallet))
+        tx = contract_fn.build_transaction({
+            'from': wallet,
+            'gas': gas,
+            'nonce': nonce,
+            'chainId': 137,
+            'gasPrice': w3.eth.gas_price,
+        })
+        signed = Account.sign_transaction(tx, self.config.private_key)
+        tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+        return w3.eth.wait_for_transaction_receipt(tx_hash)
+
     def _ensure_erc1155_approval(self, w3, ctf_addr, adapter_addr, wallet_addr):
         if adapter_addr.lower() in self._approval_cache:
             return True
@@ -84,10 +108,11 @@ class CapitalRecycler:
                 {"inputs": [{"name": "owner", "type": "address"}, {"name": "operator", "type": "address"}], "name": "isApprovedForAll", "outputs": [{"name": "", "type": "bool"}], "stateMutability": "view", "type": "function"}
             ]
             ctf = w3.eth.contract(address=Web3.to_checksum_address(ctf_addr), abi=erc1155_abi)
-            approved = ctf.functions.isApprovedForAll(Web3.to_checksum_address(wallet_addr), Web3.to_checksum_address(adapter_addr)).static_call()
+            # P0 #13: Use .call() instead of .static_call() for view functions
+            approved = ctf.functions.isApprovedForAll(Web3.to_checksum_address(wallet_addr), Web3.to_checksum_address(adapter_addr)).call()
             if not approved:
-                tx = ctf.functions.setApprovalForAll(Web3.to_checksum_address(adapter_addr), True).transact({'from': wallet_addr})
-                receipt = w3.eth.wait_for_transaction_receipt(tx)
+                # P0 #13: Use signed transaction instead of unsigned .transact()
+                receipt = self._send_signed_tx(w3, ctf.functions.setApprovalForAll(Web3.to_checksum_address(adapter_addr), True), wallet_addr, gas=200000)
                 if receipt['status'] == 1:
                     logger.info(f"ERC1155 approval granted to adapter {adapter_addr}")
                 else:
@@ -137,10 +162,11 @@ class CapitalRecycler:
             
             cid_hex = condition_id.replace('0x', '')
             condition_id_bytes = bytes.fromhex(cid_hex)
-            amount_wei = w3.to_wei(winning_shares, 'ether')
+            # P0 #13: pUSD has 6 decimals, NOT 18 (ether). Using to_wei() overstates amount by 10^12.
+            amount_wei = int(winning_shares * 10**6)
             
-            tx = adapter.functions.mergePositions("0x0000000000000000000000000000000000000000", b'\x00' * 32, condition_id_bytes, [], amount_wei).transact({'from': wallet, 'gas': 300000})
-            receipt = w3.eth.wait_for_transaction_receipt(tx)
+            # P0 #13: Use signed transaction instead of unsigned .transact()
+            receipt = self._send_signed_tx(w3, adapter.functions.mergePositions("0x0000000000000000000000000000000000000000", b'\x00' * 32, condition_id_bytes, [], amount_wei), wallet, gas=300000)
             if receipt['status'] == 1:
                 loser_cost = self.config.loser_max_price * winning_shares
                 usdc_recovered = winning_shares

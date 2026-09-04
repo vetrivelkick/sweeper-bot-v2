@@ -1,10 +1,13 @@
 """
 Sweeper Bot V2 - Resolution Detection with Finality Gate
 
-P0 #1: Strategy signal enhancements:
-  1. Resolution-rule parser: Parse resolution rules from market raw data
-  2. Outcome-source adapters: Multiple sources (price, Gamma closed, end-date)
-  3. Finality gate: Check if resolution is final before allowing sweep
+P0 #1 FIX: Demoted price from certainty signal to secondary context.
+  - Price alone is now WEAK certainty (not CERTAIN/STRONG)
+  - Gamma API closed/resolved is the PRIMARY signal for CERTAIN
+  - End date passed + price hint = STRONG (not CERTAIN)
+  - Source-conflict detection: if sources disagree, don't sweep
+  - Fail-closed: price-only markets are UNCERTAIN in live mode
+  - Fixed is_sweepable missing return False in live branch
 
 FIX #11: Added category field to DetectionResult for fee rate lookup
 """
@@ -22,7 +25,6 @@ class CertaintyLevel(Enum):
     WEAK = "weak"
     STRONG = "strong"
     CERTAIN = "certain"
-
 
 class FinalityStatus(Enum):
     """P0 #1: Finality gate status for resolution"""
@@ -93,20 +95,26 @@ class ResolutionDetector:
         return rule
 
     def _check_price_source(self, yes_price, no_price):
-        """P0 #1: Outcome-source adapter #1 - Price-based detection"""
+        """P0 #1 FIX: Price is SECONDARY context only - NOT a certainty signal.
+
+        Market price reflects crowd consensus but does NOT prove resolution.
+        Using price as CERTAIN/STRONG creates a circular signal: the bot buys
+        because price is high, and price is high because others already bought.
+        Price is demoted to WEAK at best - only a hint, not proof.
+        """
         winning_side = "YES" if yes_price > no_price else "NO"
         winning_price = max(yes_price, no_price)
         losing_price = min(yes_price, no_price)
         if winning_price >= 0.999:
-            return winning_side, winning_price, losing_price, CertaintyLevel.CERTAIN, winning_price * 100, f"Price {winning_price} >= 0.999", ["price_extreme"]
+            return winning_side, winning_price, losing_price, CertaintyLevel.WEAK, winning_price * 100, f"Price hint {winning_price} >= 0.999 (secondary only)", ["price_extreme"]
         elif winning_price >= 0.99:
-            return winning_side, winning_price, losing_price, CertaintyLevel.STRONG, winning_price * 100, f"Price {winning_price} >= 0.99", ["price_high"]
+            return winning_side, winning_price, losing_price, CertaintyLevel.WEAK, winning_price * 100, f"Price hint {winning_price} >= 0.99 (secondary only)", ["price_high"]
         elif winning_price >= 0.95:
-            return winning_side, winning_price, losing_price, CertaintyLevel.WEAK, winning_price * 100, f"Price {winning_price} >= 0.95", ["price_moderate"]
+            return winning_side, winning_price, losing_price, CertaintyLevel.WEAK, winning_price * 100, f"Price hint {winning_price} >= 0.95 (secondary only)", ["price_moderate"]
         return winning_side, winning_price, losing_price, CertaintyLevel.UNCERTAIN, 0.0, "", []
 
     def _check_gamma_closed_source(self, market):
-        """P0 #1: Outcome-source adapter #2 - Gamma API closed/resolved status"""
+        """P0 #1: Outcome-source adapter #2 - Gamma API closed/resolved status (PRIMARY signal)"""
         raw = getattr(market, 'raw', None) or {}
         closed = raw.get("closed", False)
         active = raw.get("active", True)
@@ -162,10 +170,10 @@ class ResolutionDetector:
                     except Exception:
                         pass
                 if end_passed:
-                    return FinalityStatus.FINAL, True, "Simulated finality: price extreme + end date passed (paper mode)"
-            if result.certainty == CertaintyLevel.CERTAIN:
-                return FinalityStatus.FINAL, True, "Simulated finality: price extreme (paper mode)"
-            return FinalityStatus.PENDING, False, "Market not yet closed (paper mode)"
+                    return FinalityStatus.FINAL, True, "Simulated finality: CERTAIN + end date passed (paper mode)"
+            if self.config.paper_mode and result.certainty in (CertaintyLevel.CERTAIN, CertaintyLevel.STRONG):
+                return FinalityStatus.FINAL, True, "Simulated finality: strong signal (paper mode)"
+            return FinalityStatus.PENDING, False, "Market not yet closed"
 
         if active:
             return FinalityStatus.PROPOSED, False, "Market closed but still active (UMA challenge period?)"
@@ -184,6 +192,7 @@ class ResolutionDetector:
         outcome_sources = []
         all_signals = []
 
+        # Price is secondary context only (P0 #1 FIX)
         side, wp, lp, cert, conf, reason, sigs = self._check_price_source(market.yes_price, market.no_price)
         winning_side = side
         winning_price = wp
@@ -196,23 +205,37 @@ class ResolutionDetector:
             outcome_sources.append("price")
             all_signals.extend(sigs)
 
+        # Gamma closed is the PRIMARY signal for CERTAIN (P0 #1 FIX)
         gamma_side, gamma_closed, gamma_reason = self._check_gamma_closed_source(market)
         if gamma_closed:
             outcome_sources.append("gamma_closed")
             all_signals.append("gamma_closed")
             if gamma_side:
-                winning_side = gamma_side
-                certainty = CertaintyLevel.CERTAIN
-                confidence = max(confidence, 99.0)
-                detection_reason = (detection_reason + " + " + gamma_reason) if detection_reason else gamma_reason
+                # P0 #1 FIX: Source-conflict detection
+                if gamma_side != winning_side and certainty != CertaintyLevel.UNCERTAIN:
+                    logger.warning(f"[CONFLICT] Gamma says {gamma_side} but price says {winning_side} for {market.question[:50]}")
+                    certainty = CertaintyLevel.UNCERTAIN
+                    detection_reason = f"Source conflict: gamma={gamma_side} vs price={winning_side}"
+                else:
+                    winning_side = gamma_side
+                    certainty = CertaintyLevel.CERTAIN
+                    confidence = max(confidence, 99.0)
+                    detection_reason = (detection_reason + " + " + gamma_reason) if detection_reason else gamma_reason
 
+        # End date passed + price hint = STRONG (not CERTAIN) (P0 #1 FIX)
         end_passed, end_reason = self._check_end_date_source(market)
         if end_passed:
             outcome_sources.append("end_date")
             all_signals.append("expired")
-            certainty = CertaintyLevel.CERTAIN
-            confidence = max(confidence, 99.0)
+            if certainty < CertaintyLevel.STRONG:
+                certainty = CertaintyLevel.STRONG
+            confidence = max(confidence, 95.0)
             detection_reason = (detection_reason + " + " + end_reason) if detection_reason else end_reason
+
+        # P0 #1 FIX: Fail-closed for price-only markets in live mode
+        if not self.config.paper_mode and outcome_sources == ["price"]:
+            certainty = CertaintyLevel.UNCERTAIN
+            detection_reason = "No resolution source available (price-only is insufficient in live mode)"
 
         winning_token = market.yes_token_id if winning_side == "YES" else market.no_token_id
         losing_token = market.no_token_id if winning_side == "YES" else market.yes_token_id
@@ -264,3 +287,4 @@ class ResolutionDetector:
             if result.certainty == CertaintyLevel.CERTAIN and not result.is_final:
                 logger.warning(f"[FINALITY GATE] Blocked sweep: {result.question[:50]} - {result.finality_reason}")
                 return False
+            return False  # P0 #1 FIX: fail-closed for all other cases (STRONG+non-final, WEAK, UNCERTAIN)
