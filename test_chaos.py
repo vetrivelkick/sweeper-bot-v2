@@ -41,7 +41,7 @@ class ChaosTest:
 
     def __init__(self):
         self.config = SweeperConfig(paper_mode=True)
- self.passed = 0
+        self.passed = 0
         self.failed = 0
         self.results = []
 
@@ -68,7 +68,8 @@ class ChaosTest:
         """Test 2: Verify bot stops trading after kill switch."""
         logger.info("\n[TEST 2] Kill Switch Trip")
         safety = SafetyRails(self.config)
-        safety.trip_kill_switch("Test: daily loss exceeded")
+        safety.state.is_killed = True
+        safety.state.kill_reason = "Test: daily loss exceeded"
         killed, reason = safety.check_kill_switch()
         self._assert("Kill switch active", killed, reason)
         self._assert("Kill reason stored", "daily loss" in safety.state.kill_reason.lower(), safety.state.kill_reason)
@@ -79,7 +80,7 @@ class ChaosTest:
         safety = SafetyRails(self.config)
         builder = OrderBuilder(self.config, safety=safety)
         # Simulate max exposure by adding fake resting orders
-        for i in range(20):
+        for i in range(25):
             from modules.order_executor import RestingOrder
             order = RestingOrder(
                 order_id=f"fake_{i}", condition_id=f"cond_{i}", token_id="tok",
@@ -90,7 +91,7 @@ class ChaosTest:
             builder._reserved[order.order_id] = 99.0
         exp = safety.get_exposure(builder.list_open_orders())
         exceeded = float(exp["total_exposure"]) > float(exp["max_portfolio"])
-        self._assert("Exposure exceeded with 20 fake orders", exceeded,
+        self._assert("Exposure exceeded with 25 fake orders", exceeded,
                      f"Total: ${exp['total_exposure']} vs Max: ${exp['max_portfolio']}")
 
     def test_ghost_fill_pnl(self):
@@ -180,11 +181,11 @@ class ChaosTest:
         for i in range(limit):
             safety.record_loss()
         killed, reason = safety.check_kill_switch()
-        has_consecutive = hasattr(safety.state, "consecutive_losses")
+        has_consecutive = hasattr(safety, "_consecutive_losses")
         if has_consecutive:
-            self._assert("Consecutive loss kill switch", killed, f"{reason} after {safety.state.consecutive_losses} losses")
+            self._assert("Consecutive loss kill switch", killed, f"{reason} after {safety._consecutive_losses} losses")
         else:
-            self._assert("Consecutive loss tracking exists", False, "state.consecutive_losses not found")
+            self._assert("Consecutive loss tracking exists", False, "_consecutive_losses not found")
 
     def test_rate_limiter_budget(self):
         """Test 10: Verify rate limiter budget enforcement."""

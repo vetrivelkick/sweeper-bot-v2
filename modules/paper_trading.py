@@ -12,6 +12,7 @@ Features:
 - FIX #5: True PnL scoreboard, resting counter, trade records for ghost/expired
 - Separate log files for easy review
 - JSON trade records for analysis
+- Phase 8: Double-entry ledger integration for complete audit trail
 
 Usage:
     python3 run_paper.py [--cycles N] [--sweeps N]
@@ -34,6 +35,7 @@ from modules.fill_confirmation import FillConfirmer
 from modules.reconciliation import ReconciliationEngine
 from modules.gas_manager import GasManager
 from modules.capital_recycler import CapitalRecycler
+from modules.ledger import DoubleEntryLedger
 
 logger = logging.getLogger("sweeper.paper")
 
@@ -122,6 +124,7 @@ class AdvancedPaperTrader:
             self.config, self.safety, self.fill_confirmer, self.order_builder)
         self.gas = GasManager(self.config, self.safety)
         self.recycler = CapitalRecycler(self.config, self.order_builder, self.safety)
+        self.ledger = DoubleEntryLedger()
 
         self.cumulative_pnl = 0.0
         self.daily_pnl = 0.0
@@ -369,7 +372,7 @@ class AdvancedPaperTrader:
                 best_ask, tick_size, 0.985, self.config.buy_price,
                 self.config.prefer_maker, self.config.allow_taker_fallback)
 
-        is_maker = (entry_plan is not None and entry_plan[1]) or \\
+        is_maker = (entry_plan is not None and entry_plan[1]) or \
                    (self.config.prefer_maker and best_ask is None)
 
         order_price = entry_plan[0] if entry_plan else self.config.buy_price
@@ -600,6 +603,13 @@ class AdvancedPaperTrader:
         self.cumulative_pnl += net_pnl
         self.daily_pnl += net_pnl
 
+        # Phase 8: Ledger entries for complete audit trail
+        self.ledger.record_buy_winning(trade_num, fill_price, filled_shares, is_maker=is_maker)
+        self.ledger.record_buy_loser(trade_num, self.config.loser_max_price, filled_shares)
+        self.ledger.record_fee(trade_num, fee, is_maker=is_maker)
+        self.ledger.record_gas(trade_num, gas_cost)
+        self.ledger.record_merge(trade_num, filled_shares, fill_price * filled_shares, self.config.loser_max_price * filled_shares)
+
         self._section("PNL BREAKDOWN")
         self._kv("Order Type", "GTC MAKER" if is_maker else "FAK TAKER")
         self._kv("Gross Edge", f"+${gross:.4f}  ({filled_shares:.0f} x ($1.00 - ${fill_price}))")
@@ -721,6 +731,10 @@ class AdvancedPaperTrader:
             self._log_both(f"  ERRORS: {len(self.errors)}")
             for e in self.errors:
                 self._log_both(f"    {e}")
+        self._sep()
+        # Phase 8: Ledger summary
+        self.ledger.dump()
+        self.ledger.log_summary(self._log_both)
         self._sep()
         self._log_both("  PAPER TRADING COMPLETE")
         self._sep()
