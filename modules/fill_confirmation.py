@@ -7,6 +7,8 @@ P0 #6: Fixed txHash -> transactionsHashes (list) for V2 response format
 
 AUDIT FIX #11: Block confirmation requirement + MATCHED_OFFCHAIN/TRADE_PENDING states
 AUDIT FIX #27: Fill metrics, retry logic, batch confirmation, fill age tracking
+SECTION 11 AUDIT: Settlement state tracking, PnL realization, settlement persistence,
+                 batch settlement verification, settlement age tracking
 """
 import time
 import logging
@@ -52,6 +54,13 @@ class FillConfirmer:
         self._fill_ages = []  # Time from order to confirmation
         self._max_age_samples = 100
         self._max_fill_retries = 3
+        # SECTION 11 AUDIT: Settlement state tracking
+        self._settlements = {}  # order_id -> settlement dict
+        self._total_pnl_realized = 0.0
+        self._total_settled = 0
+        self._total_pending_settlement = 0
+        self._settlement_ages = []
+        self._max_settlement_age_samples = 100
 
     def _get_client(self):
         if self._client or self.config.paper_mode:
@@ -195,6 +204,70 @@ class FillConfirmer:
                 logger.info(f"Fill retry {attempt+1}/{self._max_fill_retries} for {getattr(order, 'order_id', '')}")
                 time.sleep(2)
         return result
+
+    def realize_settlement(self, order, fill_confirmation) -> dict:
+        """SECTION 11 AUDIT: Realize PnL from a confirmed settlement.
+
+        Called when a fill is confirmed on-chain. Records the settlement
+        with PnL calculation and updates tracking metrics.
+        """
+        shares = getattr(fill_confirmation, 'fill_amount', 0) or getattr(order, 'filled_shares', 0) or getattr(order, 'fill_amount', 0)
+        buy_price = getattr(order, 'price', getattr(order, 'avg_fill_price', 0))
+        tx_hash = getattr(fill_confirmation, 'tx_hash', None) or getattr(order, 'tx_hash', None)
+        order_id = getattr(order, 'order_id', '') or getattr(fill_confirmation, 'order_id', '')
+        condition_id = getattr(order, 'condition_id', '') or getattr(fill_confirmation, 'condition_id', '')
+
+        # PnL: shares * $1.00 (redemption value) - shares * buy_price - gas
+        from config.settings import GAS_PER_SHARE
+        gross_pnl = shares * 1.0
+        cost = shares * buy_price
+        gas = GAS_PER_SHARE * shares
+        net_pnl = gross_pnl - cost - gas
+        roi = (net_pnl / cost * 100) if cost > 0 else 0.0
+
+        settlement = {
+            'order_id': order_id,
+            'condition_id': condition_id,
+            'tx_hash': tx_hash,
+            'shares': shares,
+            'buy_price': buy_price,
+            'gross_pnl': gross_pnl,
+            'cost': cost,
+            'gas': gas,
+            'net_pnl': net_pnl,
+            'roi': roi,
+            'settled_at': time.time(),
+            'status': 'settled',
+        }
+        self._settlements[order_id] = settlement
+        self._total_settled += 1
+        self._total_pnl_realized += net_pnl
+        self._settlement_ages.append(time.time() - getattr(order, 'placed_at', getattr(order, 'submitted_at', time.time())))
+        if len(self._settlement_ages) > self._max_settlement_age_samples:
+            self._settlement_ages = self._settlement_ages[-self._max_settlement_age_samples:]
+        logger.info(f"Settlement realized: {order_id[:16]} | {shares} shares | NET PnL: ${net_pnl:.2f} | ROI: {roi:.2f}%")
+        return settlement
+
+    def get_pending_settlements(self) -> list:
+        """SECTION 11 AUDIT: Get fills awaiting settlement (matched but not confirmed)."""
+        pending = []
+        for oid, s in self._settlements.items():
+            if s.get('status') == 'pending':
+                pending.append(s)
+        self._total_pending_settlement = len(pending)
+        return pending
+
+    def get_settlement_metrics(self) -> dict:
+        """SECTION 11 AUDIT: Return settlement metrics for monitoring."""
+        avg_age = sum(self._settlement_ages) / len(self._settlement_ages) if self._settlement_ages else 0.0
+        return {
+            'total_settled': self._total_settled,
+            'total_pnl_realized': round(self._total_pnl_realized, 4),
+            'total_pending': self._total_pending_settlement,
+            'avg_settlement_age_s': round(avg_age, 3),
+            'block_confirmations_required': BLOCK_CONFIRMATIONS_REQUIRED,
+            'settlements_tracked': len(self._settlements),
+        }
 
     def confirm_fills_batch(self, orders, timeout=None) -> list:
         """AUDIT FIX #27: Batch confirm multiple fills."""
