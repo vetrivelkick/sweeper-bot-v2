@@ -660,4 +660,94 @@ class SafetyRails:
             checks.append(f"FAIL: Order size {shares} < {MIN_ORDER_SIZE_ECONOMIC}")
         min_size = min_viable_size(GAS_PER_SHARE * 100, buy_price, is_maker)
         if shares < min_size:
-            checks.append(f"FAIL: Order size {shares} < min viable {min_size:.1f}
+            checks.append(f"FAIL: Order size {shares} < min viable {min_size:.1f}")
+        order_cost = buy_price * shares
+        ok_exp, exp_msg = self.check_exposure_before_order(order_cost, condition_id=condition_id)
+        if not ok_exp:
+            checks.append(f"FAIL: {exp_msg}")
+        if condition_id:
+            ok_evt, evt_msg = self.check_event_exposure(condition_id, order_cost)
+            if not ok_evt:
+                checks.append(f"FAIL: {evt_msg}")
+        if self.state.is_killed:
+            checks.append(f"FAIL: Kill switch active: {self.state.kill_reason}")
+        failures = [c for c in checks if c.startswith("FAIL")]
+        if failures:
+            return False, "; ".join(failures)
+        return True, "OK: Economics gate passed"
+
+    def calculate_break_even(self, buy_price, is_maker=False, category="other"):
+        """SECTION 8 AUDIT: Calculate break-even selling price."""
+        from config.settings import calculate_break_even as calc_be, get_fee_rate, LOSER_MAX_PRICE, GAS_PER_SHARE
+        fee_rate = get_fee_rate(category)
+        return calc_be(buy_price, LOSER_MAX_PRICE, GAS_PER_SHARE, is_maker, fee_rate)
+
+    def validate_economics_config(self):
+        """SECTION 8 AUDIT: Validate economics configuration."""
+        from config.settings import (
+            BUY_PRICE, LOSER_MAX_PRICE, GAS_PER_SHARE, MIN_ENTRY_PRICE, MAX_ENTRY_PRICE,
+            MIN_PROFIT_MARGIN, MIN_ORDER_SIZE_ECONOMIC, BREAK_EVEN_PRICE,
+            net_edge_per_share, ALLOW_TAKER_FALLBACK
+        )
+        checks = []
+        maker_edge = net_edge_per_share(BUY_PRICE, LOSER_MAX_PRICE, GAS_PER_SHARE, is_maker=True)
+        taker_edge = net_edge_per_share(BUY_PRICE, LOSER_MAX_PRICE, GAS_PER_SHARE, is_maker=False)
+        if maker_edge <= 0:
+            checks.append(f"FAIL: Maker edge {maker_edge:.6f} <= 0")
+        if taker_edge <= 0 and ALLOW_TAKER_FALLBACK:
+            checks.append(f"FAIL: Taker edge {taker_edge:.6f} <= 0")
+        if not (MIN_ENTRY_PRICE <= BUY_PRICE <= MAX_ENTRY_PRICE):
+            checks.append(f"FAIL: Buy price {BUY_PRICE} outside [{MIN_ENTRY_PRICE}, {MAX_ENTRY_PRICE}]")
+        if BREAK_EVEN_PRICE >= 1.0:
+            checks.append(f"FAIL: Break-even price {BREAK_EVEN_PRICE:.4f} >= 1.0")
+        if MIN_PROFIT_MARGIN <= 0:
+            checks.append(f"FAIL: Min profit margin {MIN_PROFIT_MARGIN} <= 0")
+        if MIN_ORDER_SIZE_ECONOMIC <= 0:
+            checks.append(f"FAIL: Min order size {MIN_ORDER_SIZE_ECONOMIC} <= 0")
+        failures = [c for c in checks if c.startswith("FAIL")]
+        if failures:
+            return False, "; ".join(failures)
+        return True, "OK: Economics config valid"
+
+    def get_economics_metrics(self, buy_price=None, shares=None, category="other", is_maker=False):
+        """SECTION 8 AUDIT: Report economics metrics for monitoring."""
+        from config.settings import (
+            BUY_PRICE, LOSER_MAX_PRICE, GAS_PER_SHARE, get_fee_rate,
+            net_edge_per_share, min_viable_size, fee_per_share,
+            MIN_PROFIT_MARGIN, MIN_ORDER_SIZE_ECONOMIC, BREAK_EVEN_PRICE
+        )
+        bp = buy_price or BUY_PRICE
+        fee_rate = get_fee_rate(category)
+        edge = net_edge_per_share(bp, LOSER_MAX_PRICE, GAS_PER_SHARE, is_maker)
+        be = BREAK_EVEN_PRICE if bp == BUY_PRICE else bp + GAS_PER_SHARE + LOSER_MAX_PRICE
+        min_size = min_viable_size(GAS_PER_SHARE * 100, bp, is_maker)
+        return {
+            'buy_price': bp, 'loser_max_price': LOSER_MAX_PRICE,
+            'gas_per_share': GAS_PER_SHARE, 'fee_rate': fee_rate,
+            'fee_per_share': round(fee_per_share(bp, fee_rate, is_maker), 6),
+            'gross_edge': round(1.0 - bp, 4), 'net_edge': round(edge, 6),
+            'break_even_price': round(be, 4), 'min_profit_margin': MIN_PROFIT_MARGIN,
+            'min_order_size': MIN_ORDER_SIZE_ECONOMIC, 'min_viable_size': round(min_size, 1),
+            'is_maker': is_maker, 'category': category, 'profitable': edge > MIN_PROFIT_MARGIN,
+        }
+
+    def estimate_slippage(self, order_size, book_liquidity=1000):
+        """SECTION 8 AUDIT: Estimate slippage for taker orders."""
+        from config.settings import estimate_slippage as est_slip, MAX_SLIPPAGE
+        slip = est_slip(order_size, book_liquidity)
+        return {'estimated_slippage': round(slip, 6), 'max_slippage': MAX_SLIPPAGE,
+                'within_threshold': slip <= MAX_SLIPPAGE, 'order_size': order_size,
+                'book_liquidity': book_liquidity}
+
+    def mark_worked(self, condition_id): self.state.worked_markets.add(condition_id)
+    def unmark_worked(self, condition_id): self.state.worked_markets.discard(condition_id); logger.info(f"Market released: {condition_id[:20]}")
+    def is_worked(self, condition_id): return condition_id in self.state.worked_markets
+
+    def record_ghost_fill(self, condition_id):
+        self.state.total_ghost_fills_removed += 1
+        if condition_id in self.state.open_positions: del self.state.open_positions[condition_id]
+        logger.warning(f"Ghost fill removed: {condition_id}")
+
+    def record_failed_claim(self, condition_id):
+        self.state.total_failed_claims += 1
+        logger.error(f"Failed claim (ops error): {condition_id}")
