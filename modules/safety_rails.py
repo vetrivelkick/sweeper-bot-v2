@@ -10,6 +10,7 @@ AUDIT FIX #6: verify_signer() - private key derives wallet address
 AUDIT FIX #7: verify_funder() - funder address validation for proxy wallets
 AUDIT FIX #8: Per-market exposure limit in check_exposure_before_order
 AUDIT FIX #9: Remote order cancellation on kill switch in main.py
+AUDIT FIX #14: health_check() method for monitoring/health endpoints
 """
 import json, os, time, logging
 from datetime import datetime, timezone
@@ -360,6 +361,37 @@ class SafetyRails:
                 'daily_pnl': round(self.state.daily_pnl, 4), 'is_killed': self.state.is_killed,
                 'kill_reason': self.state.kill_reason, 'paper_mode': self.config.paper_mode,
                 'rate_limit_429s': self.state.rate_limit_429_count}
+
+    def health_check(self):
+        """AUDIT FIX #14: Return bot health status for monitoring/health endpoints.
+        
+        Returns dict with:
+        - status: 'healthy' | 'degraded' | 'killed'
+        - is_killed, kill_reason
+        - daily_pnl, total_exposure, open_positions count
+        - rate_limit_429s, consecutive_losses
+        - paper_mode, uptime_seconds
+        """
+        exposure = self.get_exposure()
+        status = 'killed' if self.state.is_killed else ('degraded' if exposure['within_limits'] == False else 'healthy')
+        return {
+            'status': status,
+            'is_killed': self.state.is_killed,
+            'kill_reason': self.state.kill_reason,
+            'daily_pnl': round(self.state.daily_pnl, 4),
+            'total_exposure': exposure['total_exposure'],
+            'max_portfolio_exposure': exposure['max_portfolio'],
+            'within_limits': exposure['within_limits'],
+            'open_positions': len(self.state.open_positions),
+            'worked_markets': len(self.state.worked_markets),
+            'rate_limit_429s': self.state.rate_limit_429_count,
+            'consecutive_losses': self._consecutive_losses,
+            'paper_mode': self.config.paper_mode,
+            'uptime_seconds': round(time.time() - self.state.started_at, 2),
+            'total_buys': self.state.total_buys,
+            'total_redeems': self.state.total_redeems,
+            'total_recycled_usd': round(self.state.total_recycled_usd, 2),
+        }
 
     def mark_worked(self, condition_id): self.state.worked_markets.add(condition_id)
     def unmark_worked(self, condition_id): self.state.worked_markets.discard(condition_id); logger.info(f"Market released: {condition_id[:20]}")
