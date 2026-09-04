@@ -3,6 +3,8 @@
 FIX #2: Standardized fill probability logic (35% fill, 25% partial, 5% ghost, 35% expired)
 FIX #3: Gas cost standardized to GAS_PER_SHARE (0.001/share)
 P0 #3: Added SIGNATURE_TYPE and FUNDER_ADDRESS env var reading for V2 SDK wallet support
+P0 #8/#10: Added open_positions population in _complete_trade
+P0 #11: Added StartupRecovery import and integration
 """
 import sys, os, time, json, signal, logging, threading
 from datetime import datetime, timezone
@@ -17,6 +19,7 @@ from modules.fill_confirmation import FillConfirmer
 from modules.reconciliation import ReconciliationEngine
 from modules.gas_manager import GasManager
 from modules.capital_recycler import CapitalRecycler
+from modules.startup_recovery import StartupRecovery
 
 logger = logging.getLogger("sweeper.main")
 
@@ -32,6 +35,7 @@ class SweeperBot:
         self.reconciler = ReconciliationEngine(self.config, self.safety, self.fill_confirmer, self.order_builder)
         self.gas = GasManager(self.config, self.safety)
         self.recycler = CapitalRecycler(self.config, self.order_builder, self.safety)
+        self.recovery = StartupRecovery(self.config, self.safety, self.order_builder, self.fill_confirmer)
         self._running = False; self._cycle_count = 0; self._shutdown_requested = False
 
     def startup_reconcile(self):
@@ -41,6 +45,15 @@ class SweeperBot:
         if not ok: logger.critical("Preflight FAILED"); return False
         loaded = self.safety.load_state()
         if loaded: logger.info(f"State restored: {len(self.safety.state.worked_markets)} worked markets")
+        # P0 #11: Use StartupRecovery for proper reconciliation
+        try:
+            recovery_result = self.recovery.reconcile_startup()
+            if recovery_result.get("phantoms_removed", 0) > 0:
+                logger.warning(f"Startup recovery: {recovery_result['phantoms_removed']} phantom positions removed")
+            if recovery_result.get("orders_cancelled", 0) > 0:
+                logger.warning(f"Startup recovery: {recovery_result['orders_cancelled']} stale orders cancelled")
+        except Exception as e:
+            logger.error(f"Startup recovery error: {e}")
         resting = self.order_builder.list_open_orders()
         if resting:
             logger.warning(f"Found {len(resting)} unknown resting orders")
@@ -109,8 +122,23 @@ class SweeperBot:
 
     def _complete_trade(self, det, order, is_maker, filled_shares, fill_price):
         if not order.tx_hash: logger.warning("Ghost fill - no on-chain settlement"); return
+        # P0 #8/#10: Populate open_positions when a trade completes
+        condition_id = det.condition_id
+        self.safety.state.open_positions[condition_id] = {
+            'condition_id': condition_id,
+            'tx_hash': order.tx_hash,
+            'shares': filled_shares,
+            'price': fill_price,
+            'side': 'BUY',
+            'timestamp': time.time(),
+        }
+        logger.info(f"Position opened: {condition_id[:16]}... | {filled_shares} shares @ ${fill_price}")
         try: self.recycler.recycle(det, filled_shares)
         except Exception as e: logger.error(f"Recycle error: {e}")
+        # P0 #10: Mark position as closed after recycle
+        if condition_id in self.safety.state.open_positions:
+            del self.safety.state.open_positions[condition_id]
+            logger.info(f"Position closed: {condition_id[:16]}... (recycled)")
         gross = (1.0 - fill_price) * filled_shares
         fee = fee_per_share(fill_price, is_maker=is_maker) * filled_shares
         gas_cost = GAS_PER_SHARE * filled_shares
@@ -145,7 +173,8 @@ class SweeperBot:
         signal.signal(signal.SIGTERM, self._signal_handler); signal.signal(signal.SIGINT, self._signal_handler)
         if not self.startup_reconcile(): return
         self._running = True
-        logger.info("=" * 60); logger.info("SWEEPER BOT V2 - RUNNING")
+        logger.info("=" * 60)
+        logger.info("SWEEPER BOT V2 - RUNNING")
         logger.info(f"  Mode: {'PAPER' if self.config.paper_mode else 'LIVE'}")
         logger.info(f"  Order Method: {'GTC POST-ONLY MAKER' if self.config.prefer_maker else 'FAK TAKER'}")
         logger.info(f"  Taker Fallback: {self.config.allow_taker_fallback}")
