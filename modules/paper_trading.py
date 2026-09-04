@@ -36,6 +36,7 @@ from modules.reconciliation import ReconciliationEngine
 from modules.gas_manager import GasManager
 from modules.capital_recycler import CapitalRecycler
 from modules.ledger import DoubleEntryLedger
+from modules.metrics import MetricsCollector, AlertManager
 
 logger = logging.getLogger("sweeper.paper")
 
@@ -158,6 +159,8 @@ class AdvancedPaperTrader:
             datefmt="%Y-%m-%d %H:%M:%S",
             handlers=[logging.FileHandler(self.MAIN_LOG), logging.StreamHandler()])
         self.logger = logging.getLogger("sweeper.paper")
+        self.metrics = MetricsCollector(log_dir=LOG_DIR)
+        self.alerts = AlertManager(self.config, self.safety, self.metrics)
 
     def _log(self, msg):
         self.logger.info(msg)
@@ -175,7 +178,7 @@ class AdvancedPaperTrader:
         self._log_both(ch * w)
 
     def _section(self, title, w=72):
-        self._trade_log("+-" + f" {title} " + "-" * max(1, w - len(title) - 4) + "+")
+        self._trade_log("+- " + f" {title} " + "-" * max(1, w - len(title) - 4) + "+")
 
     def _section_end(self, w=72):
         self._trade_log("+" + "-" * w + "+")
@@ -340,6 +343,7 @@ class AdvancedPaperTrader:
 
     def _process_trade(self, det):
         self.total_trades += 1
+        self.metrics.inc("trades_total")
         trade_num = self.total_trades
 
         self._sep("-")
@@ -372,7 +376,7 @@ class AdvancedPaperTrader:
                 best_ask, tick_size, 0.985, self.config.buy_price,
                 self.config.prefer_maker, self.config.allow_taker_fallback)
 
-        is_maker = (entry_plan is not None and entry_plan[1]) or \
+        is_maker = (entry_plan is not None and entry_plan[1]) or \\
                    (self.config.prefer_maker and best_ask is None)
 
         order_price = entry_plan[0] if entry_plan else self.config.buy_price
@@ -442,6 +446,7 @@ class AdvancedPaperTrader:
 
         if not success or order is None:
             self.rejected_orders += 1
+            self.metrics.inc("trades_rejected")
             error_msg = "No entry price"
             if order and hasattr(order, 'error') and order.error:
                 error_msg = order.error
@@ -496,6 +501,7 @@ class AdvancedPaperTrader:
             fill_result = self._simulate_fill(order)
             if fill_result == "filled":
                 self.maker_fills += 1
+                self.metrics.inc("maker_fills")
                 self._kv("Result", "[OK] MAKER FILL (zero fees)")
                 self._kv("Filled Shares", f"{order.filled_shares:.0f}")
                 self._kv("Fill Price", f"${order.price}")
@@ -504,6 +510,7 @@ class AdvancedPaperTrader:
                 self._kv("Status", "FILLED")
             elif fill_result == "partial":
                 self.partial_fills += 1
+                self.metrics.inc("partial_fills")
                 self._kv("Result", "[~] PARTIAL FILL")
                 self._kv("Filled Shares", f"{order.filled_shares:.0f} / {order.shares:.0f}")
                 self._kv("Fill Price", f"${order.price}")
@@ -511,15 +518,18 @@ class AdvancedPaperTrader:
                 self._kv("Status", "PARTIAL")
             elif fill_result == "ghost":
                 self.ghost_fills += 1
+                self.metrics.inc("ghost_fills")
                 self._kv("Result", "[!] GHOST FILL (off-chain match, on-chain revert)")
                 self._kv("Status", "LIVE (ghost)")
             elif fill_result == "expired":
                 self.expired_orders += 1
+                self.metrics.inc("expired_orders")
                 self._kv("Result", "[X] EXPIRED")
                 self._kv("Status", "EXPIRED")
                 self.safety.unmark_worked(det.condition_id)
         else:
             self.taker_fills += 1
+            self.metrics.inc("taker_fills")
             order.filled_shares = order.fill_amount
             order.avg_fill_price = order.price
             self._kv("Result", "[OK] TAKER FILL")
@@ -595,6 +605,7 @@ class AdvancedPaperTrader:
 
         # --- PNL BREAKDOWN ---
         self.winning_trades += 1
+        self.metrics.inc("trades_won")
         gross = (1.0 - fill_price) * filled_shares
         fee = fee_per_share(fill_price, is_maker=is_maker) * filled_shares
         loser_cost = self.config.loser_max_price * filled_shares
@@ -602,6 +613,10 @@ class AdvancedPaperTrader:
         net_pnl = gross - fee - loser_cost - gas_cost
         self.cumulative_pnl += net_pnl
         self.daily_pnl += net_pnl
+        self.metrics.set("pnl_cumulative", self.cumulative_pnl)
+        self.metrics.set("pnl_daily", self.daily_pnl)
+        if self.total_trades > 0:
+            self.metrics.set("win_rate", self.winning_trades / self.total_trades * 100)
 
         # Phase 8: Ledger entries for complete audit trail
         self.ledger.record_buy_winning(trade_num, fill_price, filled_shares, is_maker=is_maker)
@@ -645,6 +660,10 @@ class AdvancedPaperTrader:
         self._kv("Loser Cost", f"${loser_cost:.4f}")
         self.total_recycled += recycled_usd
         self.recycle_count += 1
+        self.metrics.inc("recycle_count")
+        self.metrics.set("total_recycled", self.total_recycled)
+        if self.total_trades > 0:
+            self.metrics.set("ghost_fill_rate", self.ghost_fills / self.total_trades * 100)
         self._section_end()
         self._trade_log("")
 
@@ -677,8 +696,7 @@ class AdvancedPaperTrader:
             tx_hash=order.tx_hash,
             gross_edge=gross, fee=fee, loser_cost=loser_cost, gas_cost=gas_cost,
             net_pnl=net_pnl, cumulative_pnl=self.cumulative_pnl,
-            daily_pnl=self.daily_pnl,
-            recycle_success=True, usdc_recovered=recycled_usd,
+            daily_pnl=self.daily_pnl, recycle_success=True, usdc_recovered=recycled_usd,
             adapter=adapter, neg_risk=neg_risk)
         self.trade_records.append(record)
 
@@ -695,6 +713,8 @@ class AdvancedPaperTrader:
             self._log_both(f"    {b}: {self.rate_limiter.remaining(b)} remaining")
         gs = self.gas.check_balance()
         self._log_both(f"  Gas: {gs.balance_pol} POL | Low: {gs.is_low}")
+        self.metrics.set("gas_balance_pol", float(gs.balance_pol))
+        self.metrics.set("resting_orders", self.resting_orders)
         try:
             r = self.reconciler.reconcile()
             self._log_both(f"  [RECONCILE] {r.total_positions} pos, {r.phantom_positions} phantoms")
@@ -703,6 +723,11 @@ class AdvancedPaperTrader:
         resting = self.order_builder.list_open_orders()
         exp = self.safety.get_exposure(resting)
         self._log_both(f"  [EXPOSURE] Pos: ${exp['position_exposure']} | Resting: ${exp['resting_exposure']} | Total: ${exp['total_exposure']} | Max: ${exp['max_portfolio']}")
+        self.metrics.set("total_exposure", float(exp["total_exposure"]))
+        self.metrics.set("reserved_collateral", float(exp["resting_exposure"]))
+        triggered = self.alerts.check_all(resting_orders=resting, gas_manager=self.gas, total_trades=self.total_trades, ghost_count=self.ghost_fills)
+        if triggered:
+            self._log_both('  [ALERTS] ' + ', '.join(triggered))
         self._log_both("")
 
     def _final_summary(self):
@@ -727,6 +752,7 @@ class AdvancedPaperTrader:
         self._log_both(f"  Trade Log: {self.TRADE_LOG}")
         self._log_both(f"  Trade JSON: {self.TRADE_JSON}")
         self._log_both(f"  Summary JSON: {self.SUMMARY_JSON}")
+        self._log_both(f"  Metrics JSON: {self.metrics._metrics_file}")
         if self.errors:
             self._log_both(f"  ERRORS: {len(self.errors)}")
             for e in self.errors:
@@ -735,6 +761,7 @@ class AdvancedPaperTrader:
         # Phase 8: Ledger summary
         self.ledger.dump()
         self.ledger.log_summary(self._log_both)
+        self.metrics.log_summary(self._log_both)
         self._sep()
         self._log_both("  PAPER TRADING COMPLETE")
         self._sep()
