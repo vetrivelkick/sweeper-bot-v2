@@ -9,6 +9,7 @@ P0 #11: startup_reconcile uses StartupRecovery instead of killing on resting ord
 AUDIT FIX #1: Block --live mode while P0 audit items remain open
 AUDIT FIX #2: Add process lock to prevent duplicate bot instances
 AUDIT FIX #9: Cancel all remote orders when kill switch activates
+AUDIT FIX #12: Structured JSON logging with correlation IDs
 """
 import sys, os, time, json, signal, logging, threading
 from datetime import datetime, timezone
@@ -24,6 +25,7 @@ from modules.reconciliation import ReconciliationEngine
 from modules.gas_manager import GasManager
 from modules.capital_recycler import CapitalRecycler
 from modules.startup_recovery import StartupRecovery
+from modules.logging_config import setup_logging, set_correlation_id, set_trade_id, set_cycle_id, clear_context  # AUDIT FIX #12
 
 logger = logging.getLogger("sweeper.main")
 
@@ -101,7 +103,9 @@ class SweeperBot:
 
     def run_cycle(self):
         self._cycle_count += 1
-        logger.info(f"--- CYCLE {self._cycle_count} ---")
+        # AUDIT FIX #12: Set correlation ID for this cycle
+        cycle_id = set_cycle_id()
+        logger.info(f"--- CYCLE {self._cycle_count} [{cycle_id}] ---")
         killed, reason = self.safety.check_kill_switch()
         if killed:
             logger.critical(f"Kill switch: {reason}")
@@ -145,6 +149,8 @@ class SweeperBot:
             tick_size = getattr(det, 'tick_size', 0.001 if det.winning_price >= 0.999 else 0.01)
             success, order = self.order_builder.build_and_place(detection_result=det, size=100.0, best_ask=best_ask, tick_size=tick_size, neg_risk=getattr(det, 'neg_risk', False))
             if success and order:
+                # AUDIT FIX #12: Set trade correlation ID for this trade
+                set_trade_id()
                 self.rate_limiter.record_request("order")
                 self.safety.mark_worked(det.condition_id)
                 placed += 1
@@ -159,6 +165,8 @@ class SweeperBot:
         self._reconcile()
         self.safety.dump_state()
         logger.info(f"Cycle {self._cycle_count}: {placed} orders placed")
+        # AUDIT FIX #12: Clear correlation context at end of cycle
+        clear_context()
         return True
 
     def _paper_fill(self, order, det):
@@ -252,6 +260,8 @@ class SweeperBot:
         self._shutdown_requested = True
 
     def run(self):
+        # AUDIT FIX #12: Set up structured JSON logging
+        setup_logging(level=os.getenv("LOG_LEVEL", "INFO"), json_format=os.getenv("LOG_JSON", "true").lower() == "true")
         # AUDIT FIX #2: Acquire process lock to prevent duplicate instances
         self._lock = acquire_process_lock()
         signal.signal(signal.SIGTERM, self._signal_handler)
@@ -302,6 +312,8 @@ if __name__ == "__main__":
     config.wallet_address = os.environ.get("WALLET_ADDRESS", "")
     config.signature_type = int(os.environ.get("SIGNATURE_TYPE", "0"))
     config.funder = os.environ.get("FUNDER_ADDRESS", "")
+    # AUDIT FIX #12: Set up structured logging for CLI mode
+    setup_logging(level=os.getenv("LOG_LEVEL", "INFO"), json_format=os.getenv("LOG_JSON", "true").lower() == "true")
     bot = SweeperBot(config)
     if args.cycles > 0:
         if not bot.startup_reconcile():
