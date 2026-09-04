@@ -10,6 +10,7 @@ AUDIT FIX #1: Block --live mode while P0 audit items remain open
 AUDIT FIX #2: Add process lock to prevent duplicate bot instances
 AUDIT FIX #9: Cancel all remote orders when kill switch activates
 AUDIT FIX #12: Structured JSON logging with correlation IDs
+SECTION 2 AUDIT: Two-factor live mode activation (LIVE_MODE env var + --live flag)
 """
 import sys, os, time, json, signal, logging, threading
 from datetime import datetime, timezone
@@ -304,6 +305,18 @@ if __name__ == "__main__":
         print("findings are resolved and the final release gate passes.")
         print("=" * 60)
         sys.exit(1)
+    # SECTION 2 AUDIT: Require explicit LIVE_MODE env var for live trading (two-factor)
+    if args.live:
+        live_env = os.environ.get("LIVE_MODE", "false").lower()
+        if live_env != "true":
+            print("=" * 60)
+            print("FATAL: Live mode requires LIVE_MODE=true environment variable.")
+            print("Setting --live alone is not sufficient for safety.")
+            print("Export LIVE_MODE=true to confirm real-funds trading intent.")
+            print("=" * 60)
+            sys.exit(1)
+        canary_max = float(os.environ.get("MAX_CANARY_FUNDED_USD", "50.0"))
+        print(f"WARNING: Live mode enabled. Max canary funded: ${canary_max}")
     config = SweeperConfig(paper_mode=not args.live)
     config.private_key = os.environ.get("PRIVATE_KEY", "")
     config.clob_api_key = os.environ.get("CLOB_API_KEY", "")
