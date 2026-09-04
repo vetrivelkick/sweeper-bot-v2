@@ -1,4 +1,5 @@
-"""Sweeper Bot V2 - Capital Recycler (Merge)
+"""
+Sweeper Bot V2 - Capital Recycler (Merge)
 
 P0 #12: Added complementary-token purchase before merge.
         Bot now buys the losing side at loser_max_price before merging.
@@ -13,6 +14,7 @@ P0 #13: Fixed merge ABI to match CtfCollateralAdapter interface.
 FIX #6: Live mode merge via CtfCollateralAdapter on-chain (not client.merge_positions which doesn't exist in V2)
 P1 #10: Added complementary-token depth and VWAP check before buying.
         Verifies order book has sufficient depth at or below loser_max_price.
+
 """
 import time
 import logging
@@ -35,7 +37,6 @@ class RecycleResult:
     error: Optional[str] = None
     timestamp: float = 0.0
 
-
 class CapitalRecycler:
     def __init__(self, config, order_builder, safety_rails):
         self.config = config
@@ -44,6 +45,12 @@ class CapitalRecycler:
         self._total_recycled = 0.0
         self._recycle_count = 0
         self._approval_cache = set()
+        # AUDIT FIX #20: Recycling retry queue and failed tracking
+        self._recycling_queue = []  # Failed recycles for retry
+        self._total_failed = 0
+        self._total_retry_attempts = 0
+        self._max_retries = 3
+        self._recycle_timeout = 60.0  # seconds before giving up on complementary fill
 
     def _buy_complementary_paper(self, detection_result, shares):
         losing_token = getattr(detection_result, 'losing_token_id', '')
@@ -104,10 +111,8 @@ class CapitalRecycler:
                 logger.warning(f"No asks in complementary book for {losing_token[:16]}")
                 return False, 0.0, 0.0
 
-            # Sort asks by price ascending
             asks_sorted = sorted(asks, key=lambda a: float(a.get("price", 0)))
 
-            # Calculate VWAP for required shares
             remaining = shares
             total_cost = 0.0
             total_shares = 0.0
@@ -115,7 +120,7 @@ class CapitalRecycler:
                 price = float(ask.get("price", 0))
                 size = float(ask.get("size", 0))
                 if price > self.config.loser_max_price:
-                    break  # P1 #10: Don't buy above loser_max_price
+                    break
                 fill = min(remaining, size)
                 total_cost += price * fill
                 total_shares += fill
@@ -124,7 +129,7 @@ class CapitalRecycler:
                     break
 
             vwap = total_cost / total_shares if total_shares > 0 else float('inf')
-            is_sufficient = total_shares >= shares * 0.9  # Allow 90% fill
+            is_sufficient = total_shares >= shares * 0.9
             available_depth = total_shares
 
             if not is_sufficient:
@@ -140,12 +145,7 @@ class CapitalRecycler:
             return True, self.config.loser_max_price, shares
 
     def _send_signed_tx(self, w3, contract_fn, wallet, gas=300000):
-        """P0 #13: Build, sign, and send a transaction using the private key.
-
-        Replaces unsigned .transact({'from': wallet}) calls which only work
-        for nodes with unlocked accounts (e.g., Ganache). Production Polygon
-        requires signed transactions with the private key.
-        """
+        """P0 #13: Build, sign, and send a transaction using the private key."""
         from eth_account import Account
         from web3 import Web3
         nonce = w3.eth.get_transaction_count(Web3.to_checksum_address(wallet))
@@ -170,10 +170,8 @@ class CapitalRecycler:
                 {"inputs": [{"name": "owner", "type": "address"}, {"name": "operator", "type": "address"}], "name": "isApprovedForAll", "outputs": [{"name": "", "type": "bool"}], "stateMutability": "view", "type": "function"}
             ]
             ctf = w3.eth.contract(address=Web3.to_checksum_address(ctf_addr), abi=erc1155_abi)
-            # P0 #13: Use .call() instead of .static_call() for view functions
             approved = ctf.functions.isApprovedForAll(Web3.to_checksum_address(wallet_addr), Web3.to_checksum_address(adapter_addr)).call()
             if not approved:
-                # P0 #13: Use signed transaction instead of unsigned .transact()
                 receipt = self._send_signed_tx(w3, ctf.functions.setApprovalForAll(Web3.to_checksum_address(adapter_addr), True), wallet_addr, gas=200000)
                 if receipt['status'] == 1:
                     logger.info(f"ERC1155 approval granted to adapter {adapter_addr}")
@@ -201,7 +199,6 @@ class CapitalRecycler:
             logger.info(f"[PAPER] Merge: {winning_shares} shares -> {usdc_recovered} pUSD (loser cost ${loser_cost:.4f})")
             return RecycleResult(condition_id=condition_id, success=True, shares_recycled=winning_shares, usdc_recovered=usdc_recovered, loser_cost=loser_cost, net_gain=net_gain, is_paper=True, complementary_filled=True, timestamp=time.time())
 
-        # P1 #10: Check complementary token depth and VWAP before buying
         is_sufficient, vwap, depth = self._check_complementary_depth(detection_result, winning_shares)
         if not is_sufficient:
             return RecycleResult(condition_id=condition_id, success=False, shares_recycled=0, usdc_recovered=0, loser_cost=0, net_gain=0, is_paper=False, complementary_filled=False, error=f"Insufficient complementary depth (VWAP={vwap:.6f}, depth={depth:.0f})", timestamp=time.time())
@@ -229,10 +226,8 @@ class CapitalRecycler:
 
             cid_hex = condition_id.replace('0x', '')
             condition_id_bytes = bytes.fromhex(cid_hex)
-            # P0 #13: pUSD has 6 decimals, NOT 18 (ether). Using to_wei() overstates amount by 10^12.
             amount_wei = int(winning_shares * 10**6)
 
-            # P0 #13: Use signed transaction instead of unsigned .transact()
             receipt = self._send_signed_tx(w3, adapter.functions.mergePositions("0x0000000000000000000000000000000000000000", b'\x00' * 32, condition_id_bytes, [], amount_wei), wallet, gas=300000)
             if receipt['status'] == 1:
                 loser_cost = self.config.loser_max_price * winning_shares
@@ -251,3 +246,54 @@ class CapitalRecycler:
 
     def get_metrics(self):
         return {'total_recycled': self._total_recycled, 'recycle_count': self._recycle_count}
+
+    def get_recycling_status(self):
+        """AUDIT FIX #20: Return detailed recycling status for monitoring."""
+        return {
+            'total_recycled': round(self._total_recycled, 4),
+            'recycle_count': self._recycle_count,
+            'total_failed': self._total_failed,
+            'queue_size': len(self._recycling_queue),
+            'total_retry_attempts': self._total_retry_attempts,
+            'max_retries': self._max_retries,
+            'recycle_timeout': self._recycle_timeout,
+            'success_rate': round(self._recycle_count / max(1, self._recycle_count + self._total_failed) * 100, 2),
+        }
+
+    def queue_for_retry(self, detection_result, winning_shares, error_msg):
+        """AUDIT FIX #20: Queue a failed recycle for later retry."""
+        self._total_failed += 1
+        condition_id = getattr(detection_result, 'condition_id', '')
+        self._recycling_queue.append({
+            'condition_id': condition_id,
+            'detection_result': detection_result,
+            'winning_shares': winning_shares,
+            'error': error_msg,
+            'queued_at': time.time(),
+            'retry_count': 0,
+        })
+        logger.warning(f"Recycle queued for retry: {condition_id[:16]} - {error_msg}")
+
+    def retry_failed(self):
+        """AUDIT FIX #20: Retry all queued failed recycles. Returns list of results."""
+        if not self._recycling_queue:
+            return []
+        results = []
+        remaining_queue = []
+        for item in self._recycling_queue:
+            if item['retry_count'] >= self._max_retries:
+                logger.error(f"Recycle max retries exceeded for {item['condition_id'][:16]}")
+                results.append({'condition_id': item['condition_id'], 'success': False, 'error': 'max_retries_exceeded'})
+                continue
+            item['retry_count'] += 1
+            self._total_retry_attempts += 1
+            logger.info(f"Retrying recycle for {item['condition_id'][:16]} (attempt {item['retry_count']}/{self._max_retries})")
+            result = self.recycle(item['detection_result'], item['winning_shares'])
+            if result.success:
+                results.append({'condition_id': item['condition_id'], 'success': True, 'usdc_recovered': result.usdc_recovered})
+            else:
+                item['error'] = result.error or 'unknown'
+                remaining_queue.append(item)
+                results.append({'condition_id': item['condition_id'], 'success': False, 'error': result.error})
+        self._recycling_queue = remaining_queue
+        return results
