@@ -6,6 +6,7 @@ FIX #1: Dynamic fee rate per category (Crypto=0.07, Sports=0.05, etc.)
 FIX #3: Standardized gas cost to 0.001/share everywhere
 FIX #8: Export all contract addresses and constants from __init__.py
 FIX #16: BotState.from_dict() now preserves rate_limit_429_count
+P0 #3: Added signature_type and funder fields to SweeperConfig for V2 SDK compatibility
 """
 from dataclasses import dataclass, field
 from typing import Optional
@@ -129,6 +130,8 @@ class SweeperConfig:
     clob_api_secret: str = ""
     clob_api_passphrase: str = ""
     wallet_address: str = ""
+    signature_type: int = 0  # 0=EOA, 1=POLY_PROXY, 2=POLY_GNOSIS_SAFE, 3=POLY_1271
+    funder: str = ""  # Funder address for proxy/Safe/deposit wallets
     fee_rate: float = DEFAULT_FEE_RATE
 
     def validate(self):
