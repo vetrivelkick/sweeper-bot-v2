@@ -147,6 +147,14 @@ class AdvancedPaperTrader:
         self.errors = []
         self.cycle_num = 0
         self.trade_records: List[TradeRecord] = []
+        # AUDIT FIX #29: Paper trading performance metrics
+        self._pnl_history: List[float] = []  # PnL per trade for drawdown calc
+        self._peak_pnl = 0.0
+        self._max_drawdown = 0.0
+        self._max_consecutive_wins = 0
+        self._max_consecutive_losses = 0
+        self._current_win_streak = 0
+        self._current_loss_streak = 0
 
         base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         LOG_DIR = os.path.join(base, "logs")
@@ -168,6 +176,53 @@ class AdvancedPaperTrader:
 
     def _log(self, msg):
         self.logger.info(msg)
+
+    def get_paper_status(self) -> dict:
+        """AUDIT FIX #29: Return paper trading status for monitoring."""
+        wr = (self.winning_trades / self.total_trades * 100) if self.total_trades > 0 else 0.0
+        avg_pnl = (self.cumulative_pnl / self.total_trades) if self.total_trades > 0 else 0.0
+        return {
+            'cycle': self.cycle_num,
+            'total_trades': self.total_trades,
+            'winning_trades': self.winning_trades,
+            'win_rate': round(wr, 2),
+            'cumulative_pnl': round(self.cumulative_pnl, 4),
+            'daily_pnl': round(self.daily_pnl, 4),
+            'avg_pnl_per_trade': round(avg_pnl, 4),
+            'max_drawdown': round(self._max_drawdown, 4),
+            'max_consecutive_wins': self._max_consecutive_wins,
+            'max_consecutive_losses': self._max_consecutive_losses,
+            'maker_fills': self.maker_fills,
+            'taker_fills': self.taker_fills,
+            'resting_orders': self.resting_orders,
+            'expired_orders': self.expired_orders,
+            'partial_fills': self.partial_fills,
+            'ghost_fills': self.ghost_fills,
+            'rejected_orders': self.rejected_orders,
+            'total_recycled': round(self.total_recycled, 4),
+            'recycle_count': self.recycle_count,
+            'kill_switch': self.safety.state.is_killed,
+            'errors_count': len(self.errors),
+        }
+
+    def _update_performance(self, trade_pnl: float, is_win: bool):
+        """AUDIT FIX #29: Update performance metrics after each trade."""
+        self._pnl_history.append(trade_pnl)
+        if self.cumulative_pnl > self._peak_pnl:
+            self._peak_pnl = self.cumulative_pnl
+        drawdown = self._peak_pnl - self.cumulative_pnl
+        if drawdown > self._max_drawdown:
+            self._max_drawdown = drawdown
+        if is_win:
+            self._current_win_streak += 1
+            self._current_loss_streak = 0
+            if self._current_win_streak > self._max_consecutive_wins:
+                self._max_consecutive_wins = self._current_win_streak
+        else:
+            self._current_loss_streak += 1
+            self._current_win_streak = 0
+            if self._current_loss_streak > self._max_consecutive_losses:
+                self._max_consecutive_losses = self._current_loss_streak
 
     def _trade_log(self, msg):
         with open(self.TRADE_LOG, "a") as f:
@@ -612,6 +667,7 @@ class AdvancedPaperTrader:
         net_pnl = gross - fee - loser_cost - gas_cost
         self.cumulative_pnl += net_pnl
         self.daily_pnl += net_pnl
+        self._update_performance(net_pnl, True)
         self.metrics.set("pnl_cumulative", self.cumulative_pnl)
         self.metrics.set("pnl_daily", self.daily_pnl)
         if self.total_trades > 0:
@@ -778,3 +834,17 @@ class AdvancedPaperTrader:
         with open(self.SUMMARY_JSON, "w") as f:
             json.dump(summary, f, indent=2)
         self._log_both(f"  Exported {len(self.trade_records)} trade records to JSON")
+        # AUDIT FIX #29: CSV export for accounting
+        import csv
+        csv_file = self.TRADE_JSON.replace('.json', '.csv')
+        if self.trade_records:
+            with open(csv_file, 'w', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=asdict(self.trade_records[0]).keys())
+                writer.writeheader()
+                for r in self.trade_records:
+                    writer.writerow(asdict(r))
+            self._log_both(f"  Exported {len(self.trade_records)} trade records to CSV")
+        # AUDIT FIX #29: Performance metrics in summary
+        avg_pnl = (self.cumulative_pnl / self.total_trades) if self.total_trades > 0 else 0.0
+        self._log_both(f"  Avg PnL/Trade: ${avg_pnl:.4f} | Max Drawdown: ${self._max_drawdown:.4f}")
+        self._log_both(f"  Max Win Streak: {self._max_consecutive_wins} | Max Loss Streak: {self._max_consecutive_losses}")
