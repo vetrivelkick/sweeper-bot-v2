@@ -7,6 +7,8 @@ FIX #10: Removed unused net_edge_per_share import
 FIX #3: Gas cost uses GAS_PER_SHARE constant (0.001)
 P1: Parameterized min_entry_price (was hardcoded 0.985)
 P1: Fixed dead code - moved metrics.inc before continue
+P1 #16: Added win rate disclaimer (simulated, not historically replayed)
+P1 #2,#3: Wired rate_limiter to OrderBuilder for 429/425 handling
 
 """
 import sys, os, time, json, logging, random
@@ -39,8 +41,8 @@ class AdvancedDryRunner:
         self.safety = SafetyRails(self.config)
         self.discovery = MarketDiscovery(self.config)
         self.detector = ResolutionDetector(self.config)
-        self.order_builder = OrderBuilder(self.config, self.safety)
         self.rate_limiter = RateLimitManager(self.config)
+        self.order_builder = OrderBuilder(self.config, self.safety, self.rate_limiter)
         self.fill_confirmer = FillConfirmer(self.config)
         self.reconciler = ReconciliationEngine(self.config, self.safety, self.fill_confirmer, self.order_builder)
         self.gas = GasManager(self.config, self.safety)
@@ -303,6 +305,7 @@ class AdvancedDryRunner:
         self.log(""); self.log("=" * 80); self.log("FINAL DRY RUN SUMMARY"); self.log("=" * 80)
         self.log(f"  Cycles: {self.cycle_num} | Trades: {self.total_trades} | Wins: {self.winning_trades}")
         self.log(f"  Win rate: {self.winning_trades/self.total_trades*100:.1f}%" if self.total_trades > 0 else "  Win rate: 0.0%")
+        self.log(f"  NOTE: Win rate is simulated via random probabilities, not historically replayed.")
         self.log(f"  Maker fills: {self.maker_fills} (zero fees) | Taker fills: {self.taker_fills}")
         self.log(f"  Resting: {self.resting_orders} | Expired: {self.expired_orders} | Partial: {self.partial_fills} | Ghost: {self.ghost_fills}")
         self.log(f"  Cumulative PnL: ${self.cumulative_pnl:.4f} | Daily PnL: ${self.daily_pnl:.4f}")

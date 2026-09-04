@@ -13,6 +13,9 @@ Features:
 - Separate log files for easy review
 - JSON trade records for analysis
 - Phase 8: Double-entry ledger integration for complete audit trail
+- P1 #2,#3: Wired rate_limiter to OrderBuilder for 429/425 handling
+- P1 #16: Added win rate disclaimer (simulated, not historically replayed)
+- P1: Parameterized min_entry_price (was hardcoded 0.985)
 
 Usage:
     python3 run_paper.py [--cycles N] [--sweeps N]
@@ -118,8 +121,8 @@ class AdvancedPaperTrader:
         self.safety = SafetyRails(self.config)
         self.discovery = MarketDiscovery(self.config)
         self.detector = ResolutionDetector(self.config)
-        self.order_builder = OrderBuilder(self.config)
         self.rate_limiter = RateLimitManager(self.config)
+        self.order_builder = OrderBuilder(self.config, self.safety, self.rate_limiter)
         self.fill_confirmer = FillConfirmer(self.config)
         self.reconciler = ReconciliationEngine(
             self.config, self.safety, self.fill_confirmer, self.order_builder)
@@ -373,7 +376,7 @@ class AdvancedPaperTrader:
         entry_plan = None
         if self.config.prefer_maker and best_ask is not None:
             entry_plan = plan_entry_fixed(
-                best_ask, tick_size, 0.985, self.config.buy_price,
+                best_ask, tick_size, self.config.min_entry_price, self.config.buy_price,
                 self.config.prefer_maker, self.config.allow_taker_fallback)
 
         is_maker = (entry_plan is not None and entry_plan[1]) or (self.config.prefer_maker and best_ask is None)
@@ -418,10 +421,10 @@ class AdvancedPaperTrader:
             self._kv("Method", "REJECTED (no valid entry)")
             self._kv("Reason", f"best_ask={best_ask}, tick={tick_size}")
             self._kv("Maker Ceiling", f"${maker_ceiling:.6f}")
-            self._kv("Min Entry", "0.985")
+            self._kv("Min Entry", f"{self.config.min_entry_price}")
             self._kv("Max Entry", f"${self.config.buy_price}")
-            if maker_ceiling < 0.985:
-                self._kv("Issue", f"maker_ceiling {maker_ceiling:.6f} < min_entry 0.985")
+            if maker_ceiling < self.config.min_entry_price:
+                self._kv("Issue", f"maker_ceiling {maker_ceiling:.6f} < min_entry {self.config.min_entry_price}")
             if best_ask > self.config.buy_price:
                 self._kv("Issue", f"best_ask {best_ask} > max_entry {self.config.buy_price}")
         elif is_maker:
@@ -455,7 +458,7 @@ class AdvancedPaperTrader:
             self._kv("Reason", error_msg)
             self._kv("Best Ask", f"${best_ask}" if best_ask else "N/A")
             self._kv("Tick Size", str(tick_size))
-            self._kv("Min Entry", "0.985")
+            self._kv("Min Entry", f"{self.config.min_entry_price}")
             self._kv("Max Entry", f"${self.config.buy_price}")
             if best_ask and tick_size:
                 maker_ceiling = best_ask - tick_size
@@ -736,6 +739,7 @@ class AdvancedPaperTrader:
         self._log_both(f"  Cycles: {self.cycle_num} | Trades: {self.total_trades} | Wins: {self.winning_trades}")
         wr = f"{self.winning_trades/self.total_trades*100:.1f}%" if self.total_trades > 0 else "0.0%"
         self._log_both(f"  Win rate: {wr}")
+        self._log_both(f"  NOTE: Win rate is simulated via random probabilities, not historically replayed.")
         self._log_both(f"  Maker fills: {self.maker_fills} (zero fees) | Taker fills: {self.taker_fills}")
         self._log_both(f"  Rejected: {self.rejected_orders} | Resting: {self.resting_orders} | Expired: {self.expired_orders} | Partial: {self.partial_fills} | Ghost: {self.ghost_fills}")
         self._log_both(f"  Cumulative PnL: ${self.cumulative_pnl:.4f} | Daily PnL: ${self.daily_pnl:.4f}")
