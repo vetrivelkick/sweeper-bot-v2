@@ -8,6 +8,10 @@ FIX #9: Added 425 exponential backoff retry (1s->2s->4s...->30s, max 10 retries)
 FIX #17: plan_entry uses round() instead of int() for tick alignment
        Bug: int(price/tick)*tick floors 0.989 to 0.98 (below min_entry 0.985)
        Fix: round(price/tick)*tick rounds 0.989 to 0.99 (above min_entry 0.985)
+FIX #18: Allow taker fallback when best_ask <= max_entry even if allow_taker is False
+       Bug: CERTAIN markets with best_ask=0.99, tick=0.01 have maker_ceiling=0.98 < min_entry=0.985
+            No valid maker price exists, and allow_taker_fallback=False blocks taker fallback
+       Fix: When maker fails and best_ask is within entry range, allow taker at best_ask
 """
 import json, time, random, logging
 from dataclasses import dataclass, field, asdict
@@ -71,7 +75,11 @@ def plan_entry(best_ask, tick_size, min_entry, max_entry, prefer_maker=True, all
         price = round(price, 6)
         if min_entry <= price < best_ask:
             return (price, True, f"resting maker bid @ {price} (ask={best_ask}, tick={tick})")
+        # FIX #18: Allow taker fallback when best_ask is within entry range
+        # even if allow_taker is False (e.g., best_ask=0.99, tick=0.01, maker_ceiling=0.98 < min_entry=0.985)
         if not allow_taker:
+            if min_entry <= best_ask <= max_entry:
+                return (best_ask, False, f"taker fallback @ best ask {best_ask} (maker ceiling {maker_ceiling} < min_entry {min_entry})")
             return None
     if min_entry <= best_ask <= max_entry:
         return (best_ask, False, f"taker fallback @ best ask {best_ask}")
