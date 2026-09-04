@@ -1,30 +1,129 @@
-"""Sweeper Bot V2 - Startup Recovery
+"""
+Sweeper Bot V2 - Startup Recovery
 
 P0 #11: Query remote open orders and nonterminal trades on startup
 instead of checking empty local memory. Recovers resting orders and
 positions from the CLOB V2 API after a restart.
+
+AUDIT FIX #18: State persistence verification, backup, and validation.
+- verify_state(): Check bot_state.json exists, is valid JSON, has expected fields
+- backup_state(): Backup old state file before recovery
+- State version field for forward compatibility
+- Enhanced recovery status reporting
 """
 import time
+import json
+import os
+import shutil
 import logging
 
 logger = logging.getLogger("sweeper.recovery")
+
+# AUDIT FIX #18: State version for forward compatibility
+STATE_VERSION = 2
+
+# Required fields in bot_state.json
+REQUIRED_STATE_FIELDS = [
+    'started_at', 'is_killed', 'daily_pnl', 'open_positions',
+    'worked_markets', 'total_buys', 'total_redeems'
+]
+
 
 class StartupRecovery:
     def __init__(self, config, order_builder, safety_rails):
         self.config = config
         self.builder = order_builder
         self.safety = safety_rails
+        self._state_file = getattr(config, 'state_file', 'data/bot_state.json')
+        self._backup_dir = os.path.join(os.path.dirname(self._state_file), 'backups')
+        self._recovery_status = {
+            'state_verified': False,
+            'state_backup_created': False,
+            'orders_recovered': 0,
+            'trades_recovered': 0,
+            'positions_recovered': 0,
+            'errors': [],
+            'timestamp': None,
+        }
+
+    def verify_state(self):
+        """AUDIT FIX #18: Verify bot_state.json exists, is valid JSON, and has required fields."""
+        if not os.path.exists(self._state_file):
+            logger.info("State verification: No state file found (first run)")
+            return False, "No state file (first run)"
+        try:
+            with open(self._state_file, 'r') as f:
+                data = json.load(f)
+            missing = [f for f in REQUIRED_STATE_FIELDS if f not in data]
+            if missing:
+                logger.warning(f"State verification: Missing fields: {missing}")
+                return False, f"Missing fields: {missing}"
+            version = data.get('state_version', 1)
+            if version > STATE_VERSION:
+                logger.warning(f"State verification: Future version {version} (current {STATE_VERSION})")
+                return False, f"Future state version {version}"
+            logger.info(f"State verification: OK (version {version}, {len(data.get('open_positions', {}))} positions)")
+            self._recovery_status['state_verified'] = True
+            return True, f"OK (version {version})"
+        except json.JSONDecodeError as e:
+            logger.error(f"State verification: Corrupted JSON: {e}")
+            return False, f"Corrupted JSON: {e}"
+        except Exception as e:
+            logger.error(f"State verification: Error: {e}")
+            return False, f"Error: {e}"
+
+    def backup_state(self):
+        """AUDIT FIX #18: Backup current state file before recovery or overwrite."""
+        if not os.path.exists(self._state_file):
+            return False
+        os.makedirs(self._backup_dir, exist_ok=True)
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        backup_path = os.path.join(self._backup_dir, f"bot_state_{ts}.json")
+        try:
+            shutil.copy2(self._state_file, backup_path)
+            logger.info(f"State backup created: {backup_path}")
+            self._recovery_status['state_backup_created'] = True
+            # Keep only last 5 backups
+            backups = sorted([f for f in os.listdir(self._backup_dir) if f.startswith('bot_state_')])
+            for old in backups[:-5]:
+                os.remove(os.path.join(self._backup_dir, old))
+                logger.debug(f"Removed old backup: {old}")
+            return True
+        except Exception as e:
+            logger.error(f"State backup failed: {e}")
+            self._recovery_status['errors'].append(f"backup: {e}")
+            return False
+
+    def get_recovery_status(self):
+        """AUDIT FIX #18: Return detailed recovery status for monitoring."""
+        self._recovery_status['timestamp'] = time.time()
+        return self._recovery_status.copy()
 
     def recover(self):
-        """Recover resting orders and positions from remote state."""
+        """Recover resting orders and positions from remote state.
+        AUDIT FIX #18: Now includes state verification and backup before recovery.
+        """
+        # AUDIT FIX #18: Verify and backup state before recovery
+        state_ok, state_msg = self.verify_state()
+        if os.path.exists(self._state_file):
+            self.backup_state()
+        if state_ok:
+            self.safety.load_state()
+            logger.info("Local state loaded successfully")
+        else:
+            logger.warning(f"State load skipped: {state_msg}")
+
         if self.config.paper_mode:
             logger.info("Startup recovery: Paper mode — remote recovery skipped")
-            return {'orders_recovered': 0, 'trades_recovered': 0, 'positions_recovered': 0}
+            self._recovery_status['timestamp'] = time.time()
+            return self.get_recovery_status()
 
         client = self.builder._get_client()
         if not client:
             logger.warning("Startup recovery: CLOB V2 client not available — skipping")
-            return {'orders_recovered': 0, 'trades_recovered': 0, 'positions_recovered': 0}
+            self._recovery_status['errors'].append("CLOB client not available")
+            self._recovery_status['timestamp'] = time.time()
+            return self.get_recovery_status()
 
         orders_recovered = 0
         trades_recovered = 0
@@ -58,6 +157,7 @@ class StartupRecovery:
                 logger.info(f"Startup recovery: Recovered {orders_recovered} open orders from remote")
         except Exception as e:
             logger.error(f"Startup recovery: Failed to get open orders: {e}")
+            self._recovery_status['errors'].append(f"orders: {e}")
 
         # Recover nonterminal trades and create positions
         try:
@@ -85,5 +185,12 @@ class StartupRecovery:
                 logger.info(f"Startup recovery: Recovered {trades_recovered} trades, {positions_recovered} positions from remote")
         except Exception as e:
             logger.error(f"Startup recovery: Failed to get trades: {e}")
+            self._recovery_status['errors'].append(f"trades: {e}")
 
-        return {'orders_recovered': orders_recovered, 'trades_recovered': trades_recovered, 'positions_recovered': positions_recovered}
+        self._recovery_status['orders_recovered'] = orders_recovered
+        self._recovery_status['trades_recovered'] = trades_recovered
+        self._recovery_status['positions_recovered'] = positions_recovered
+        self._recovery_status['timestamp'] = time.time()
+
+        logger.info(f"Startup recovery complete: {orders_recovered} orders, {trades_recovered} trades, {positions_recovered} positions")
+        return self.get_recovery_status()
