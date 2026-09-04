@@ -9,6 +9,7 @@ Features:
 - Settlement: capital recycle, merge, adapter
 - Fixed plan_entry for tick_size=0.01 markets (round vs int bug)
 - FIX #18: taker fallback when best_ask <= max_entry even if allow_taker=False
+- FIX #5: True PnL scoreboard, resting counter, trade records for ghost/expired
 - Separate log files for easy review
 - JSON trade records for analysis
 
@@ -299,8 +300,6 @@ class AdvancedPaperTrader:
         self._cycle_summary(cycle_time, sweeps)
         return True
 
-    # --- FIX: Added missing _simulate_fill method ---
-
     def _simulate_fill(self, order):
         """Simulate fill outcome for maker orders.
         If already filled/partial/ghost from _paper_place, return that status.
@@ -371,7 +370,6 @@ class AdvancedPaperTrader:
                 best_ask, tick_size, 0.985, self.config.buy_price,
                 self.config.prefer_maker, self.config.allow_taker_fallback)
 
-        # FIX: Removed broken third condition that always evaluated True
         is_maker = (entry_plan is not None and entry_plan[1]) or \
                    (self.config.prefer_maker and best_ask is None)
 
@@ -490,6 +488,9 @@ class AdvancedPaperTrader:
         # --- FILL SIMULATION ---
         self._section("FILL SIMULATION")
         if isinstance(order, RestingOrder):
+            # FIX #5: Count resting orders before fast-forward
+            if order.status == OrderStatus.LIVE and (not hasattr(order, 'filled_shares') or order.filled_shares == 0):
+                self.resting_orders += 1
             fill_result = self._simulate_fill(order)
             if fill_result == "filled":
                 self.maker_fills += 1
@@ -527,15 +528,62 @@ class AdvancedPaperTrader:
         self._section_end()
         self._trade_log("")
 
-        # Handle expired and ghost orders (no settlement)
+        # Handle expired orders (no settlement) - FIX #5: add trade record
         if order.status == OrderStatus.EXPIRED:
             self._log_both(f"  [X] TRADE #{trade_num} EXPIRED - No fill")
+            record = TradeRecord(
+                trade_num=trade_num, cycle=self.cycle_num,
+                timestamp=datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+                market_question=det.question, condition_id=det.condition_id,
+                category=cat, winning_side=det.winning_side,
+                winning_price=det.winning_price, losing_price=det.losing_price,
+                spread=det.winning_price - det.losing_price,
+                certainty=str(det.certainty), confidence_score=det.confidence_score,
+                detection_reason=det.detection_reason,
+                best_ask=best_ask, best_bid=best_bid_price,
+                asks_count=book_depth_asks, bids_count=book_depth_bids,
+                tick_size=tick_size, is_maker=is_maker,
+                order_method="GTC" if is_maker else "FAK",
+                order_price=order_price, order_size=100.0,
+                entry_detail=order_detail,
+                fill_status="EXPIRED", filled_shares=0, fill_price=0,
+                tx_hash=None, gross_edge=0, fee=0, loser_cost=0, gas_cost=0,
+                net_pnl=0, cumulative_pnl=self.cumulative_pnl,
+                daily_pnl=self.daily_pnl,
+                recycle_success=False, usdc_recovered=0,
+                adapter="N/A", neg_risk=getattr(det, 'neg_risk', False),
+                error="Expired")
+            self.trade_records.append(record)
             self._sep("-")
             self._log_both("")
             return
 
+        # Handle ghost fills (no settlement) - FIX #5: add trade record
         if not order.tx_hash:
             self._log_both(f"  [!] TRADE #{trade_num} GHOST FILL - No settlement")
+            record = TradeRecord(
+                trade_num=trade_num, cycle=self.cycle_num,
+                timestamp=datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+                market_question=det.question, condition_id=det.condition_id,
+                category=cat, winning_side=det.winning_side,
+                winning_price=det.winning_price, losing_price=det.losing_price,
+                spread=det.winning_price - det.losing_price,
+                certainty=str(det.certainty), confidence_score=det.confidence_score,
+                detection_reason=det.detection_reason,
+                best_ask=best_ask, best_bid=best_bid_price,
+                asks_count=book_depth_asks, bids_count=book_depth_bids,
+                tick_size=tick_size, is_maker=is_maker,
+                order_method="GTC" if is_maker else "FAK",
+                order_price=order_price, order_size=100.0,
+                entry_detail=order_detail,
+                fill_status="GHOST", filled_shares=0, fill_price=0,
+                tx_hash=None, gross_edge=0, fee=0, loser_cost=0, gas_cost=0,
+                net_pnl=0, cumulative_pnl=self.cumulative_pnl,
+                daily_pnl=self.daily_pnl,
+                recycle_success=False, usdc_recovered=0,
+                adapter="N/A", neg_risk=getattr(det, 'neg_risk', False),
+                error="Ghost fill")
+            self.trade_records.append(record)
             self._sep("-")
             self._log_both("")
             return
@@ -590,6 +638,9 @@ class AdvancedPaperTrader:
         self.recycle_count += 1
         self._section_end()
         self._trade_log("")
+
+        # FIX #5: Update scoreboard so True PnL matches Cumulative PnL
+        self.safety.update_scoreboard(buys=[{}], redeems=[{}], merges=[{"amount": recycled_usd}], net_pnl=net_pnl)
 
         # --- TRADE COMPLETE ---
         self._log_both(f"  [OK] TRADE #{trade_num} COMPLETE - {'MAKER (ZERO FEES)' if is_maker else 'TAKER'}")
