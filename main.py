@@ -8,6 +8,7 @@ P0 #11: startup_reconcile uses StartupRecovery instead of killing on resting ord
 
 AUDIT FIX #1: Block --live mode while P0 audit items remain open
 AUDIT FIX #2: Add process lock to prevent duplicate bot instances
+AUDIT FIX #9: Cancel all remote orders when kill switch activates
 """
 import sys, os, time, json, signal, logging, threading
 from datetime import datetime, timezone
@@ -104,6 +105,10 @@ class SweeperBot:
         killed, reason = self.safety.check_kill_switch()
         if killed:
             logger.critical(f"Kill switch: {reason}")
+            # AUDIT FIX #9: Cancel all remote orders when kill switch activates
+            cancelled = self.order_builder.cancel_all()
+            logger.critical(f"Kill switch: cancelled {cancelled} remote orders")
+            self.safety.dump_state()
             return False
         try:
             candidates = self.discovery.discover_candidates(max_markets=100)

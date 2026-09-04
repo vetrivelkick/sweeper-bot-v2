@@ -8,6 +8,8 @@ P0 #18: get_true_pnl now attempts chain-derived P&L reconciliation in live mode
 AUDIT FIX #5: Real geoblock API call (GET https://polymarket.com/api/geoblock)
 AUDIT FIX #6: verify_signer() - private key derives wallet address
 AUDIT FIX #7: verify_funder() - funder address validation for proxy wallets
+AUDIT FIX #8: Per-market exposure limit in check_exposure_before_order
+AUDIT FIX #9: Remote order cancellation on kill switch in main.py
 """
 import json, os, time, logging
 from datetime import datetime, timezone
@@ -209,12 +211,27 @@ class SafetyRails:
             self.dump_state()
             return False, None, str(e)
 
-    def check_exposure_before_order(self, order_cost, resting_orders=None):
-        """P0 #17: Check if placing an order would exceed exposure limits."""
+    def check_exposure_before_order(self, order_cost, resting_orders=None, condition_id=None):
+        """P0 #17 + AUDIT FIX #8: Check portfolio AND per-market exposure limits."""
         exposure = self.get_exposure(resting_orders)
         new_total = exposure['total_exposure'] + order_cost
         if new_total > self.config.max_portfolio_exposure:
             return False, f"Portfolio exposure ${new_total:.2f} would exceed ${self.config.max_portfolio_exposure:.2f}"
+        # AUDIT FIX #8: Per-market exposure limit
+        if condition_id and hasattr(self.config, 'max_per_market_exposure'):
+            market_exposure = sum(
+                p.get('cost', p.get('shares', 0) * p.get('fill_price', 0))
+                for cid, p in self.state.open_positions.items()
+                if isinstance(p, dict) and cid == condition_id
+            )
+            if resting_orders:
+                for order in resting_orders:
+                    if hasattr(order, 'condition_id') and order.condition_id == condition_id:
+                        if hasattr(order, 'shares') and hasattr(order, 'price'):
+                            remaining = order.shares - getattr(order, 'filled_shares', 0)
+                            market_exposure += remaining * order.price
+            if market_exposure + order_cost > self.config.max_per_market_exposure:
+                return False, f"Market exposure ${market_exposure + order_cost:.2f} would exceed ${self.config.max_per_market_exposure:.2f} for {condition_id[:16]}"
         return True, "OK"
 
     def record_loss(self, amount=0.0):
