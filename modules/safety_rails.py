@@ -1,4 +1,5 @@
-"""Sweeper Bot V2 - Safety Rails (Updated)
+"""
+Sweeper Bot V2 - Safety Rails (Updated)
 
 FIX #7: Removed duplicate BotState — now imports from config.settings
 FIX #16: from_dict() no longer pops rate_limit_429_count (persists across restarts)
@@ -11,6 +12,7 @@ AUDIT FIX #7: verify_funder() - funder address validation for proxy wallets
 AUDIT FIX #8: Per-market exposure limit in check_exposure_before_order
 AUDIT FIX #9: Remote order cancellation on kill switch in main.py
 AUDIT FIX #14: health_check() method for monitoring/health endpoints
+AUDIT FIX #26: Risk controls - event exposure, drawdown, risk score, concentration
 """
 import json, os, time, logging
 from datetime import datetime, timezone
@@ -49,6 +51,10 @@ class SafetyBotState:
     reserved_collateral: float = 0.0
     rate_limit_429_count: int = 0
     tracked_net_pnl: float = 0.0
+    # AUDIT FIX #26: Risk control tracking
+    peak_pnl: float = 0.0
+    max_drawdown: float = 0.0
+    max_open_positions: int = 10
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -70,6 +76,8 @@ class SafetyRails:
         self._log_dir = getattr(config, 'log_dir', 'logs')
         self._consecutive_losses = 0
         self._max_consecutive_losses = 5
+        # AUDIT FIX #26: Risk control tracking
+        self._max_drawdown_limit = 0.20  # 20% max drawdown from peak
         os.makedirs(os.path.dirname(self._state_file), exist_ok=True)
         os.makedirs(self._log_dir, exist_ok=True)
 
@@ -123,11 +131,7 @@ class SafetyRails:
         return passed, checks
 
     def check_geoblock(self):
-        """AUDIT FIX #5: Call real Polymarket geoblock API endpoint.
-        
-        GET https://polymarket.com/api/geoblock -> {"blocked": bool, "country": str}
-        Falls back to static BLOCKED_REGIONS list if API is unreachable.
-        """
+        """AUDIT FIX #5: Call real Polymarket geoblock API endpoint."""
         if self.config.paper_mode:
             return True, "Paper mode - geoblock check skipped"
         try:
@@ -151,11 +155,7 @@ class SafetyRails:
         return True, "Geoblock check passed (static fallback)"
 
     def verify_signer(self):
-        """AUDIT FIX #6: Verify private key derives configured wallet address.
-        
-        For EOA (type 0): key must derive wallet_address.
-        For proxy/Safe (types 1-3): key is signer, funder holds funds.
-        """
+        """AUDIT FIX #6: Verify private key derives configured wallet address."""
         if self.config.paper_mode:
             return True, "Paper mode - signer verification skipped"
         if not self.config.private_key:
@@ -363,15 +363,7 @@ class SafetyRails:
                 'rate_limit_429s': self.state.rate_limit_429_count}
 
     def health_check(self):
-        """AUDIT FIX #14: Return bot health status for monitoring/health endpoints.
-        
-        Returns dict with:
-        - status: 'healthy' | 'degraded' | 'killed'
-        - is_killed, kill_reason
-        - daily_pnl, total_exposure, open_positions count
-        - rate_limit_429s, consecutive_losses
-        - paper_mode, uptime_seconds
-        """
+        """AUDIT FIX #14: Return bot health status for monitoring/health endpoints."""
         exposure = self.get_exposure()
         status = 'killed' if self.state.is_killed else ('degraded' if exposure['within_limits'] == False else 'healthy')
         return {
@@ -391,6 +383,111 @@ class SafetyRails:
             'total_buys': self.state.total_buys,
             'total_redeems': self.state.total_redeems,
             'total_recycled_usd': round(self.state.total_recycled_usd, 2),
+        }
+
+    def check_event_exposure(self, condition_id, order_cost, resting_orders=None):
+        """AUDIT FIX #26: Check per-event exposure limit (MAX_EVENT_EXPOSURE_USD)."""
+        event_exposure = sum(
+            p.get('cost', p.get('shares', 0) * p.get('fill_price', 0))
+            for cid, p in self.state.open_positions.items()
+            if isinstance(p, dict) and cid == condition_id
+        )
+        if resting_orders:
+            for order in resting_orders:
+                if hasattr(order, 'condition_id') and order.condition_id == condition_id:
+                    if hasattr(order, 'shares') and hasattr(order, 'price'):
+                        remaining = order.shares - getattr(order, 'filled_shares', 0)
+                        event_exposure += remaining * order.price
+        if event_exposure + order_cost > self.config.max_event_exposure:
+            return False, f"Event exposure ${event_exposure + order_cost:.2f} would exceed ${self.config.max_event_exposure:.2f}"
+        return True, "OK"
+
+    def update_drawdown(self):
+        """AUDIT FIX #26: Track peak PnL and calculate drawdown."""
+        current_pnl = self.state.tracked_net_pnl
+        if current_pnl > self.state.peak_pnl:
+            self.state.peak_pnl = current_pnl
+        drawdown = 0.0
+        if self.state.peak_pnl > 0:
+            drawdown = (self.state.peak_pnl - current_pnl) / self.state.peak_pnl
+        if drawdown > self.state.max_drawdown:
+            self.state.max_drawdown = drawdown
+            if drawdown >= self._max_drawdown_limit:
+                self.state.is_killed = True
+                self.state.kill_reason = f"Max drawdown {drawdown:.1%} exceeded limit {self._max_drawdown_limit:.1%}"
+                logger.critical(f"KILL SWITCH: {self.state.kill_reason}")
+                self.dump_state()
+        return drawdown
+
+    def get_risk_score(self) -> float:
+        """AUDIT FIX #26: Calculate overall risk score (0=safe, 100=extreme)."""
+        score = 0.0
+        exposure = self.get_exposure()
+        # Exposure utilization (0-40 points)
+        exp_pct = exposure['total_exposure'] / max(1, self.config.max_portfolio_exposure)
+        score += min(40, exp_pct * 40)
+        # Consecutive losses (0-25 points)
+        loss_pct = self._consecutive_losses / max(1, self._max_consecutive_losses)
+        score += min(25, loss_pct * 25)
+        # Drawdown (0-20 points)
+        dd = self.state.max_drawdown / max(0.01, self._max_drawdown_limit)
+        score += min(20, dd * 20)
+        # Rate limit pressure (0-15 points)
+        rl_pct = self.state.rate_limit_429_count / max(1, self.config.max_429_before_trip)
+        score += min(15, rl_pct * 15)
+        return round(min(100, score), 1)
+
+    def check_max_positions(self) -> bool:
+        """AUDIT FIX #26: Check if max open positions limit reached."""
+        current = len(self.state.open_positions)
+        if current >= self.state.max_open_positions:
+            logger.warning(f"Max open positions reached: {current}/{self.state.max_open_positions}")
+            return False
+        return True
+
+    def get_concentration(self) -> dict:
+        """AUDIT FIX #26: Calculate portfolio concentration by market."""
+        if not self.state.open_positions:
+            return {'max_single_market_pct': 0.0, 'markets': 0, 'concentrated': False}
+        total = sum(p.get('cost', 0) for p in self.state.open_positions.values() if isinstance(p, dict))
+        if total == 0:
+            return {'max_single_market_pct': 0.0, 'markets': len(self.state.open_positions), 'concentrated': False}
+        market_costs = {}
+        for cid, p in self.state.open_positions.items():
+            if isinstance(p, dict):
+                market_costs[cid] = p.get('cost', 0)
+        max_market = max(market_costs.values()) if market_costs else 0
+        max_pct = max_market / total * 100 if total > 0 else 0
+        return {
+            'max_single_market_pct': round(max_pct, 2),
+            'markets': len(self.state.open_positions),
+            'concentrated': max_pct > 50.0,
+            'total_exposure': round(total, 2),
+        }
+
+    def get_risk_status(self) -> dict:
+        """AUDIT FIX #26: Comprehensive risk status report."""
+        exposure = self.get_exposure()
+        drawdown = self.update_drawdown()
+        concentration = self.get_concentration()
+        return {
+            'risk_score': self.get_risk_score(),
+            'is_killed': self.state.is_killed,
+            'kill_reason': self.state.kill_reason,
+            'total_exposure': exposure['total_exposure'],
+            'max_portfolio': exposure['max_portfolio'],
+            'exposure_utilization': round(exposure['total_exposure'] / max(1, self.config.max_portfolio_exposure) * 100, 2),
+            'consecutive_losses': self._consecutive_losses,
+            'max_consecutive_losses': self._max_consecutive_losses,
+            'peak_pnl': round(self.state.peak_pnl, 4),
+            'current_pnl': round(self.state.tracked_net_pnl, 4),
+            'max_drawdown': round(self.state.max_drawdown * 100, 2),
+            'drawdown_limit': round(self._max_drawdown_limit * 100, 2),
+            'open_positions': len(self.state.open_positions),
+            'max_open_positions': self.state.max_open_positions,
+            'concentration': concentration,
+            'rate_limit_429s': self.state.rate_limit_429_count,
+            'within_limits': exposure['within_limits'] and not self.state.is_killed,
         }
 
     def mark_worked(self, condition_id): self.state.worked_markets.add(condition_id)
