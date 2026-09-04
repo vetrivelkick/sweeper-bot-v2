@@ -19,6 +19,8 @@ P0 #6: Fixed order response parsing: txHash -> transactionsHashes (list), added 
        V2 responses use transactionsHashes (list) and tradeIDs, not txHash (string)
 P0 #7: Store real exchange-assigned orderID from response, replacing fabricated local ID
 P1: Parameterized min_entry_price (was hardcoded 0.985) - now uses self.config.min_entry_price
+P1 #2: 429 handling now wired to rate limiter via handle_429()
+P1 #3: Duplicate order prevention on 425 retries via is_duplicate_order()/record_order_id()
 """
 import json, time, random, logging
 from decimal import Decimal, ROUND_DOWN
@@ -91,11 +93,12 @@ def plan_entry(best_ask, tick_size, min_entry, max_entry, prefer_maker=True, all
     return None
 
 class OrderBuilder:
-    def __init__(self, config, safety=None):
+    def __init__(self, config, safety=None, rate_limiter=None):
         self.config = config; self._client = None
         self._resting = {}; self._reserved = {}
         self._rng = random.Random(); self._force_post_only = False; self._cancel_only = False
         self._safety = safety  # P0 #18: Optional safety ref for kill switch/exposure checks
+        self._rate_limiter = rate_limiter  # P1 #2,#3: Rate limiter for 429/425 handling and duplicate order prevention
 
     def _get_client(self):
         if self._client or self.config.paper_mode: return self._client
@@ -302,6 +305,12 @@ class OrderBuilder:
                     elif response.get("error"):
                         err = response.get("error", "")
                         if "425" in str(err).lower() and attempt < max_retries:
+                            # P1 #3: Check for duplicate order before retrying
+                            if self._rate_limiter and self._rate_limiter.is_duplicate_order(order.order_id):
+                                logger.warning(f"425 retry aborted - duplicate order ID: {order.order_id}")
+                                order.status = OrderStatus.REJECTED
+                                order.error = "Duplicate order ID on 425 retry"
+                                return False, order
                             logger.warning(f"425 retry {attempt+1}/{max_retries}, backing off {backoff:.1f}s")
                             time.sleep(backoff)
                             backoff = min(backoff * 2, 30.0)
@@ -314,10 +323,19 @@ class OrderBuilder:
                 if order.status in (OrderStatus.LIVE, OrderStatus.MATCHED, OrderStatus.FILLED, OrderStatus.PARTIAL):
                     if isinstance(order, RestingOrder) and order.status == OrderStatus.LIVE:
                         self._resting[order.order_id] = order; self._reserved[order.order_id] = order.shares * order.price
+                    # P1 #3: Record order ID to prevent duplicate submissions on retry
+                    if self._rate_limiter and order.order_id:
+                        self._rate_limiter.record_order_id(order.order_id)
                 return True, order
             except Exception as e:
                 err_msg = str(e)
                 if "425" in err_msg and attempt < max_retries:
+                    # P1 #3: Check for duplicate order before retrying
+                    if self._rate_limiter and self._rate_limiter.is_duplicate_order(order.order_id):
+                        logger.warning(f"425 retry aborted - duplicate order ID: {order.order_id}")
+                        order.status = OrderStatus.REJECTED
+                        order.error = "Duplicate order ID on 425 retry"
+                        return False, order
                     logger.warning(f"425 retry {attempt+1}/{max_retries}, backing off {backoff:.1f}s")
                     time.sleep(backoff)
                     backoff = min(backoff * 2, 30.0)
@@ -340,6 +358,9 @@ class OrderBuilder:
             order.status = OrderStatus.REJECTED; order.error = RejectCode.RATE_LIMITED.value
             retry = response.get("retry_after") if response and isinstance(response, dict) else None
             order.retry_after = float(retry) if retry else 5.0; logger.warning(f"429 Rate limited, retry={order.retry_after}s")
+            # P1 #2: Wire 429 handling to rate limiter
+            if self._rate_limiter:
+                self._rate_limiter.handle_429("order", order.retry_after)
         elif "post_only_would_cross" in e or "would cross" in e or "crosses book" in e:
             order.status = OrderStatus.REJECTED; order.error = RejectCode.POST_ONLY_WOULD_CROSS.value; logger.warning("Post-only would cross")
         elif "not_enough_balance" in e:
