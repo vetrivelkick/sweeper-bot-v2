@@ -4,6 +4,7 @@ FIX #2: Standardized fill probability logic (35% fill, 25% partial, 5% ghost, 35
          Removed extra 30% second-chance fill that made total ~49%
 FIX #10: Removed unused net_edge_per_share import
 FIX #3: Gas cost uses GAS_PER_SHARE constant (0.001)
+P0 #10: Added open_positions population in _complete_trade for reconciliation
 """
 import sys, os, time, json, logging, random
 from datetime import datetime, timezone
@@ -205,6 +206,20 @@ class AdvancedDryRunner:
         if order.tx_hash:
             self.log(f"    Confirmed: {filled_shares} shares | TX: {order.tx_hash} | On-chain: True")
         else: self.log("    GHOST FILL: No settlement"); self.ghost_fills += 1; return
+        # P0 #10: Create position in open_positions
+        condition_id = getattr(det, 'condition_id', '')
+        if condition_id:
+            self.safety.state.open_positions[condition_id] = {
+                'condition_id': condition_id,
+                'token_id': getattr(order, 'token_id', getattr(det, 'winning_token_id', '')),
+                'shares': filled_shares,
+                'fill_price': fill_price,
+                'tx_hash': order.tx_hash,
+                'status': 'open',
+                'is_maker': is_maker,
+                'is_paper': True,
+                'timestamp': time.time(),
+            }
         self.winning_trades += 1; self.log(""); self.log("  CAPITAL RECYCLE:")
         neg_risk = getattr(det, 'neg_risk', False)
         adapter = "NegRiskCtfCollateralAdapter" if neg_risk else "CtfCollateralAdapter"
@@ -217,6 +232,10 @@ class AdvancedDryRunner:
             else:
                 self.log(f"    Recycle: FAILED | {result.error}")
         except Exception as e: self.log(f"    Recycle error: {e}")
+        # P0 #10: Mark position as closed after recycle
+        if condition_id and condition_id in self.safety.state.open_positions:
+            self.safety.state.open_positions[condition_id]['status'] = 'closed'
+            self.safety.state.open_positions[condition_id]['closed_at'] = time.time()
         recycled_usd = filled_shares * 1.0; loser_cost = filled_shares * self.config.loser_max_price
         self.log(f"    Recycled: ${recycled_usd:.2f} pUSD | Loser cost: ${loser_cost:.4f}")
         self.total_recycled += recycled_usd; self.recycle_count += 1
