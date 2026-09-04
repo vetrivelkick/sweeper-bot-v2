@@ -7,6 +7,7 @@ FIX #3: Standardized gas cost to 0.001/share everywhere
 FIX #8: Export all contract addresses and constants from __init__.py
 FIX #16: BotState.from_dict() now preserves rate_limit_429_count
 P0 #3: Added signature_type and funder fields to SweeperConfig for V2 SDK compatibility
+P1: .env support via os.getenv for sensitive fields; atomic BotState.save
 """
 from dataclasses import dataclass, field
 from typing import Optional
@@ -125,13 +126,13 @@ class SweeperConfig:
     rate_limit_gamma_per_min: int = RATE_LIMIT_GAMMA_PER_MIN
     rate_limit_headroom: float = RATE_LIMIT_HEADROOM
     polygon_rpc: str = POLYGON_RPC
-    private_key: str = ""
-    clob_api_key: str = ""
-    clob_api_secret: str = ""
-    clob_api_passphrase: str = ""
-    wallet_address: str = ""
-    signature_type: int = 0  # 0=EOA, 1=POLY_PROXY, 2=POLY_GNOSIS_SAFE, 3=POLY_1271
-    funder: str = ""  # Funder address for proxy/Safe/deposit wallets
+    private_key: str = field(default_factory=lambda: os.getenv("PRIVATE_KEY", ""))
+    clob_api_key: str = field(default_factory=lambda: os.getenv("CLOB_API_KEY", ""))
+    clob_api_secret: str = field(default_factory=lambda: os.getenv("CLOB_API_SECRET", ""))
+    clob_api_passphrase: str = field(default_factory=lambda: os.getenv("CLOB_API_PASSPHRASE", ""))
+    wallet_address: str = field(default_factory=lambda: os.getenv("WALLET_ADDRESS", ""))
+    signature_type: int = field(default_factory=lambda: int(os.getenv("SIGNATURE_TYPE", "0")))  # 0=EOA, 1=POLY_PROXY, 2=POLY_GNOSIS_SAFE, 3=POLY_1271
+    funder: str = field(default_factory=lambda: os.getenv("FUNDER", ""))  # Funder address for proxy/Safe/deposit wallets
     fee_rate: float = DEFAULT_FEE_RATE
 
     def validate(self):
@@ -175,8 +176,11 @@ class BotState:
             rate_limit_429_count=d.get("rate_limit_429_count", 0))
 
     def save(self, path):
+        """P1: Atomic save - write to temp file then rename to prevent corruption."""
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w") as f: json.dump(self.to_dict(), f, indent=2)
+        tmp_path = path + '.tmp'
+        with open(tmp_path, "w") as f: json.dump(self.to_dict(), f, indent=2)
+        os.replace(tmp_path, path)
 
     @classmethod
     def load(cls, path):

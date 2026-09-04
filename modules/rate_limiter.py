@@ -13,10 +13,12 @@ class RateBucket:
     requests: deque
     last_429: float = 0.0
     retry_after: float = 0.0
+    last_425: float = 0.0  # P1: Track 425 (engine restarting) events
 
 class RateLimitManager:
     def __init__(self, config):
         self.config = config
+        self._seen_order_ids = set()  # P1: Duplicate order ID prevention
         headroom = config.rate_limit_headroom
         self.buckets = {
             'order': RateBucket('CLOB POST /order', int(config.rate_limit_order_per_min * headroom), deque()),
@@ -51,6 +53,25 @@ class RateLimitManager:
             bucket.last_429 = time.time()
             bucket.retry_after = time.time() + retry_after_seconds
             logger.warning(f"429 on {bucket.name}, retry after {retry_after_seconds}s")
+
+    def handle_425(self, bucket_name: str = 'order'):
+        """P1: Track 425 (engine restarting) events and set a cooldown."""
+        bucket = self.buckets.get(bucket_name)
+        if bucket:
+            bucket.last_425 = time.time()
+            bucket.retry_after = time.time() + 5.0  # 5s cooldown for engine restart
+            logger.warning(f"425 on {bucket.name}, engine restarting - 5s cooldown")
+
+    def is_duplicate_order(self, order_id: str) -> bool:
+        """P1: Check if an order ID was already submitted (duplicate prevention)."""
+        return order_id in self._seen_order_ids
+
+    def record_order_id(self, order_id: str):
+        """P1: Track submitted order IDs to prevent duplicates."""
+        self._seen_order_ids.add(order_id)
+        # Keep only last 1000 order IDs to avoid unbounded growth
+        if len(self._seen_order_ids) > 1000:
+            self._seen_order_ids = set(list(self._seen_order_ids)[-500:])
 
     def remaining(self, bucket_name: str) -> int:
         bucket = self.buckets.get(bucket_name)
