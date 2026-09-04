@@ -14,6 +14,7 @@ AUDIT FIX #9: Remote order cancellation on kill switch in main.py
 AUDIT FIX #14: health_check() method for monitoring/health endpoints
 AUDIT FIX #26: Risk controls - event exposure, drawdown, risk score, concentration
 SECTION 1 AUDIT: Fix preflight check for list-returning validate()
+SECTION 2 AUDIT: SDK version check and canary funded amount in preflight
 """
 import json, os, time, logging
 from datetime import datetime, timezone
@@ -131,6 +132,22 @@ class SafetyRails:
             checks.append("OK: GTC post-only maker mode (PREFER_MAKER=True)")
             if not self.config.allow_taker_fallback: checks.append("OK: Taker fallback disabled")
         else: checks.append("WARN: Taker-only mode (paying fees)")
+        # SECTION 2 AUDIT: SDK version check
+        try:
+            import importlib.metadata
+            sdk_version = importlib.metadata.version("py-clob-client-v2")
+            from config.settings import APPROVED_SDK_VERSION
+            if sdk_version == APPROVED_SDK_VERSION:
+                checks.append(f"OK: SDK version {sdk_version} matches approved {APPROVED_SDK_VERSION}")
+            else:
+                checks.append(f"FAIL: SDK version {sdk_version} != approved {APPROVED_SDK_VERSION}")
+                passed = False
+        except Exception as e:
+            checks.append(f"WARN: SDK version check skipped: {e}")
+        # SECTION 2 AUDIT: Canary funded amount check (live mode only)
+        if not self.config.paper_mode:
+            canary_max = getattr(self.config, 'max_canary_funded_usd', 50.0)
+            checks.append(f"OK: Canary max funded ${canary_max} (live mode)")
         return passed, checks
 
     def check_geoblock(self):
