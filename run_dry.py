@@ -104,7 +104,8 @@ class AdvancedDryRunner:
             entry_plan = None
             if self.config.prefer_maker and best_ask is not None:
                 entry_plan = plan_entry(best_ask, tick_size, 0.985, self.config.buy_price, self.config.prefer_maker, self.config.allow_taker_fallback)
-            is_maker = (entry_plan is not None and entry_plan[1]) or (self.config.prefer_maker and best_ask is None) or (self.config.prefer_maker and not self.config.allow_taker_fallback)
+            # FIX: Removed broken third condition (prefer_maker and not allow_taker_fallback) that always evaluated True
+            is_maker = (entry_plan is not None and entry_plan[1]) or (self.config.prefer_maker and best_ask is None)
             order_price = entry_plan[0] if entry_plan else self.config.buy_price
             order_detail = entry_plan[2] if entry_plan else "maker bid at buy_price"
             self.log(""); self.log("-" * 60); self.log(f"TRADE #{self.total_trades + 1}"); self.log("-" * 60)
@@ -120,12 +121,22 @@ class AdvancedDryRunner:
             cat = getattr(det, 'category', 'other')
             self.log(f"    Category: {cat} | Taker Fee Rate: {get_fee_rate(cat)} | Maker Fee: $0 (ZERO)")
             self.log(""); self.log("  ORDER EXECUTION:")
-            if is_maker:
+            if entry_plan is None and best_ask is not None:
+                # Log rejection reason for debugging
+                maker_ceiling = best_ask - tick_size
+                self.log(f"    Method: REJECTED (no valid entry)")
+                self.log(f"    Reason: best_ask={best_ask}, tick={tick_size}, maker_ceiling={maker_ceiling:.6f}, min_entry=0.985, max_entry={self.config.buy_price}")
+                if maker_ceiling < 0.985:
+                    self.log(f"    -> maker_ceiling {maker_ceiling:.6f} < min_entry 0.985 (no valid maker price)")
+                if best_ask > self.config.buy_price:
+                    self.log(f"    -> best_ask {best_ask} > max_entry {self.config.buy_price} (ask above buy price)")
+            elif is_maker:
                 self.log("    Method: GTC POST-ONLY MAKER (zero fees)")
                 self.log(f"    Entry: {order_detail}")
                 self.log(f"    Building GTC post-only bid: BUY 100 @ ${order_price}")
             else:
                 self.log("    Method: FAK TAKER (pays fees)")
+                self.log(f"    Entry: {order_detail}")
                 self.log(f"    Building FAK order: BUY 100 @ ${order_price}")
             success, order = self.order_builder.build_and_place(detection_result=det, size=100.0, best_ask=best_ask, tick_size=tick_size, neg_risk=getattr(det, 'neg_risk', False))
             if not success or order is None:
