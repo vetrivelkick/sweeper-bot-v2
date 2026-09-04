@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from enum import Enum, IntEnum
 from typing import Optional, List
 from datetime import datetime, timezone
+from config.settings import OUTCOME_FINALITY_POLICIES, UNSUPPORTED_RESOLUTION_SOURCES, MAX_RESOLUTION_DISPUTE_RISK
 
 logger = logging.getLogger("sweeper.detection")
 
@@ -159,6 +160,7 @@ class ResolutionDetector:
         2. Market is inactive (Gamma API: active=false)
         3. Market is not accepting orders (Gamma API: acceptingOrders=false)
         4. UMA 2-hour dispute window has passed (simulated in paper mode)
+        5. SECTION 1 AUDIT: Per-category finality policy (OUTCOME_FINALITY_POLICIES)
         """
         raw = getattr(market, 'raw', None) or {}
         closed = raw.get("closed", False)
@@ -188,13 +190,38 @@ class ResolutionDetector:
         if accepting:
             return FinalityStatus.PROPOSED, False, "Market closed but still accepting orders"
 
-        return FinalityStatus.FINAL, True, "Market closed, inactive, not accepting orders - resolution final"
+        # SECTION 1 AUDIT: Per-category finality policy
+        category = getattr(result, 'category', 'other')
+        policy = OUTCOME_FINALITY_POLICIES.get(category, OUTCOME_FINALITY_POLICIES.get('other', {}))
+        min_blocks = policy.get('min_blocks', 128)
+        dispute_window = policy.get('dispute_window_hours', 2)
+        require_source = policy.get('require_source', True)
+
+        if require_source and not getattr(result, 'outcome_sources', []):
+            return FinalityStatus.PENDING, False, f"Category {category} requires source agreement"
+
+        return FinalityStatus.FINAL, True, f"Market closed, inactive, not accepting orders - resolution final (category={category}, min_blocks={min_blocks})"
+
+    def _check_resolution_dispute_risk(self, result):
+        """SECTION 1 AUDIT: Check resolution dispute risk.
+
+        Returns (is_safe, risk_score, reason).
+        """
+        risk = getattr(result, 'resolution_dispute_risk', 0.0)
+        if risk > self.config.max_resolution_dispute_risk:
+            return False, risk, f"Dispute risk {risk} > max {self.config.max_resolution_dispute_risk}"
+        return True, risk, "OK"
 
     def detect(self, market, book=None):
         if not market:
             return None
 
         resolution_rules = self._parse_resolution_rules(market)
+
+        # SECTION 1 AUDIT: Skip markets with unsupported resolution sources
+        if resolution_rules.resolution_source in UNSUPPORTED_RESOLUTION_SOURCES:
+            logger.info(f"[SKIP] Market {market.question[:50]} has unsupported resolution source: {resolution_rules.resolution_source}")
+            return None
 
         outcome_sources = []
         all_signals = []
@@ -301,6 +328,11 @@ class ResolutionDetector:
             return False
         else:
             if result.certainty in (CertaintyLevel.CERTAIN, CertaintyLevel.STRONG) and result.is_final:
+                # SECTION 1 AUDIT: Check resolution dispute risk
+                is_safe, risk, reason = self._check_resolution_dispute_risk(result)
+                if not is_safe:
+                    logger.warning(f"[DISPUTE RISK] Blocked sweep: {result.question[:50]} - {reason}")
+                    return False
                 return True
             if result.certainty == CertaintyLevel.CERTAIN and not result.is_final:
                 logger.warning(f"[FINALITY GATE] Blocked sweep: {result.question[:50]} - {result.finality_reason}")
