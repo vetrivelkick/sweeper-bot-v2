@@ -6,12 +6,18 @@ FIX #3: Gas cost standardized to 0.001/share
 FIX #5: V2 SDK migration: chain_id=137 -> chain=137
 FIX #9: Added 425 exponential backoff retry (1s->2s->4s...->30s, max 10 retries)
 FIX #17: plan_entry uses round() instead of int() for tick alignment
-       Bug: int(price/tick)*tick floors 0.989 to 0.98 (below min_entry 0.985)
-       Fix: round(price/tick)*tick rounds 0.989 to 0.99 (above min_entry 0.985)
 FIX #18: Allow taker fallback when best_ask <= max_entry even if allow_taker is False
-       Bug: CERTAIN markets with best_ask=0.99, tick=0.01 have maker_ceiling=0.98 < min_entry=0.985
-            No valid maker price exists, and allow_taker_fallback=False blocks taker fallback
-       Fix: When maker fails and best_ask is within entry range, allow taker at best_ask
+P0 #2: Fixed CLOB V2 constructor: chain=137 -> chain_id=137 (V2 Python SDK uses chain_id)
+P0 #3: Added signature_type and funder parameters to ClobClient constructor
+       signature_type: 0=EOA, 1=POLY_PROXY, 2=POLY_GNOSIS_SAFE, 3=POLY_1271
+       funder: Required for proxy/Safe/deposit wallets (address holding funds)
+P0 #4: Fixed cancellation: client.cancel(order_id) -> client.cancel_orders([order_id])
+       V2 SDK uses cancel_order(OrderPayload) or cancel_orders(list), not cancel(str)
+P0 #5: Fixed cancel-then-delete ordering: local state removed only AFTER remote cancel succeeds
+       Bug: _resting.pop() before client.cancel() -> lost order if cancel fails
+P0 #6: Fixed order response parsing: txHash -> transactionsHashes (list), added tradeIDs
+       V2 responses use transactionsHashes (list) and tradeIDs, not txHash (string)
+P0 #7: Store real exchange-assigned orderID from response, replacing fabricated local ID
 """
 import json, time, random, logging
 from dataclasses import dataclass, field, asdict
@@ -66,17 +72,12 @@ def plan_entry(best_ask, tick_size, min_entry, max_entry, prefer_maker=True, all
         maker_ceiling = best_ask - tick
         desired = max(maker_ceiling, min_entry)
         price = min(desired, maker_ceiling, max_entry)
-        # FIX #17: Use round() instead of int() for tick alignment.
-        # Bug: int(0.989/0.01)*0.01 = 0.98 which is below min_entry 0.985 -> order rejected
-        # Fix: round(0.989/0.01)*0.01 = 0.99 which is above min_entry 0.985 -> order accepted
         price = round(price / tick) * tick
         if price >= best_ask:
             price -= tick
         price = round(price, 6)
         if min_entry <= price < best_ask:
             return (price, True, f"resting maker bid @ {price} (ask={best_ask}, tick={tick})")
-        # FIX #18: Allow taker fallback when best_ask is within entry range
-        # even if allow_taker is False (e.g., best_ask=0.99, tick=0.01, maker_ceiling=0.98 < min_entry=0.985)
         if not allow_taker:
             if min_entry <= best_ask <= max_entry:
                 return (best_ask, False, f"taker fallback @ best ask {best_ask} (maker ceiling {maker_ceiling} < min_entry {min_entry})")
@@ -96,8 +97,17 @@ class OrderBuilder:
         try:
             from py_clob_client_v2 import ClobClient, ApiCreds
             creds = ApiCreds(api_key=self.config.clob_api_key, api_secret=self.config.clob_api_secret, api_passphrase=self.config.clob_api_passphrase)
-            self._client = ClobClient(host="https://clob.polymarket.com", key=self.config.private_key, chain=137, creds=creds)
-            logger.info("CLOB V2 client initialized for live trading")
+            # P0 #2: V2 Python SDK uses chain_id, not chain
+            # P0 #3: Added signature_type and funder for proxy/Safe/deposit wallet support
+            self._client = ClobClient(
+                host="https://clob.polymarket.com",
+                key=self.config.private_key,
+                chain_id=137,
+                creds=creds,
+                signature_type=self.config.signature_type,
+                funder=self.config.funder if self.config.funder else None,
+            )
+            logger.info(f"CLOB V2 client initialized (chain_id=137, sig_type={self.config.signature_type})")
         except Exception as e: logger.error(f"Failed to init CLOB V2 client: {e}")
         return self._client
 
@@ -111,14 +121,30 @@ class OrderBuilder:
         return count
 
     def _cancel_order(self, order_id):
-        order = self._resting.pop(order_id, None)
+        # P0 #5: Don't remove from tracking until remote cancel succeeds
+        order = self._resting.get(order_id)
         if not order: return True
-        self._reserved.pop(order_id, None)
-        if order.is_paper: order.status = OrderStatus.CANCELLED; return True
+        if order.is_paper:
+            self._resting.pop(order_id, None)
+            self._reserved.pop(order_id, None)
+            order.status = OrderStatus.CANCELLED
+            return True
         client = self._get_client()
         if client:
-            try: client.cancel(order_id); order.status = OrderStatus.CANCELLED; logger.info(f"Cancelled {order_id}"); return True
-            except Exception as e: logger.error(f"Cancel failed {order_id}: {e}"); return False
+            try:
+                # P0 #4: V2 SDK uses cancel_orders(list), not cancel(str)
+                client.cancel_orders([order_id])
+                self._resting.pop(order_id, None)
+                self._reserved.pop(order_id, None)
+                order.status = OrderStatus.CANCELLED
+                logger.info(f"Cancelled {order_id}")
+                return True
+            except Exception as e:
+                logger.error(f"Cancel failed {order_id}: {e}")
+                return False
+        # No client available — remove from tracking
+        self._resting.pop(order_id, None)
+        self._reserved.pop(order_id, None)
         return True
 
     def build_and_place(self, detection_result, size=100.0, best_ask=None, tick_size=0.001, neg_risk=False):
@@ -190,24 +216,42 @@ class OrderBuilder:
         backoff = 1.0
         for attempt in range(max_retries + 1):
             try:
-                from py_clob_client_v2 import OrderArgs, PartialCreateOrderOptions
-                from py_clob_client_v2.order_builder.constants import BUY
-                order_args = OrderArgs(token_id=order.token_id, price=order.price, size=order.shares if isinstance(order, RestingOrder) else order.size, side=BUY)
+                # P0 #6/#7: Use V2 SDK imports (Side, OrderType) and create_and_post_order
+                from py_clob_client_v2 import OrderArgs, OrderType as V2OrderType, PartialCreateOrderOptions, Side
+                order_args = OrderArgs(
+                    token_id=order.token_id,
+                    price=order.price,
+                    size=order.shares if isinstance(order, RestingOrder) else order.size,
+                    side=Side.BUY,
+                )
                 options = PartialCreateOrderOptions(tick_size=order.tick_size, neg_risk=order.neg_risk)
-                signed = client.create_order(order_args, options)
-                if post_only: response = client.post_order(signed, order_type="GTC", post_only=True)
-                else: response = client.post_order(signed, order_type="FAK")
+                ot = V2OrderType.GTC if post_only else V2OrderType.FAK
+                response = client.create_and_post_order(
+                    order_args=order_args,
+                    options=options,
+                    order_type=ot,
+                    post_only=post_only,
+                )
                 order.submitted_at = time.time()
                 if isinstance(response, dict):
+                    # P0 #7: Store the real exchange-assigned orderID
+                    real_order_id = response.get("orderID")
+                    if real_order_id:
+                        order.order_id = real_order_id
                     if response.get("status") == "matched":
                         order.status = OrderStatus.MATCHED; order.matched_at = time.time()
-                        order.tx_hash = response.get("txHash", "")
+                        # P0 #6: Parse transactionsHashes (list) instead of txHash (string)
+                        tx_hashes = response.get("transactionsHashes", [])
+                        order.tx_hash = tx_hashes[0] if tx_hashes else None
+                        trade_ids = response.get("tradeIDs", [])
+                        if not order.tx_hash and trade_ids:
+                            logger.info(f"[LIVE] Matched, {len(trade_ids)} trades pending hash resolution")
                         fill = float(response.get("size_matched", 0))
                         if isinstance(order, RestingOrder): order.filled_shares = fill; order.avg_fill_price = order.price
                         else: order.fill_amount = fill
-                        logger.info(f"[LIVE] Order MATCHED: {fill} shares")
+                        logger.info(f"[LIVE] Order MATCHED: {fill} shares, tx={order.tx_hash}")
                     elif response.get("orderID"):
-                        order.order_id = response.get("orderID", order.order_id); order.status = OrderStatus.LIVE
+                        order.status = OrderStatus.LIVE
                         logger.info(f"[LIVE] GTC post-only RESTING: {order.order_id}")
                     elif response.get("error"):
                         err = response.get("error", "")
@@ -217,7 +261,10 @@ class OrderBuilder:
                             backoff = min(backoff * 2, 30.0)
                             continue
                         self._handle_rejection(order, err, response)
-                else: order.status = OrderStatus.SUBMITTED
+                    else:
+                        order.status = OrderStatus.SUBMITTED
+                else:
+                    order.status = OrderStatus.SUBMITTED
                 if order.status in (OrderStatus.LIVE, OrderStatus.MATCHED, OrderStatus.FILLED, OrderStatus.PARTIAL):
                     if isinstance(order, RestingOrder) and order.status == OrderStatus.LIVE:
                         self._resting[order.order_id] = order; self._reserved[order.order_id] = order.shares * order.price
@@ -284,7 +331,9 @@ class OrderBuilder:
                         matched = float(status.get("size_matched", 0))
                         if matched > 0:
                             order.filled_shares = matched; order.avg_fill_price = order.price
-                            order.tx_hash = status.get("txHash", "")
+                            # P0 #6: V2 uses transactionsHashes (list), not txHash (string)
+                            tx_hashes = status.get("transactionsHashes", [])
+                            order.tx_hash = tx_hashes[0] if tx_hashes else status.get("txHash", "")
                             if matched >= order.shares: order.status = OrderStatus.FILLED; self._reserved.pop(order_id, None)
                             else: order.status = OrderStatus.PARTIAL; self._reserved[order_id] = (order.shares - matched) * order.price
                             logger.info(f"[LIVE] Order fill: {matched}/{order.shares}")
