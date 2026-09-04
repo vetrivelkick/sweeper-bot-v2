@@ -6,6 +6,8 @@ P0 #3: Added SIGNATURE_TYPE and FUNDER_ADDRESS env var reading for V2 SDK wallet
 P0 #8/#10: _complete_trade now creates positions in open_positions
 P0 #11: startup_reconcile uses StartupRecovery instead of killing on resting orders
 
+AUDIT FIX #1: Block --live mode while P0 audit items remain open
+AUDIT FIX #2: Add process lock to prevent duplicate bot instances
 """
 import sys, os, time, json, signal, logging, threading
 from datetime import datetime, timezone
@@ -24,6 +26,33 @@ from modules.startup_recovery import StartupRecovery
 
 logger = logging.getLogger("sweeper.main")
 
+# AUDIT FIX #1: Block live mode until all P0 audit items are closed
+P0_BLOCKED = True  # Set to False ONLY after all P0 production-readiness items are resolved
+
+# AUDIT FIX #2: Process lock to prevent duplicate instances
+try:
+    import fcntl
+    _HAS_FCNTL = True
+except ImportError:
+    _HAS_FCNTL = False
+
+def acquire_process_lock():
+    """Prevent duplicate bot instances via file lock."""
+    if not _HAS_FCNTL:
+        return None  # Non-Unix systems - skip lock
+    lock_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.sweeper.lock')
+    try:
+        lock = open(lock_file, 'w')
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        lock.write(str(os.getpid()))
+        lock.flush()
+        logger.info(f"Process lock acquired (PID {os.getpid()})")
+        return lock
+    except (IOError, OSError):
+        logger.critical("FATAL: Another sweeper-bot-v2 instance is already running.")
+        print("FATAL: Another sweeper-bot-v2 instance is already running.")
+        sys.exit(1)
+
 class SweeperBot:
     def __init__(self, config=None):
         self.config = config or SweeperConfig(paper_mode=True)
@@ -39,6 +68,7 @@ class SweeperBot:
         self._running = False
         self._cycle_count = 0
         self._shutdown_requested = False
+        self._lock = None
 
     def startup_reconcile(self):
         logger.info("=" * 60)
@@ -217,6 +247,8 @@ class SweeperBot:
         self._shutdown_requested = True
 
     def run(self):
+        # AUDIT FIX #2: Acquire process lock to prevent duplicate instances
+        self._lock = acquire_process_lock()
         signal.signal(signal.SIGTERM, self._signal_handler)
         signal.signal(signal.SIGINT, self._signal_handler)
         if not self.startup_reconcile():
@@ -248,6 +280,15 @@ if __name__ == "__main__":
     parser.add_argument("--live", action="store_true", help="Live trading mode")
     parser.add_argument("--cycles", type=int, default=0, help="Max cycles (0 = infinite)")
     args = parser.parse_args()
+    # AUDIT FIX #1: Block live mode while P0 audit items are open
+    if args.live and P0_BLOCKED:
+        print("=" * 60)
+        print("FATAL: Live mode is BLOCKED.")
+        print("P0 production-readiness audit items remain open.")
+        print("Set P0_BLOCKED = False in main.py ONLY after all P0")
+        print("findings are resolved and the final release gate passes.")
+        print("=" * 60)
+        sys.exit(1)
     config = SweeperConfig(paper_mode=not args.live)
     config.private_key = os.environ.get("PRIVATE_KEY", "")
     config.clob_api_key = os.environ.get("CLOB_API_KEY", "")

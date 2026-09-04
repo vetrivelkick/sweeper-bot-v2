@@ -1,8 +1,15 @@
 # Sweeper Bot V2
 
-Production-ready Polymarket arbitrage bot with GTC post-only maker orders (zero fees).
+⚠️ **NOT PRODUCTION-READY** — Paper trading only. Do not run with real funds until all P0 audit items are closed.
 
-## All 20 Features Implemented & Verified
+Polymarket arbitrage bot with GTC post-only maker orders (zero fees).
+
+## Current Status: Paper Trading Only
+
+This bot is under active development. Multiple P0 production-readiness items remain open.
+Running in live mode (`--live`) is blocked until all P0 findings are resolved.
+
+## All 20 Features Implemented & Verified (Paper Mode)
 1. GTC Post-Only Order Method
 2. Maker Pricing (bid below best ask)
 3. PREFER_MAKER=True
@@ -31,7 +38,9 @@ cd sweeper-bot-v2
 pip install -r requirements.txt
 cp .env.example .env  # Fill credentials
 python3 run_dry.py    # Paper dry run
-python3 main.py --live  # Live trading
+python3 run_paper.py --cycles 3 --sweeps 5  # Paper trade with live data
 ```
+
+**Do NOT run `python3 main.py --live` — live mode is blocked.**
 
 See DEPLOYMENT.md for full guide.
