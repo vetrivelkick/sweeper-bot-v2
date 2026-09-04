@@ -16,6 +16,7 @@ Features:
 - P1 #2,#3: Wired rate_limiter to OrderBuilder for 429/425 handling
 - P1 #16: Added win rate disclaimer (simulated, not historically replayed)
 - P1: Parameterized min_entry_price (was hardcoded 0.985)
+- FIX: Log detection errors instead of silently swallowing exceptions
 
 Usage:
     python3 run_paper.py [--cycles N] [--sweeps N]
@@ -272,8 +273,8 @@ class AdvancedPaperTrader:
                 det = self.detector.detect(m)
                 if det and self.detector.is_sweepable(det):
                     sweepable.append(det)
-            except Exception:
-                pass
+            except Exception as e:
+                self._log(f"  [!] Detection error for {m.question[:40]}: {e}")
         self._log_both(f"[DETECTION] {len(sweepable)} sweepable markets")
 
         self._log_both("")
@@ -497,7 +498,6 @@ class AdvancedPaperTrader:
         # --- FILL SIMULATION ---
         self._section("FILL SIMULATION")
         if isinstance(order, RestingOrder):
-            # FIX #5: Count resting orders before fast-forward
             if order.status == OrderStatus.LIVE and (not hasattr(order, 'filled_shares') or order.filled_shares == 0):
                 self.resting_orders += 1
             fill_result = self._simulate_fill(order)
@@ -542,7 +542,6 @@ class AdvancedPaperTrader:
         self._section_end()
         self._trade_log("")
 
-        # Handle expired orders (no settlement) - FIX #5: add trade record
         if order.status == OrderStatus.EXPIRED:
             self._log_both(f"  [X] TRADE #{trade_num} EXPIRED - No fill")
             record = TradeRecord(
@@ -572,7 +571,6 @@ class AdvancedPaperTrader:
             self._log_both("")
             return
 
-        # Handle ghost fills (no settlement) - FIX #5: add trade record
         if not order.tx_hash:
             self._log_both(f"  [!] TRADE #{trade_num} GHOST FILL - No settlement")
             record = TradeRecord(
@@ -605,7 +603,6 @@ class AdvancedPaperTrader:
         filled_shares = order.filled_shares if order.filled_shares > 0 else 100.0
         fill_price = order.price
 
-        # --- PNL BREAKDOWN ---
         self.winning_trades += 1
         self.metrics.inc("trades_won")
         gross = (1.0 - fill_price) * filled_shares
@@ -620,7 +617,6 @@ class AdvancedPaperTrader:
         if self.total_trades > 0:
             self.metrics.set("win_rate", self.winning_trades / self.total_trades * 100)
 
-        # Phase 8: Ledger entries for complete audit trail
         self.ledger.record_buy_winning(trade_num, fill_price, filled_shares, is_maker=is_maker)
         self.ledger.record_buy_loser(trade_num, self.config.loser_max_price, filled_shares)
         self.ledger.record_fee(trade_num, fee, is_maker=is_maker)
@@ -642,7 +638,6 @@ class AdvancedPaperTrader:
         self._section_end()
         self._trade_log("")
 
-        # --- SETTLEMENT ---
         self._section("SETTLEMENT (CAPITAL RECYCLE)")
         neg_risk = getattr(det, 'neg_risk', False)
         adapter = "NegRiskCtfCollateralAdapter" if neg_risk else "CtfCollateralAdapter"
@@ -669,10 +664,8 @@ class AdvancedPaperTrader:
         self._section_end()
         self._trade_log("")
 
-        # FIX #5: Update scoreboard so True PnL matches Cumulative PnL
         self.safety.update_scoreboard(buys=[{}], redeems=[{}], merges=[{"amount": recycled_usd}], net_pnl=net_pnl)
 
-        # --- TRADE COMPLETE ---
         self._log_both(f"  [OK] TRADE #{trade_num} COMPLETE - {'MAKER (ZERO FEES)' if is_maker else 'TAKER'}")
         self._log_both(f"      Net PnL: +${net_pnl:.4f} | Cumulative: ${self.cumulative_pnl:.4f}")
         self._sep("-")
@@ -761,7 +754,6 @@ class AdvancedPaperTrader:
             for e in self.errors:
                 self._log_both(f"    {e}")
         self._sep()
-        # Phase 8: Ledger summary
         self.ledger.dump()
         self.ledger.log_summary(self._log_both)
         self.metrics.log_summary(self._log_both)
