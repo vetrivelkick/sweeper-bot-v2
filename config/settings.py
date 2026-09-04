@@ -12,6 +12,7 @@ P1 #5: State file saves are now atomic AND versioned (keeps .bak backup)
 P1 #6: All strategy parameters now load from .env via os.getenv with module constants as defaults
 P1: .env support via os.getenv for sensitive fields; atomic BotState.save
 P1: Added min_entry_price parameter (was hardcoded 0.985 in order_executor.py and run_dry.py)
+SECTION 1 AUDIT: Strategy specification - MAX_ENTRY_PRICE, finality policies, merge/redeem rules
 
 """
 from dataclasses import dataclass, field
@@ -74,6 +75,35 @@ MAX_EVENT_EXPOSURE_USD = 500.0
 MAX_PORTFOLIO_EXPOSURE_USD = 2000.0
 MAX_429_BEFORE_TRIP = 3
 MIN_ENTRY_PRICE = 0.985  # P1: Parameterized entry floor
+
+# === SECTION 1 AUDIT: STRATEGY SPECIFICATION ===
+MAX_ENTRY_PRICE = 0.99  # $0.999 NOT viable: gross=$0.001, loser=$0.005, gas=$0.001 => net=-$0.005/share
+
+# Per-category outcome finality policies (min block confirmations, dispute window hours, source required)
+OUTCOME_FINALITY_POLICIES = {
+    "crypto": {"min_blocks": 128, "dispute_window_hours": 2, "require_source": True},
+    "sports": {"min_blocks": 128, "dispute_window_hours": 2, "require_source": True},
+    "politics": {"min_blocks": 256, "dispute_window_hours": 2, "require_source": True},
+    "finance": {"min_blocks": 128, "dispute_window_hours": 2, "require_source": True},
+    "geopolitics": {"min_blocks": 256, "dispute_window_hours": 2, "require_source": True},
+    "economics": {"min_blocks": 128, "dispute_window_hours": 2, "require_source": True},
+    "tech": {"min_blocks": 128, "dispute_window_hours": 2, "require_source": True},
+    "mentions": {"min_blocks": 128, "dispute_window_hours": 2, "require_source": True},
+    "culture": {"min_blocks": 128, "dispute_window_hours": 2, "require_source": True},
+    "weather": {"min_blocks": 128, "dispute_window_hours": 2, "require_source": True},
+    "other": {"min_blocks": 128, "dispute_window_hours": 2, "require_source": True},
+}
+
+# Markets with these resolution-source patterns are automatic skips
+UNSUPPORTED_RESOLUTION_SOURCES = ["manual", "unresolved", "ambiguous", "cancelled", "void"]
+
+# Maximum acceptable probability that resolution is overturned
+MAX_RESOLUTION_DISPUTE_RISK = 0.02  # 2% max
+
+# Merge-now vs wait-for-redemption decision rules
+MERGE_THRESHOLD_SPREAD = 0.02  # If losing-side ask <= this, merge now
+PREFER_MERGE_OVER_REDEEM = True  # Merge is cheaper when both sides available
+REDEMPTION_MIN_WAIT_BLOCKS = 128  # Min blocks after resolution before redemption
 
 # === FIX #1: DYNAMIC FEE RATES PER CATEGORY ===
 DEFAULT_FEE_RATE = 0.04
@@ -171,11 +201,32 @@ class SweeperConfig:
     funder: str = field(default_factory=lambda: os.getenv("FUNDER", ""))  # Funder address for proxy/Safe/deposit wallets
     fee_rate: float = DEFAULT_FEE_RATE
     min_entry_price: float = field(default_factory=lambda: float(os.getenv("MIN_ENTRY_PRICE", str(MIN_ENTRY_PRICE))))  # P1: Parameterized entry floor
+    # SECTION 1 AUDIT: Strategy specification fields
+    max_entry_price: float = field(default_factory=lambda: float(os.getenv("MAX_ENTRY_PRICE", str(MAX_ENTRY_PRICE))))
+    max_resolution_dispute_risk: float = field(default_factory=lambda: float(os.getenv("MAX_RESOLUTION_DISPUTE_RISK", str(MAX_RESOLUTION_DISPUTE_RISK))))
+    require_source_agreement: bool = field(default_factory=lambda: os.getenv("REQUIRE_SOURCE_AGREEMENT", "true").lower() == "true")
+    merge_threshold_spread: float = field(default_factory=lambda: float(os.getenv("MERGE_THRESHOLD_SPREAD", str(MERGE_THRESHOLD_SPREAD))))
+    prefer_merge_over_redeem: bool = field(default_factory=lambda: os.getenv("PREFER_MERGE_OVER_REDEEM", "true").lower() == "true")
 
-    def validate(self):
-        if not (0.90 <= self.buy_price <= 0.999): return False
-        if self.max_daily_loss <= 0 or self.gas_floor <= 0: return False
-        return True
+    def validate(self) -> list:
+        """AUDIT FIX #30 + SECTION 1: Comprehensive config validation with detailed error messages."""
+        errors = []
+        # Strategy parameter validation
+        if not (0.90 <= self.buy_price <= self.max_entry_price):
+            errors.append(f"buy_price {self.buy_price} must be between 0.90 and {self.max_entry_price}")
+        if not (0.0 <= self.loser_max_price <= 0.05):
+            errors.append(f"loser_max_price {self.loser_max_price} must be between 0.0 and 0.05")
+        if not (0.0 <= self.min_entry_price < self.buy_price):
+            errors.append(f"min_entry_price {self.min_entry_price} must be >= 0.0 and < buy_price {self.buy_price}")
+        if self.max_daily_loss <= 0:
+            errors.append(f"max_daily_loss {self.max_daily_loss} must be > 0")
+        if self.gas_floor <= 0:
+            errors.append(f"gas_floor {self.gas_floor} must be > 0")
+        # Probability validation
+        total_prob = self.fill_probability + self.partial_fill_probability + self.ghost_probability
+        if total_prob > 1.0:
+            errors.append(f"probabilities sum to {total_prob:.2f} > 1.0")
+        return errors
 
     def net_edge(self, is_maker=False):
         return net_edge_per_share(self.buy_price, self.loser_max_price, is_maker=is_maker)
@@ -215,13 +266,12 @@ class BotState:
     def save(self, path):
         """P1 #5: Atomic save with versioning - write to temp, rename, keep .bak backup."""
         os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
-        # P1 #5: Keep a backup of the previous state file before overwriting
         if os.path.exists(path):
             backup_path = path + '.bak'
             try:
                 os.replace(path, backup_path)
             except OSError:
-                pass  # non-fatal if backup fails
+                pass
         tmp_path = path + '.tmp'
         with open(tmp_path, "w") as f: json.dump(self.to_dict(), f, indent=2)
         os.replace(tmp_path, path)
