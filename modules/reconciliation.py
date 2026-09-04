@@ -1,4 +1,8 @@
-"""Sweeper Bot V2 - Reconciliation Engine (Updated)"""
+"""Sweeper Bot V2 - Reconciliation Engine (Updated)
+
+P0 #8: Added _create_position_from_fill() to populate open_positions
+P0 #10: Added process_fills() to handle partial fills and create positions
+"""
 import time
 import logging
 from dataclasses import dataclass
@@ -31,6 +35,31 @@ class ReconciliationEngine:
         self.order_builder = order_builder
         self._last_run = 0
         self._last_order_run = 0
+
+    def _create_position_from_fill(self, condition_id, tx_hash, shares, price, side):
+        """P0 #8: Create a position entry from a confirmed fill."""
+        position = {
+            'condition_id': condition_id,
+            'tx_hash': tx_hash,
+            'shares': shares,
+            'price': price,
+            'side': side,
+            'timestamp': time.time(),
+        }
+        self.safety.state.open_positions[condition_id] = position
+        logger.info(f"Position created: {condition_id[:16]}... | {shares} shares @ ${price}")
+        return position
+
+    def process_fills(self, fills):
+        """P0 #10: Process confirmed fills and create positions in open_positions."""
+        for fill in fills:
+            condition_id = getattr(fill, 'condition_id', '')
+            tx_hash = getattr(fill, 'tx_hash', '')
+            fill_amount = getattr(fill, 'fill_amount', getattr(fill, 'filled_shares', 0))
+            price = getattr(fill, 'avg_fill_price', getattr(fill, 'price', 0))
+            side = getattr(fill, 'side', 'BUY')
+            if condition_id and tx_hash:
+                self._create_position_from_fill(condition_id, tx_hash, fill_amount, price, side)
 
     def reconcile(self) -> ReconciliationResult:
         positions = self.safety.state.open_positions
