@@ -1,1 +1,278 @@
-IiIiU3dlZXBlciBCb3QgVjIgLSBTYWZldHkgUmFpbHMgKFVwZGF0ZWQpCgpGSVggIzc6IFJlbW92ZWQgZHVwbGljYXRlIEJvdFN0YXRlIOKAlCBub3cgaW1wb3J0cyBmcm9tIGNvbmZpZy5zZXR0aW5ncwpGSVggIzE2OiBmcm9tX2RpY3QoKSBubyBsb25nZXIgcG9wcyByYXRlX2xpbWl0XzQyOV9jb3VudCAocGVyc2lzdHMgYWNyb3NzIHJlc3RhcnRzKQoiIiIKaW1wb3J0IGpzb24sIG9zLCB0aW1lLCBsb2dnaW5nCmZyb20gZGF0ZXRpbWUgaW1wb3J0IGRhdGV0aW1lLCB0aW1lem9uZQpmcm9tIHR5cGluZyBpbXBvcnQgT3B0aW9uYWwKZnJvbSBkYXRhY2xhc3NlcyBpbXBvcnQgZGF0YWNsYXNzLCBmaWVsZCwgYXNkaWN0Cgpsb2dnZXIgPSBsb2dnaW5nLmdldExvZ2dlcigic3dlZXBlci5zYWZldHkiKQoKIyBQMCAjMjA6IE9GQUMgc2FuY3Rpb25lZCByZWdpb25zIC0gYmxvY2tlZCBmcm9tIFBvbHltYXJrZXQgdHJhZGluZwpCTE9DS0VEX1JFR0lPTlMgPSBbIkNVIiwgIklSIiwgIktQIiwgIlNZIiwgIkNSIl0KCmZyb20gY29uZmlnLnNldHRpbmdzIGltcG9ydCBCb3RTdGF0ZSBhcyBDb25maWdCb3RTdGF0ZQoKQGRhdGFjbGFzcwpjbGFzcyBTYWZldHlCb3RTdGF0ZToKICAgICIiIkZJWCAjNzogUmVuYW1lZCB0byBTYWZldHlCb3RTdGF0ZSB0byBhdm9pZCBjb25mdXNpb24gd2l0aCBjb25maWcuQm90U3RhdGUuIiIiCiAgICBzdGFydGVkX2F0OiBmbG9hdCA9IGZpZWxkKGRlZmF1bHRfZmFjdG9yeT10aW1lLnRpbWUpCiAgICBpc19ydW5uaW5nOiBib29sID0gRmFsc2UKICAgIGlzX2tpbGxlZDogYm9vbCA9IEZhbHNlCiAgICBraWxsX3JlYXNvbjogT3B0aW9uYWxbc3RyXSA9IE5vbmUKICAgIGRhaWx5X3BubDogZmxvYXQgPSAwLjAKICAgIGRhaWx5X3BubF9yZXNldF90aW1lOiBmbG9hdCA9IGZpZWxkKGRlZmF1bHRfZmFjdG9yeT10aW1lLnRpbWUpCiAgICBvcGVuX3Bvc2l0aW9uczogZGljdCA9IGZpZWxkKGRlZmF1bHRfZmFjdG9yeT1kaWN0KQogICAgcGVuZGluZ19vcmRlcnM6IGRpY3QgPSBmaWVsZChkZWZhdWx0X2ZhY3Rvcnk9ZGljdCkKICAgIHdvcmtlZF9tYXJrZXRzOiBzZXQgPSBmaWVsZChkZWZhdWx0X2ZhY3Rvcnk9c2V0KQogICAgdG90YWxfYnV5czogaW50ID0gMAogICAgdG90YWxfcmVkZWVtczogaW50ID0gMAogICAgdG90YWxfbWVyZ2VzOiBpbnQgPSAwCiAgICB0b3RhbF9yZWN5Y2xlZF91c2Q6IGZsb2F0ID0gMC4wCiAgICB0b3RhbF9naG9zdF9maWxsc19yZW1vdmVkOiBpbnQgPSAwCiAgICB0b3RhbF9mYWlsZWRfY2xhaW1zOiBpbnQgPSAwCiAgICBwYXBlcl9idXlzOiBpbnQgPSAwCiAgICBwYXBlcl9yZWRlZW1zOiBpbnQgPSAwCiAgICBwYXBlcl9wbmw6IGZsb2F0ID0gMC4wCiAgICBvcGVuX29yZGVyczogbGlzdCA9IGZpZWxkKGRlZmF1bHRfZmFjdG9yeT1saXN0KQogICAgcmVzZXJ2ZWRfY29sbGF0ZXJhbDogZmxvYXQgPSAwLjAKICAgIHJhdGVfbGltaXRfNDI5X2NvdW50OiBpbnQgPSAwCiAgICB0cmFja2VkX25ldF9wbmw6IGZsb2F0ID0gMC4wCgogICAgZGVmIHRvX2RpY3Qoc2VsZikgLT4gZGljdDoKICAgICAgICBkID0gYXNkaWN0KHNlbGYpCiAgICAgICAgZFsnd29ya2VkX21hcmtldHMnXSA9IGxpc3Qoc2VsZi53b3JrZWRfbWFya2V0cykKICAgICAgICByZXR1cm4gZAoKICAgIEBjbGFzc21ldGhvZAogICAgZGVmIGZyb21fZGljdChjbHMsIGQ6IGRpY3QpIC0+ICdTYWZldHlCb3RTdGF0ZSc6CiAgICAgICAgZCA9IGQuY29weSgpCiAgICAgICAgZFsnd29ya2VkX21hcmtldHMnXSA9IHNldChkLmdldCgnd29ya2VkX21hcmtldHMnLCBbXSkpCiAgICAgICAgIyBGSVggIzE2OiBQcmVzZXJ2ZSByYXRlX2xpbWl0XzQyOV9jb3VudCBpbnN0ZWFkIG9mIHBvcHBpbmcgaXQKICAgICAgICByZXR1cm4gY2xzKCoqZCkKCmNsYXNzIFNhZmV0eVJhaWxzOgogICAgZGVmIF9faW5pdF9fKHNlbGYsIGNvbmZpZyk6CiAgICAgICAgc2VsZi5jb25maWcgPSBjb25maWcKICAgICAgICBzZWxmLnN0YXRlID0gU2FmZXR5Qm90U3RhdGUoKQogICAgICAgIHNlbGYuX3N0YXRlX2ZpbGUgPSBnZXRhdHRyKGNvbmZpZywgJ3N0YXRlX2ZpbGUnLCAnZGF0YS9ib3Rfc3RhdGUuanNvbicpCiAgICAgICAgc2VsZi5fbG9nX2RpciA9IGdldGF0dHIoY29uZmlnLCAnbG9nX2RpcicsICdsb2dzJykKICAgICAgICBzZWxmLl9jb25zZWN1dGl2ZV9sb3NzZXMgPSAwCiAgICAgICAgc2VsZi5fbWF4X2NvbnNlY3V0aXZlX2xvc3NlcyA9IDUKICAgICAgICBvcy5tYWtlZGlycyhvcy5wYXRoLmRpcm5hbWUoc2VsZi5fc3RhdGVfZmlsZSksIGV4aXN0X29rPVRydWUpCiAgICAgICAgb3MubWFrZWRpcnMoc2VsZi5fbG9nX2RpciwgZXhpc3Rfb2s9VHJ1ZSkKCiAgICBkZWYgcHJlZmxpZ2h0X2NoZWNrKHNlbGYpOgogICAgICAgIGNoZWNrcyA9IFtdOyBwYXNzZWQgPSBUcnVlCiAgICAgICAgaWYgc2VsZi5jb25maWcudmFsaWRhdGUoKTogY2hlY2tzLmFwcGVuZCgiT0s6IENvbmZpZyB2YWxpZGF0aW9uIHBhc3NlZCIpCiAgICAgICAgZWxzZTogY2hlY2tzLmFwcGVuZCgiRkFJTDogQ29uZmlnIHZhbGlkYXRpb24gZmFpbGVkIik7IHBhc3NlZCA9IEZhbHNlCiAgICAgICAgIyBQMCAjMjA6IEdlb2Jsb2NrIHByZWZsaWdodAogICAgICAgIGdlb19vaywgZ2VvX21zZyA9IHNlbGYuY2hlY2tfZ2VvYmxvY2soKQogICAgICAgIGlmIGdlb19vazogY2hlY2tzLmFwcGVuZChmIk9LOiB7Z2VvX21zZ30iKQogICAgICAgIGVsc2U6IGNoZWNrcy5hcHBlbmQoZiJGQUlMOiB7Z2VvX21zZ30iKTsgcGFzc2VkID0gRmFsc2UKICAgICAgICBpZiBzZWxmLmNvbmZpZy5wYXBlcl9tb2RlOiBjaGVja3MuYXBwZW5kKCJPSzogUGFwZXIgbW9kZSBlbmFibGVkIC0gd2FsbGV0IGNoZWNrcyBza2lwcGVkIikKICAgICAgICBlbHNlOgogICAgICAgICAgICB3YWxsZXQgPSBnZXRhdHRyKHNlbGYuY29uZmlnLCAnd2FsbGV0X2FkZHJlc3MnLCAnJykKICAgICAgICAgICAgaWYgd2FsbGV0OiBjaGVja3MuYXBwZW5kKGYiT0s6IFdhbGxldCBhZGRyZXNzIHNldDoge3dhbGxldFs6MTBdfS4uLiIpCiAgICAgICAgICAgIGVsc2U6IGNoZWNrcy5hcHBlbmQoIkZBSUw6IFdhbGxldCBhZGRyZXNzIG5vdCBzZXQiKTsgcGFzc2VkID0gRmFsc2UKICAgICAgICAgICAgaWYgc2VsZi5jb25maWcuY2xvYl9hcGlfa2V5IGFuZCBzZWxmLmNvbmZpZy5jbG9iX2FwaV9zZWNyZXQ6IGNoZWNrcy5hcHBlbmQoIk9LOiBDTE9CIEFQSSBjcmVkZW50aWFscyBwcmVzZW50IikKICAgICAgICAgICAgZWxzZTogY2hlY2tzLmFwcGVuZCgiRkFJTDogQ0xPQiBBUEkgY3JlZGVudGlhbHMgaW5jb21wbGV0ZSIpOyBwYXNzZWQgPSBGYWxzZQogICAgICAgICAgICBjaGVja3MuYXBwZW5kKCJPSzogR2FzIGJhbGFuY2UgY2hlY2sgKGRlZmVycmVkIHRvIGxpdmUgbW9kZSkiKQogICAgICAgICAgICBva19jaGFpbiwgY2hhaW5faWQsIGNoYWluX21zZyA9IHNlbGYudmVyaWZ5X2NoYWluKCkKICAgICAgICAgICAgaWYgb2tfY2hhaW46IGNoZWNrcy5hcHBlbmQoZiJPSzogQ2hhaW4gdmVyaWZpZWQ6IHtjaGFpbl9tc2d9IikKICAgICAgICAgICAgZWxzZTogY2hlY2tzLmFwcGVuZChmIkZBSUw6IHtjaGFpbl9tc2d9Iik7IHBhc3NlZCA9IEZhbHNlCiAgICAgICAgY2hlY2tzLmFwcGVuZCgiT0s6IEFsZXJ0IHN5c3RlbSAobG9nZ2luZyB0byBmaWxlKSIpCiAgICAgICAgdHJ5OgogICAgICAgICAgICB0ZXN0X3BhdGggPSBvcy5wYXRoLmpvaW4ob3MucGF0aC5kaXJuYW1lKHNlbGYuX3N0YXRlX2ZpbGUpLCAnLndyaXRlX3Rlc3QnKQogICAgICAgICAgICB3aXRoIG9wZW4odGVzdF9wYXRoLCAndycpIGFzIGY6IGYud3JpdGUoJ29rJykKICAgICAgICAgICAgb3MucmVtb3ZlKHRlc3RfcGF0aCkKICAgICAgICAgICAgY2hlY2tzLmFwcGVuZCgiT0s6IFN0YXRlIGZpbGUgZGlyZWN0b3J5IHdyaXRhYmxlIikKICAgICAgICBleGNlcHQgRXhjZXB0aW9uIGFzIGU6CiAgICAgICAgICAgIGNoZWNrcy5hcHBlbmQoZiJGQUlMOiBTdGF0ZSBmaWxlIGRpcmVjdG9yeSBub3Qgd3JpdGFibGU6IHtlfSIpOyBwYXNzZWQgPSBGYWxzZQogICAgICAgIGlmIDAuOTAgPD0gc2VsZi5jb25maWcuYnV5X3ByaWNlIDw9IDEuMDogY2hlY2tzLmFwcGVuZChmIk9LOiBCdXkgcHJpY2Uge3NlbGYuY29uZmlnLmJ1eV9wcmljZX0gaW4gdmFsaWQgcmFuZ2UiKQogICAgICAgIGVsc2U6IGNoZWNrcy5hcHBlbmQoZiJGQUlMOiBCdXkgcHJpY2Uge3NlbGYuY29uZmlnLmJ1eV9wcmljZX0gb3V0IG9mIHJhbmdlIik7IHBhc3NlZCA9IEZhbHNlCiAgICAgICAgbWFrZXJfZWRnZSA9IHNlbGYuY29uZmlnLm5ldF9lZGdlKGlzX21ha2VyPVRydWUpCiAgICAgICAgdGFrZXJfZWRnZSA9IHNlbGYuY29uZmlnLm5ldF9lZGdlKGlzX21ha2VyPUZhbHNlKQogICAgICAgIGlmIG1ha2VyX2VkZ2UgPiAwOgogICAgICAgICAgICBjaGVja3MuYXBwZW5kKGYiT0s6IE1ha2VyIGVkZ2UgJHttYWtlcl9lZGdlOi42Zn0vc2hhcmUgKHplcm8gZmVlcykiKQogICAgICAgICAgICBjaGVja3MuYXBwZW5kKGYiT0s6IFRha2VyIGVkZ2UgJHt0YWtlcl9lZGdlOi42Zn0vc2hhcmUgKGlmIGZhbGxiYWNrIHVzZWQpIikKICAgICAgICBlbHNlOiBjaGVja3MuYXBwZW5kKCJGQUlMOiBOZXQgZWRnZSBub24tcG9zaXRpdmUiKTsgcGFzc2VkID0gRmFsc2UKICAgICAgICBpZiBzZWxmLmNvbmZpZy5wcmVmZXJfbWFrZXI6CiAgICAgICAgICAgIGNoZWNrcy5hcHBlbmQoIk9LOiBHVEMgcG9zdC1vbmx5IG1ha2VyIG1vZGUgKFBSRUZFUl9NQUtFUj1UcnVlKSIpCiAgICAgICAgICAgIGlmIG5vdCBzZWxmLmNvbmZpZy5hbGxvd190YWtlcl9mYWxsYmFjazogY2hlY2tzLmFwcGVuZCgiT0s6IFRha2VyIGZhbGxiYWNrIGRpc2FibGVkIikKICAgICAgICBlbHNlOiBjaGVja3MuYXBwZW5kKCJXQVJOOiBUYWtlci1vbmx5IG1vZGUgKHBheWluZyBmZWVzKSIpCiAgICAgICAgcmV0dXJuIHBhc3NlZCwgY2hlY2tzCgoKICAgIGRlZiBjaGVja19nZW9ibG9jayhzZWxmKToKICAgICAgICAiIiJQMCAjMjA6IEdlb2Jsb2NrIHByZWZsaWdodCAtIGNoZWNrIGlmIHVzZXIncyByZWdpb24gaXMgYWxsb3dlZCBmb3IgUG9seW1hcmtldCB0cmFkaW5nLiIiIgogICAgICAgIGlmIHNlbGYuY29uZmlnLnBhcGVyX21vZGU6CiAgICAgICAgICAgIHJldHVybiBUcnVlLCAiUGFwZXIgbW9kZSAtIGdlb2Jsb2NrIGNoZWNrIHNraXBwZWQiCiAgICAgICAgdXNlcl9yZWdpb24gPSBnZXRhdHRyKHNlbGYuY29uZmlnLCAndXNlcl9yZWdpb24nLCBOb25lKQogICAgICAgIGlmIHVzZXJfcmVnaW9uIGFuZCB1c2VyX3JlZ2lvbiBpbiBCTE9DS0VEX1JFR0lPTlM6CiAgICAgICAgICAgIGxvZ2dlci5lcnJvcihmIltHRU9CTE9DS10gVXNlciByZWdpb24ge3VzZXJfcmVnaW9ufSBpcyBibG9ja2VkIikKICAgICAgICAgICAgcmV0dXJuIEZhbHNlLCBmIlJlZ2lvbiB7dXNlcl9yZWdpb259IGlzIGJsb2NrZWQgZm9yIFBvbHltYXJrZXQgdHJhZGluZyIKICAgICAgICByZXR1cm4gVHJ1ZSwgIkdlb2Jsb2NrIGNoZWNrIHBhc3NlZCIKCiAgICBkZWYgdmVyaWZ5X2NoYWluKHNlbGYsIHczPU5vbmUpOgogICAgICAgICIiIlAwICMxNTogRmFpbC1jbG9zZWQgY2hhaW4gdmVyaWZpY2F0aW9uLiIiIgogICAgICAgIGlmIHNlbGYuY29uZmlnLnBhcGVyX21vZGU6CiAgICAgICAgICAgIHJldHVybiBUcnVlLCAxMzcsICJQYXBlciBtb2RlIC0gY2hhaW4gY2hlY2sgc2tpcHBlZCIKICAgICAgICB0cnk6CiAgICAgICAgICAgIGZyb20gd2ViMyBpbXBvcnQgV2ViMwogICAgICAgICAgICBmcm9tIGNvbmZpZy5zZXR0aW5ncyBpbXBvcnQgUE9MWUdPTl9SUEMKICAgICAgICAgICAgaWYgdzMgaXMgTm9uZToKICAgICAgICAgICAgICAgIHczID0gV2ViMyhXZWIzLkhUVFBQcm92aWRlcihzZWxmLmNvbmZpZy5wb2x5Z29uX3JwYyBvciBQT0xZR09OX1JQQykpCiAgICAgICAgICAgIGNoYWluX2lkID0gdzMuZXRoLmNoYWluX2lkCiAgICAgICAgICAgIGlmIGNoYWluX2lkICE9IDEzNzoKICAgICAgICAgICAgICAgIHNlbGYuc3RhdGUuaXNfa2lsbGVkID0gVHJ1ZQogICAgICAgICAgICAgICAgc2VsZi5zdGF0ZS5raWxsX3JlYXNvbiA9IGYiV3JvbmcgY2hhaW46IHtjaGFpbl9pZH0gKGV4cGVjdGVkIDEzNy9Qb2x5Z29uKSIKICAgICAgICAgICAgICAgIGxvZ2dlci5jcml0aWNhbChmIktJTEwgU1dJVENIOiB7c2VsZi5zdGF0ZS5raWxsX3JlYXNvbn0iKQogICAgICAgICAgICAgICAgc2VsZi5kdW1wX3N0YXRlKCkKICAgICAgICAgICAgICAgIHJldHVybiBGYWxzZSwgY2hhaW5faWQsIHNlbGYuc3RhdGUua2lsbF9yZWFzb24KICAgICAgICAgICAgcmV0dXJuIFRydWUsIGNoYWluX2lkLCAiT0s6IFBvbHlnb24gKDEzNykiCiAgICAgICAgZXhjZXB0IEV4Y2VwdGlvbiBhcyBlOgogICAgICAgICAgICBzZWxmLnN0YXRlLmlzX2tpbGxlZCA9IFRydWUKICAgICAgICAgICAgc2VsZi5zdGF0ZS5raWxsX3JlYXNvbiA9IGYiQ2hhaW4gdmVyaWZpY2F0aW9uIGZhaWxlZDoge2V9IgogICAgICAgICAgICBsb2dnZXIuY3JpdGljYWwoZiJLSUxMIFNXSVRDSDoge3NlbGYuc3RhdGUua2lsbF9yZWFzb259IikKICAgICAgICAgICAgc2VsZi5kdW1wX3N0YXRlKCkKICAgICAgICAgICAgcmV0dXJuIEZhbHNlLCBOb25lLCBzdHIoZSkKCiAgICBkZWYgY2hlY2tfZXhwb3N1cmVfYmVmb3JlX29yZGVyKHNlbGYsIG9yZGVyX2Nvc3QsIHJlc3Rpbmdfb3JkZXJzPU5vbmUpOgogICAgICAgICIiIlAwICMxNzogQ2hlY2sgaWYgcGxhY2luZyBhbiBvcmRlciB3b3VsZCBleGNlZWQgZXhwb3N1cmUgbGltaXRzLiIiIgogICAgICAgIGV4cG9zdXJlID0gc2VsZi5nZXRfZXhwb3N1cmUocmVzdGluZ19vcmRlcnMpCiAgICAgICAgbmV3X3RvdGFsID0gZXhwb3N1cmVbJ3RvdGFsX2V4cG9zdXJlJ10gKyBvcmRlcl9jb3N0CiAgICAgICAgaWYgbmV3X3RvdGFsID4gc2VsZi5jb25maWcubWF4X3BvcnRmb2xpb19leHBvc3VyZToKICAgICAgICAgICAgcmV0dXJuIEZhbHNlLCBmIlBvcnRmb2xpbyBleHBvc3VyZSAke25ld190b3RhbDouMmZ9IHdvdWxkIGV4Y2VlZWQgJHtzZWxmLmNvbmZpZy5tYXhfcG9ydGZvbGlvX2V4cG9zdXJlOi4yZn0iCiAgICAgICAgcmV0dXJuIFRydWUsICJPSyIKCiAgICBkZWYgcmVjb3JkX2xvc3Moc2VsZiwgYW1vdW50PTAuMCk6CiAgICAgICAgIiIiUDAgIzE4OiBUcmFjayBjb25zZWN1dGl2ZSBsb3NzZXMgZm9yIGtpbGwgc3dpdGNoLiIiIgogICAgICAgIHNlbGYuX2NvbnNlY3V0aXZlX2xvc3NlcyArPSAxCiAgICAgICAgaWYgc2VsZi5fY29uc2VjdXRpdmVfbG9zc2VzID49IHNlbGYuX21heF9jb25zZWN1dGl2ZV9sb3NzZXM6CiAgICAgICAgICAgIHNlbGYuc3RhdGUuaXNfa2lsbGVkID0gVHJ1ZQogICAgICAgICAgICBzZWxmLnN0YXRlLmtpbGxfcmVhc29uID0gZiJDb25zZWN1dGl2ZSBsb3NzZXM6IHtzZWxmLl9jb25zZWN1dGl2ZV9sb3NzZXN9IChtYXgge3NlbGYuX21heF9jb25zZWN1dGl2ZV9sb3NzZXN9KSIKICAgICAgICAgICAgbG9nZ2VyLmNyaXRpY2FsKGYiS0lMTCBTV0lUQ0g6IHtzZWxmLnN0YXRlLmtpbGxfcmVhc29ufSIpCiAgICAgICAgICAgIHNlbGYuZHVtcF9zdGF0ZSgpCiAgICAgICAgICAgIHJldHVybiBUcnVlLCBzZWxmLnN0YXRlLmtpbGxfcmVhc29uCiAgICAgICAgbG9nZ2VyLndhcm5pbmcoZiJMb3NzIHJlY29yZGVkOiB7c2VsZi5fY29uc2VjdXRpdmVfbG9zc2VzfS97c2VsZi5fbWF4X2NvbnNlY3V0aXZlX2xvc3Nlc30gY29uc2VjdXRpdmUiKQogICAgICAgIHJldHVybiBGYWxzZSwgIiIKCiAgICBkZWYgcmVjb3JkX3dpbihzZWxmKToKICAgICAgICAiIiJQMCAjMTg6IFJlc2V0IGNvbnNlY3V0aXZlIGxvc3MgY291bnRlciBvbiB3aW4uIiIiCiAgICAgICAgaWYgc2VsZi5fY29uc2VjdXRpdmVfbG9zc2VzID4gMDoKICAgICAgICAgICAgbG9nZ2VyLmluZm8oZiJXaW4gcmVjb3JkZWQsIHJlc2V0dGluZyBjb25zZWN1dGl2ZSBsb3NzZXMgZnJvbSB7c2VsZi5fY29uc2VjdXRpdmVfbG9zc2VzfSIpCiAgICAgICAgc2VsZi5fY29uc2VjdXRpdmVfbG9zc2VzID0gMAoKICAgIGRlZiBjaGVja19raWxsX3N3aXRjaChzZWxmLCBjdXJyZW50X2RhaWx5X2xvc3M9Tm9uZSk6CiAgICAgICAgaWYgc2VsZi5zdGF0ZS5pc19raWxsZWQ6IHJldHVybiBUcnVlLCBzZWxmLnN0YXRlLmtpbGxfcmVhc29uIG9yICJBbHJlYWR5IGtpbGxlZCIKICAgICAgICBsb3NzID0gY3VycmVudF9kYWlseV9sb3NzIGlmIGN1cnJlbnRfZGFpbHlfbG9zcyBpcyBub3QgTm9uZSBlbHNlIGFicyhtaW4oMCwgc2VsZi5zdGF0ZS5kYWlseV9wbmwpKQogICAgICAgIGlmIGxvc3MgPj0gc2VsZi5jb25maWcubWF4X2RhaWx5X2xvc3M6CiAgICAgICAgICAgIHNlbGYuc3RhdGUuaXNfa2lsbGVkID0gVHJ1ZQogICAgICAgICAgICBzZWxmLnN0YXRlLmtpbGxfcmVhc29uID0gZiJEYWlseSBsb3NzICR7bG9zcDouMmZ9IGV4Y2VlZGVkIHRocmVzaG9sZCAke3NlbGYuY29uZmlnLm1heF9kYWlseV9sb3NzOi4yZn0iCiAgICAgICAgICAgIGxvZ2dlci5jcml0aWNhbChmIktJTEwgU1dJVENIVFJJR0dFUkVEOiB7c2VsZi5zdGF0ZS5raWxsX3JlYXNvbn0iKQogICAgICAgICAgICBzZWxmLmR1bXBfc3RhdGUoKQogICAgICAgICAgICByZXR1cm4gVHJ1ZSwgc2VsZi5zdGF0ZS5raWxsX3JlYXNvbgogICAgICAgIHJldHVybiBGYWxzZSwgIiIKCiAgICBkZWYgcmVjb3JkXzQyOShzZWxmKToKICAgICAgICBzZWxmLnN0YXRlLnJhdGVfbGltaXRfNDI5X2NvdW50ICs9IDEKICAgICAgICBpZiBzZWxmLnN0YXRlLnJhdGVfbGltaXRfNDI5X2NvdW50ID49IHNlbGYuY29uZmlnLm1heF80MjlfYmVmb3JlX3RyaXA6CiAgICAgICAgICAgIHNlbGYuc3RhdGUuaXNfa2lsbGVkID0gVHJ1ZQogICAgICAgICAgICBzZWxmLnN0YXRlLmtpbGxfcmVhc29uID0gZiJSYXRlIGxpbWl0OiB7c2VsZi5zdGF0ZS5yYXRlX2xpbWl0XzQyOV9jb3VudH0gNDI5cyAobWF4IHtzZWxmLmNvbmZpZy5tYXhfNDI5X2JlZm9yZV90cmlwfSkiCiAgICAgICAgICAgIGxvZ2dlci5jcml0aWNhbChmIktJTEwgU1dJVENIOiB7c2VsZi5zdGF0ZS5raWxsX3JlYXNvbn0iKQogICAgICAgICAgICBzZWxmLmR1bXBfc3RhdGUoKQogICAgICAgICAgICByZXR1cm4gVHJ1ZSwgc2VsZi5zdGF0ZS5raWxsX3JlYXNvbgogICAgICAgIGxvZ2dlci53YXJuaW5nKGYiNDI5IHJlY29yZGVkOiB7c2VsZi5zdGF0ZS5yYXRlX2xpbWl0XzQyOV9jb3VudH0ve3NlbGYuY29uZmlnLm1heF80MjlfYmVmb3JlX3RyaXB9IikKICAgICAgICByZXR1cm4gRmFsc2UsICIiCgogICAgZGVmIGdldF9leHBvc3VyZShzZWxmLCByZXN0aW5nX29yZGVycz1Ob25lKToKICAgICAgICBwb3NpdGlvbl9leHBvc3VyZSA9IHN1bShwLmdldCgnY29zdCcsIDApIGZvciBwIGluIHNlbGYuc3RhdGUub3Blbl9wb3NpdGlvbnMudmFsdWVzKCkgaWYgaXNpbnN0YW5jZShwLCBkaWN0KSkKICAgICAgICByZXN0aW5nX2V4cG9zdXJlID0gMC4wCiAgICAgICAgaWYgcmVzdGluZ19vcmRlcnM6CiAgICAgICAgICAgIGZvciBvcmRlciBpbiByZXN0aW5nX29yZGVyczoKICAgICAgICAgICAgICAgIGlmIGhhc2F0dHIob3JkZXIsICdzaGFyZXMnKSBhbmQgaGFzYXR0cihvcmRlciwgJ3ByaWNlJyk6CiAgICAgICAgICAgICAgICAgICAgaWYgaGFzYXR0cihvcmRlciwgJ3N0YXR1cycpIGFuZCBzdHIob3JkZXIuc3RhdHVzKSBpbiAoJ2xpdmUnLCAnT3JkZXJTdGF0dXMuTElWRScsICdwYXJ0aWFsJywgJ09yZGVyU3RhdHVzLlBBUlRJQUwnKToKICAgICAgICAgICAgICAgICAgICAgICAgcmVtYWluaW5nID0gb3JkZXIuc2hhcmVzIC0gZ2V0YXR0cihvcmRlciwgJ2ZpbGxlZF9zaGFyZXMnLCAwKQogICAgICAgICAgICAgICAgICAgICAgICByZXN0aW5nX2V4cG9zdXJlICs9IHJlbWFpbmluZyAqIG9yZGVyLnByaWNlCiAgICAgICAgICAgICAgICBlbGlmIGlzaW5zdGFuY2Uob3JkZXIsIGRpY3QpOgogICAgICAgICAgICAgICAgICAgIHJlbWFpbmluZyA9IGZsb2F0KG9yZGVyLmdldCgnc2hhcmVzJywgMCkpIC0gZmxvYXQob3JkZXIuZ2V0KCdmaWxsZWRfc2hhcmVzJywgMCkpCiAgICAgICAgICAgICAgICAgICAgcmVzdGluZ19leHBvc3VyZSArPSByZW1haW5pbmcgKiBmbG9hdChvcmRlci5nZXQoJ3ByaWNlJywgMCkpCiAgICAgICAgdG90YWwgPSBwb3NpdGlvbl9leHBvc3VyZSArIHJlc3RpbmdfZXhwb3N1cmUKICAgICAgICByZXR1cm4geydwb3NpdGlvbl9leHBvc3VyZSc6IHJvdW5kKHBvc2l0aW9uX2V4cG9zdXJlLCAyKSwgJ3Jlc3RpbmdfZXhwb3N1cmUnOiByb3VuZChyZXN0aW5nX2V4cG9zdXJlLCAyKSwKICAgICAgICAgICAgICAgICd0b3RhbF9leHBvc3VyZSc6IHJvdW5kKHRvdGFsLCAyKSwgJ21heF9ldmVudCc6IHNlbGYuY29uZmlnLm1heF9ldmVudF9leHBvc3VyZSwKICAgICAgICAgICAgICAgICdtYXhfcG9ydGZvbGlvJzogc2VsZi5jb25maWcubWF4X3BvcnRmb2xpb19leHBvc3VyZSwgJ3dpdGhpbl9saW1pdHMnOiB0b3RhbCA8PSBzZWxmLmNvbmZpZy5tYXhfcG9ydGZvbGlvX2V4cG9zdXJlfQoKICAgIGRlZiBtYW51YWxfa2lsbChzZWxmLCByZWFzb249Ik1hbnVhbCBraWxsIik6CiAgICAgICAgc2VsZi5zdGF0ZS5pc19raWxsZWQgPSBUcnVlOyBzZWxmLnN0YXRlLmtpbGxfcmVhc29uID0gcmVhc29uOyBzZWxmLnN0YXRlLmlzX3J1bm5pbmcgPSBGYWxzZQogICAgICAgIGxvZ2dlci5jcml0aWNhbChmIk1BTlVBTCBLSUxMOiB7cmVhc29ufSIpOyBzZWxmLmR1bXBfc3RhdGUoKQoKICAgIGRlZiByZXNldF9kYWlseShzZWxmKToKICAgICAgICBzZWxmLnN0YXRlLmRhaWx5X3BubCA9IDAuMDsgc2VsZi5zdGF0ZS5kYWlseV9wbmxfcmVzZXRfdGltZSA9IHRpbWUudGltZSgpCiAgICAgICAgc2VsZi5zdGF0ZS5pc19raWxsZWQgPSBGYWxzZTsgc2VsZi5zdGF0ZS5raWxsX3JlYXNvbiA9IE5vbmU7IHNlbGYuc3RhdGUucmF0ZV9saW1pdF80MjlfY291bnQgPSAwCiAgICAgICAgbG9nZ2VyLmluZm8oIkRhaWx5IGNvdW50ZXJzIHJlc2V0IikKCiAgICBkZWYgZHVtcF9zdGF0ZShzZWxmKToKICAgICAgICB0cnk6CiAgICAgICAgICAgIHdpdGggb3BlbihzZWxmLl9zdGF0ZV9maWxlLCAndycpIGFzIGY6IGpzb24uZHVtcChzZWxmLnN0YXRlLnRvX2RpY3QoKSwgZiwgaW5kZW50PTIsIGRlZmF1bHQ9c3RyKQogICAgICAgIGV4Y2VwdCBFeGNlcHRpb24gYXMgZTogbG9nZ2VyLmVycm9yKGYiU3RhdGUgZHVtcCBmYWlsZWQ6IHtlfSIpCgogICAgZGVmIGxvYWRfc3RhdGUoc2VsZik6CiAgICAgICAgaWYgb3MucGF0aC5leGlzdHMoc2VsZi5fc3RhdGVfZmlsZSk6CiAgICAgICAgICAgIHRyeToKICAgICAgICAgICAgICAgIHdpdGggb3BlbihzZWxmLl9zdGF0ZV9maWxlLCAncicpIGFzIGY6IGRhdGEgPSBqc29uLmxvYWQoZikKICAgICAgICAgICAgICAgIHNlbGYuc3RhdGUgPSBTYWZldHlCb3RTdGF0ZS5mcm9tX2RpY3QoZGF0YSkKICAgICAgICAgICAgICAgIGxvZ2dlci5pbmZvKGYiU3RhdGUgbG9hZGVkOiB7bGVuKHNlbGYuc3RhdGUud29ya2VkX21hcmtldHMpfSB3b3JrZWQsIHtsZW4oc2VsZi5zdGF0ZS5vcGVuX3Bvc2l0aW9ucyl9IHBvc2l0aW9ucyIpCiAgICAgICAgICAgICAgICByZXR1cm4gVHJ1ZQogICAgICAgICAgICBleGNlcHQgRXhjZXB0aW9uIGFzIGU6IGxvZ2dlci5lcnJvcihmIlN0YXRlIGxvYWQgZmFpbGVkOiB7ZX0iKQogICAgICAgIHJldHVybiBGYWxzZQoKICAgIGRlZiB1cGRhdGVfc2NvcmVib2FyZChzZWxmLCBidXlzPU5vbmUsIHJlZGVlbXM9Tm9uZSwgbWVyZ2VzPU5vbmUsIG5ldF9wbmw9Tm9uZSk6CiAgICAgICAgaWYgYnV5czoKICAgICAgICAgICAgZm9yIGJ1eSBpbiBidXlzOgogICAgICAgICAgICAgICAgc2VsZi5zdGF0ZS50b3RhbF9idXlzICs9IDEKICAgICAgICAgICAgICAgIGlmIHNlbGYuY29uZmlnLnBhcGVyX21vZGU6IHNlbGYuc3RhdGUucGFwZXJfYnV5cyArPSAxCiAgICAgICAgaWYgcmVkZWVtczoKICAgICAgICAgICAgZm9yIHJlZGVlbSBpbiByZWRlZW1zOgogICAgICAgICAgICAgICAgc2VsZi5zdGF0ZS50b3RhbF9yZWRlZW1zICs9IDEKICAgICAgICAgICAgICAgIGlmIHNlbGYuY29uZmlnLnBhcGVyX21vZGU6IHNlbGYuc3RhdGUucGFwZXJfcmVkZWVtcyArPSAxCiAgICAgICAgaWYgbWVyZ2VzOgogICAgICAgICAgICBmb3IgbWVyZ2UgaW4gbWVyZ2VzOgogICAgICAgICAgICAgICAgc2VsZi5zdGF0ZS50b3RhbF9tZXJnZXMgKz0gMQogICAgICAgICAgICAgICAgc2VsZi5zdGF0ZS50b3RhbF9yZWN5Y2xlZF91c2QgKz0gbWVyZ2UuZ2V0KCdhbW91bnQnLCAwKQogICAgICAgIGlmIG5ldF9wbmwgaXMgbm90IE5vbmU6CiAgICAgICAgICAgIHNlbGYuc3RhdGUudHJhY2tlZF9uZXRfcG5sICs9IG5ldF9wbmwKCiAgICBkZWYgZ2V0X3RydWVfcG5sKHNlbGYpOgogICAgICAgIHRvdGFsX2luID0gc2VsZi5zdGF0ZS50b3RhbF9idXlzICogc2VsZi5jb25maWcuYnV5X3ByaWNlCiAgICAgICAgdG90YWxfb3V0ID0gc2VsZi5zdGF0ZS50b3RhbF9yZWRlZW1zICogMS4wCiAgICAgICAgdHJ1ZV9wbmwgPSBzZWxmLnN0YXRlLnRyYWNrZWRfbmV0X3BubAogICAgICAgIHRydWVfd2luX3JhdGUgPSAoc2VsZi5zdGF0ZS50b3RhbF9yZWRlZW1zIC8gc2VsZi5zdGF0ZS50b3RhbF9idXlzIGlmIHNlbGYuc3RhdGUudG90YWxfYnV5cyA+IDAgZWxzZSAwLjApCiAgICAgICAgcmV0dXJuIHsndG90YWxfYnV5cyc6IHNlbGYuc3RhdGUudG90YWxfYnV5cywgJ3RvdGFsX3JlZGVlbXMnOiBzZWxmLnN0YXRlLnRvdGFsX3JlZGVlbXMsCiAgICAgICAgICAgICAgICAndG90YWxfbWVyZ2VzJzogc2VsZi5zdGF0ZS50b3RhbF9tZXJnZXMsICd0b3RhbF9yZWN5Y2xlZF91c2QnOiByb3VuZChzZWxmLnN0YXRlLnRvdGFsX3JlY3ljbGVkX3VzZCwgNCksCiAgICAgICAgICAgICAgICAndHJ1ZV9wbmwnOiByb3VuZCh0cnVlX3BubCwgNCksICd0cnVlX3dpbl9yYXRlJzogcm91bmQodHJ1ZV93aW5fcmF0ZSwgNCksCiAgICAgICAgICAgICAgICAnZ2hvc3RfZmlsbHNfcmVtb3ZlZCc6IHNlbGYuc3RhdGUudG90YWxfZ2hvc3RfZmlsbHNfcmVtb3ZlZCwgJ2ZhaWxlZF9jbGFpbXMnOiBzZWxmLnN0YXRlLnRvdGFsX2ZhaWxlZF9jbGFpbXMsCiAgICAgICAgICAgICAgICAnZGFpbHlfcG5sJzogcm91bmQoc2VsZi5zdGF0ZS5kYWlseV9wbmwsIDQpLCAnaXNfa2lsbGVkJzogc2VsZi5zdGF0ZS5pc19raWxsZWQsCiAgICAgICAgICAgICAgICAna2lsbF9yZWFzb24nOiBzZWxmLnN0YXRlLmtpbGxfcmVhc29uLCAncGFwZXJfbW9kZSc6IHNlbGYuY29uZmlnLnBhcGVyX21vZGUsCiAgICAgICAgICAgICAgICAncmF0ZV9saW1pdF80MjlzJzogc2VsZi5zdGF0ZS5yYXRlX2xpbWl0XzQyOV9jb3VudH0KCiAgICBkZWYgbWFya193b3JrZWQoc2VsZiwgY29uZGl0aW9uX2lkKTogc2VsZi5zdGF0ZS53b3JrZWRfbWFya2V0cy5hZGQoY29uZGl0aW9uX2lkKQogICAgZGVmIHVubWFya193b3JrZWQoc2VsZiwgY29uZGl0aW9uX2lkKTogc2VsZi5zdGF0ZS53b3JrZWRfbWFya2V0cy5kaXNjYXJkKGNvbmRpdGlvbl9pZCk7IGxvZ2dlci5pbmZvKGYiTWFya2V0IHJlbGVhc2VkOiB7Y29uZGl0aW9uX2lkWzoyMF19IikKICAgIGRlZiBpc193b3JrZWQoc2VsZiwgY29uZGl0aW9uX2lkKTogcmV0dXJuIGNvbmRpdGlvbl9pZCBpbiBzZWxmLnN0YXRlLndvcmtlZF9tYXJrZXRzCgogICAgZGVmIHJlY29yZF9naG9zdF9maWxsKHNlbGYsIGNvbmRpdGlvbl9pZCk6CiAgICAgICAgc2VsZi5zdGF0ZS50b3RhbF9naG9zdF9maWxsc19yZW1vdmVkICs9IDEKICAgICAgICBpZiBjb25kaXRpb25faWQgaW4gc2VsZi5zdGF0ZS5vcGVuX3Bvc2l0aW9uczogZGVsIHNlbGYuc3RhdGUub3Blbl9wb3NpdGlvbnNbY29uZGl0aW9uX2lkXQogICAgICAgIGxvZ2dlci53YXJuaW5nKGYiR2hvc3QgZmlsbCByZW1vdmVkOiB7Y29uZGl0aW9uX2lkfSIpCgogICAgZGVmIHJlY29yZF9mYWlsZWRfY2xhaW0oc2VsZiwgY29uZGl0aW9uX2lkKToKICAgICAgICBzZWxmLnN0YXRlLnRvdGFsX2ZhaWxlZF9jbGFpbXMgKz0gMQogICAgICAgIGxvZ2dlci5lcnJvcihmIkZhaWxlZCBjbGFpbSAob3BzIGVycm9yKToge2NvbmRpdGlvbl9pZH0iKQo=
+"""Sweeper Bot V2 - Safety Rails (Updated)
+
+FIX #7: Removed duplicate BotState — now imports from config.settings
+FIX #16: from_dict() no longer pops rate_limit_429_count (persists across restarts)
+"""
+import json, os, time, logging
+from datetime import datetime, timezone
+from typing import Optional
+from dataclasses import dataclass, field, asdict
+
+logger = logging.getLogger("sweeper.safety")
+
+# P0 #20: OFAC sanctioned regions - blocked from Polymarket trading
+BLOCKED_REGIONS = ["CU", "IR", "KP", "SY", "CR"]
+
+from config.settings import BotState as ConfigBotState
+
+@dataclass
+class SafetyBotState:
+    """FIX #7: Renamed to SafetyBotState to avoid confusion with config.BotState."""
+    started_at: float = field(default_factory=time.time)
+    is_running: bool = False
+    is_killed: bool = False
+    kill_reason: Optional[str] = None
+    daily_pnl: float = 0.0
+    daily_pnl_reset_time: float = field(default_factory=time.time)
+    open_positions: dict = field(default_factory=dict)
+    pending_orders: dict = field(default_factory=dict)
+    worked_markets: set = field(default_factory=set)
+    total_buys: int = 0
+    total_redeems: int = 0
+    total_merges: int = 0
+    total_recycled_usd: float = 0.0
+    total_ghost_fills_removed: int = 0
+    total_failed_claims: int = 0
+    paper_buys: int = 0
+    paper_redeems: int = 0
+    paper_pnl: float = 0.0
+    open_orders: list = field(default_factory=list)
+    reserved_collateral: float = 0.0
+    rate_limit_429_count: int = 0
+    tracked_net_pnl: float = 0.0
+
+    def to_dict(self) -> dict:
+        d = asdict(self)
+        d['worked_markets'] = list(self.worked_markets)
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> 'SafetyBotState':
+        d = d.copy()
+        d['worked_markets'] = set(d.get('worked_markets', []))
+        # FIX #16: Preserve rate_limit_429_count instead of popping it
+        return cls(**d)
+
+class SafetyRails:
+    def __init__(self, config):
+        self.config = config
+        self.state = SafetyBotState()
+        self._state_file = getattr(config, 'state_file', 'data/bot_state.json')
+        self._log_dir = getattr(config, 'log_dir', 'logs')
+        self._consecutive_losses = 0
+        self._max_consecutive_losses = 5
+        os.makedirs(os.path.dirname(self._state_file), exist_ok=True)
+        os.makedirs(self._log_dir, exist_ok=True)
+
+    def preflight_check(self):
+        checks = []; passed = True
+        if self.config.validate(): checks.append("OK: Config validation passed")
+        else: checks.append("FAIL: Config validation failed"); passed = False
+        # P0 #20: Geoblock preflight
+        geo_ok, geo_msg = self.check_geoblock()
+        if geo_ok: checks.append(f"OK: {geo_msg}")
+        else: checks.append(f"FAIL: {geo_msg}"); passed = False
+        if self.config.paper_mode: checks.append("OK: Paper mode enabled - wallet checks skipped")
+        else:
+            wallet = getattr(self.config, 'wallet_address', '')
+            if wallet: checks.append(f"OK: Wallet address set: {wallet[:10]}...")
+            else: checks.append("FAIL: Wallet address not set"); passed = False
+            if self.config.clob_api_key and self.config.clob_api_secret: checks.append("OK: CLOB API credentials present")
+            else: checks.append("FAIL: CLOB API credentials incomplete"); passed = False
+            checks.append("OK: Gas balance check (deferred to live mode)")
+            ok_chain, chain_id, chain_msg = self.verify_chain()
+            if ok_chain: checks.append(f"OK: Chain verified: {chain_msg}")
+            else: checks.append(f"FAIL: {chain_msg}"); passed = False
+        checks.append("OK: Alert system (logging to file)")
+        try:
+            test_path = os.path.join(os.path.dirname(self._state_file), '.write_test')
+            with open(test_path, 'w') as f: f.write('ok')
+            os.remove(test_path)
+            checks.append("OK: State file directory writable")
+        except Exception as e:
+            checks.append(f"FAIL: State file directory not writable: {e}"); passed = False
+        if 0.90 <= self.config.buy_price <= 1.0: checks.append(f"OK: Buy price {self.config.buy_price} in valid range")
+        else: checks.append(f"FAIL: Buy price {self.config.buy_price} out of range"); passed = False
+        maker_edge = self.config.net_edge(is_maker=True)
+        taker_edge = self.config.net_edge(is_maker=False)
+        if maker_edge > 0:
+            checks.append(f"OK: Maker edge ${maker_edge:.6f}/share (zero fees)")
+            checks.append(f"OK: Taker edge ${taker_edge:.6f}/share (if fallback used)")
+        else: checks.append("FAIL: Net edge non-positive"); passed = False
+        if self.config.prefer_maker:
+            checks.append("OK: GTC post-only maker mode (PREFER_MAKER=True)")
+            if not self.config.allow_taker_fallback: checks.append("OK: Taker fallback disabled")
+        else: checks.append("WARN: Taker-only mode (paying fees)")
+        return passed, checks
+
+
+    def check_geoblock(self):
+        """P0 #20: Geoblock preflight - check if user's region is allowed for Polymarket trading."""
+        if self.config.paper_mode:
+            return True, "Paper mode - geoblock check skipped"
+        user_region = getattr(self.config, 'user_region', None)
+        if user_region and user_region in BLOCKED_REGIONS:
+            logger.error(f"[GEOBLOCK] User region {user_region} is blocked")
+            return False, f"Region {user_region} is blocked for Polymarket trading"
+        return True, "Geoblock check passed"
+
+    def verify_chain(self, w3=None):
+        """P0 #15: Fail-closed chain verification."""
+        if self.config.paper_mode:
+            return True, 137, "Paper mode - chain check skipped"
+        try:
+            from web3 import Web3
+            from config.settings import POLYGON_RPC
+            if w3 is None:
+                w3 = Web3(Web3.HTTPProvider(self.config.polygon_rpc or POLYGON_RPC))
+            chain_id = w3.eth.chain_id
+            if chain_id != 137:
+                self.state.is_killed = True
+                self.state.kill_reason = f"Wrong chain: {chain_id} (expected 137/Polygon)"
+                logger.critical(f"KILL SWITCH: {self.state.kill_reason}")
+                self.dump_state()
+                return False, chain_id, self.state.kill_reason
+            return True, chain_id, "OK: Polygon (137)"
+        except Exception as e:
+            self.state.is_killed = True
+            self.state.kill_reason = f"Chain verification failed: {e}"
+            logger.critical(f"KILL SWITCH: {self.state.kill_reason}")
+            self.dump_state()
+            return False, None, str(e)
+
+    def check_exposure_before_order(self, order_cost, resting_orders=None):
+        """P0 #17: Check if placing an order would exceed exposure limits."""
+        exposure = self.get_exposure(resting_orders)
+        new_total = exposure['total_exposure'] + order_cost
+        if new_total > self.config.max_portfolio_exposure:
+            return False, f"Portfolio exposure ${new_total:.2f} would exceed ${self.config.max_portfolio_exposure:.2f}"
+        return True, "OK"
+
+    def record_loss(self, amount=0.0):
+        """P0 #18: Track consecutive losses for kill switch."""
+        self._consecutive_losses += 1
+        if self._consecutive_losses >= self._max_consecutive_losses:
+            self.state.is_killed = True
+            self.state.kill_reason = f"Consecutive losses: {self._consecutive_losses} (max {self._max_consecutive_losses})"
+            logger.critical(f"KILL SWITCH: {self.state.kill_reason}")
+            self.dump_state()
+            return True, self.state.kill_reason
+        logger.warning(f"Loss recorded: {self._consecutive_losses}/{self._max_consecutive_losses} consecutive")
+        return False, ""
+
+    def record_win(self):
+        """P0 #18: Reset consecutive loss counter on win."""
+        if self._consecutive_losses > 0:
+            logger.info(f"Win recorded, resetting consecutive losses from {self._consecutive_losses}")
+        self._consecutive_losses = 0
+
+    def check_kill_switch(self, current_daily_loss=None):
+        if self.state.is_killed: return True, self.state.kill_reason or "Already killed"
+        loss = current_daily_loss if current_daily_loss is not None else abs(min(0, self.state.daily_pnl))
+        if loss >= self.config.max_daily_loss:
+            self.state.is_killed = True
+            self.state.kill_reason = f"Daily loss ${loss:.2f} exceeded threshold ${self.config.max_daily_loss:.2f}"
+            logger.critical(f"KILL SWITCH TRIGGERED: {self.state.kill_reason}")
+            self.dump_state()
+            return True, self.state.kill_reason
+        return False, ""
+
+    def record_429(self):
+        self.state.rate_limit_429_count += 1
+        if self.state.rate_limit_429_count >= self.config.max_429_before_trip:
+            self.state.is_killed = True
+            self.state.kill_reason = f"Rate limit: {self.state.rate_limit_429_count} 429s (max {self.config.max_429_before_trip})"
+            logger.critical(f"KILL SWITCH: {self.state.kill_reason}")
+            self.dump_state()
+            return True, self.state.kill_reason
+        logger.warning(f"429 recorded: {self.state.rate_limit_429_count}/{self.config.max_429_before_trip}")
+        return False, ""
+
+    def get_exposure(self, resting_orders=None):
+        position_exposure = sum(p.get('cost', 0) for p in self.state.open_positions.values() if isinstance(p, dict))
+        resting_exposure = 0.0
+        if resting_orders:
+            for order in resting_orders:
+                if hasattr(order, 'shares') and hasattr(order, 'price'):
+                    if hasattr(order, 'status') and str(order.status) in ('live', 'OrderStatus.LIVE', 'partial', 'OrderStatus.PARTIAL'):
+                        remaining = order.shares - getattr(order, 'filled_shares', 0)
+                        resting_exposure += remaining * order.price
+                elif isinstance(order, dict):
+                    remaining = float(order.get('shares', 0)) - float(order.get('filled_shares', 0))
+                    resting_exposure += remaining * float(order.get('price', 0))
+        total = position_exposure + resting_exposure
+        return {'position_exposure': round(position_exposure, 2), 'resting_exposure': round(resting_exposure, 2),
+                'total_exposure': round(total, 2), 'max_event': self.config.max_event_exposure,
+                'max_portfolio': self.config.max_portfolio_exposure, 'within_limits': total <= self.config.max_portfolio_exposure}
+
+    def manual_kill(self, reason="Manual kill"):
+        self.state.is_killed = True; self.state.kill_reason = reason; self.state.is_running = False
+        logger.critical(f"MANUAL KILL: {reason}"); self.dump_state()
+
+    def reset_daily(self):
+        self.state.daily_pnl = 0.0; self.state.daily_pnl_reset_time = time.time()
+        self.state.is_killed = False; self.state.kill_reason = None; self.state.rate_limit_429_count = 0
+        logger.info("Daily counters reset")
+
+    def dump_state(self):
+        """P1: Atomic state dump - write to temp file then rename to prevent corruption on crash."""
+        tmp_file = self._state_file + '.tmp'
+        try:
+            with open(tmp_file, 'w') as f: json.dump(self.state.to_dict(), f, indent=2, default=str)
+            os.replace(tmp_file, self._state_file)
+        except Exception as e:
+            logger.error(f"State dump failed: {e}")
+            if os.path.exists(tmp_file):
+                os.remove(tmp_file)
+
+    def load_state(self):
+        if os.path.exists(self._state_file):
+            try:
+                with open(self._state_file, 'r') as f: data = json.load(f)
+                self.state = SafetyBotState.from_dict(data)
+                logger.info(f"State loaded: {len(self.state.worked_markets)} worked, {len(self.state.open_positions)} positions")
+                return True
+            except Exception as e: logger.error(f"State load failed: {e}")
+        return False
+
+    def update_scoreboard(self, buys=None, redeems=None, merges=None, net_pnl=None):
+        if buys:
+            for buy in buys:
+                self.state.total_buys += 1
+                if self.config.paper_mode: self.state.paper_buys += 1
+        if redeems:
+            for redeem in redeems:
+                self.state.total_redeems += 1
+                if self.config.paper_mode: self.state.paper_redeems += 1
+        if merges:
+            for merge in merges:
+                self.state.total_merges += 1
+                self.state.total_recycled_usd += merge.get('amount', 0)
+        if net_pnl is not None:
+            self.state.tracked_net_pnl += net_pnl
+
+    def get_true_pnl(self):
+        total_in = self.state.total_buys * self.config.buy_price
+        total_out = self.state.total_redeems * 1.0
+        true_pnl = self.state.tracked_net_pnl
+        true_win_rate = (self.state.total_redeems / self.state.total_buys if self.state.total_buys > 0 else 0.0)
+        return {'total_buys': self.state.total_buys, 'total_redeems': self.state.total_redeems,
+                'total_merges': self.state.total_merges, 'total_recycled_usd': round(self.state.total_recycled_usd, 4),
+                'true_pnl': round(true_pnl, 4), 'true_win_rate': round(true_win_rate, 4),
+                'ghost_fills_removed': self.state.total_ghost_fills_removed, 'failed_claims': self.state.total_failed_claims,
+                'daily_pnl': round(self.state.daily_pnl, 4), 'is_killed': self.state.is_killed,
+                'kill_reason': self.state.kill_reason, 'paper_mode': self.config.paper_mode,
+                'rate_limit_429s': self.state.rate_limit_429_count}
+
+    def mark_worked(self, condition_id): self.state.worked_markets.add(condition_id)
+    def unmark_worked(self, condition_id): self.state.worked_markets.discard(condition_id); logger.info(f"Market released: {condition_id[:20]}")
+    def is_worked(self, condition_id): return condition_id in self.state.worked_markets
+
+    def record_ghost_fill(self, condition_id):
+        self.state.total_ghost_fills_removed += 1
+        if condition_id in self.state.open_positions: del self.state.open_positions[condition_id]
+        logger.warning(f"Ghost fill removed: {condition_id}")
+
+    def record_failed_claim(self, condition_id):
+        self.state.total_failed_claims += 1
+        logger.error(f"Failed claim (ops error): {condition_id}")
