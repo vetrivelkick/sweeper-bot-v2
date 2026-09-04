@@ -2,6 +2,7 @@
 
 FIX #2: Standardized fill probability logic (35% fill, 25% partial, 5% ghost, 35% expired)
 FIX #3: Gas cost standardized to GAS_PER_SHARE (0.001/share)
+P0 #3: Added SIGNATURE_TYPE and FUNDER_ADDRESS env var reading for V2 SDK wallet support
 """
 import sys, os, time, json, signal, logging, threading
 from datetime import datetime, timezone
@@ -67,7 +68,7 @@ class SweeperBot:
         placed = 0
         for det in sweepable:
             if placed >= 10: break
-            if self.safety.is_worked(det.condition_id): continue
+                       if self.safety.is_worked(det.condition_id): continue
             if not self.rate_limiter.can_request("order"): logger.warning("Order rate limit exhausted"); break
             best_ask = None
             try:
@@ -172,6 +173,9 @@ if __name__ == "__main__":
     config.clob_api_secret = os.environ.get("CLOB_API_SECRET", "")
     config.clob_api_passphrase = os.environ.get("CLOB_API_PASSPHRASE", "")
     config.wallet_address = os.environ.get("WALLET_ADDRESS", "")
+    # P0 #3: Read signature_type and funder for V2 SDK wallet support
+    config.signature_type = int(os.environ.get("SIGNATURE_TYPE", "0"))
+    config.funder = os.environ.get("FUNDER_ADDRESS", "")
     bot = SweeperBot(config)
     if args.cycles > 0:
         if not bot.startup_reconcile(): sys.exit(1)
