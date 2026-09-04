@@ -298,3 +298,21 @@ class BotState:
         if os.path.exists(path):
             with open(path) as f: return cls.from_dict(json.load(f))
         return cls()
+
+# === SECTION 8 AUDIT: ECONOMICS GATE ===
+MIN_PROFIT_MARGIN = 0.001
+MAX_SLIPPAGE = 0.002
+MIN_ORDER_SIZE_ECONOMIC = 5.0
+BREAK_EVEN_PRICE = BUY_PRICE + GAS_PER_SHARE + LOSER_MAX_PRICE
+
+def calculate_break_even(buy_price, loser_price=LOSER_MAX_PRICE, gas_per_share=GAS_PER_SHARE, is_maker=False, fee_rate=DEFAULT_FEE_RATE):
+    """SECTION 8 AUDIT: Calculate break-even selling price."""
+    fee = fee_per_share(buy_price, fee_rate, is_maker)
+    return buy_price + fee + loser_price + gas_per_share
+
+def estimate_slippage(order_size, book_liquidity=1000):
+    """SECTION 8 AUDIT: Estimate slippage for taker orders."""
+    if book_liquidity <= 0:
+        return float('inf')
+    impact = order_size / book_liquidity
+    return min(impact * 0.01, 0.05)

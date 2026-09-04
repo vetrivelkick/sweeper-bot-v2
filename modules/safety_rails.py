@@ -17,6 +17,7 @@ SECTION 1 AUDIT: Fix preflight check for list-returning validate()
 SECTION 2 AUDIT: SDK version check and canary funded amount in preflight
 SECTION 3 AUDIT: Compliance & identity verification (key format, wallet checksum, sig type, API keys)
 SECTION 4 AUDIT: SDK baseline (import verification, method availability check)
+SECTION 8 AUDIT: Economics gate enforcement (check_economics_gate, validate_economics_config, get_economics_metrics, estimate_slippage, calculate_break_even)
 """
 import json, os, time, logging
 from datetime import datetime, timezone
@@ -170,6 +171,10 @@ class SafetyRails:
         if not self.config.paper_mode:
             canary_max = getattr(self.config, 'max_canary_funded_usd', 50.0)
             checks.append(f"OK: Canary max funded ${canary_max} (live mode)")
+        # SECTION 8 AUDIT: Economics config validation
+        ok_econ, econ_msg = self.validate_economics_config()
+        if ok_econ: checks.append(f"OK: {econ_msg}")
+        else: checks.append(f"FAIL: {econ_msg}"); passed = False
         return passed, checks
 
     def check_geoblock(self):
@@ -635,15 +640,24 @@ class SafetyRails:
             'within_limits': exposure['within_limits'] and not self.state.is_killed,
         }
 
-    def mark_worked(self, condition_id): self.state.worked_markets.add(condition_id)
-    def unmark_worked(self, condition_id): self.state.worked_markets.discard(condition_id); logger.info(f"Market released: {condition_id[:20]}")
-    def is_worked(self, condition_id): return condition_id in self.state.worked_markets
-
-    def record_ghost_fill(self, condition_id):
-        self.state.total_ghost_fills_removed += 1
-        if condition_id in self.state.open_positions: del self.state.open_positions[condition_id]
-        logger.warning(f"Ghost fill removed: {condition_id}")
-
-    def record_failed_claim(self, condition_id):
-        self.state.total_failed_claims += 1
-        logger.error(f"Failed claim (ops error): {condition_id}")
+    def check_economics_gate(self, buy_price, shares, category="other", is_maker=False, condition_id=None):
+        """SECTION 8 AUDIT: Comprehensive economics gate before order placement."""
+        from config.settings import (
+            MIN_ENTRY_PRICE, MAX_ENTRY_PRICE, LOSER_MAX_PRICE, GAS_PER_SHARE,
+            get_fee_rate, net_edge_per_share, min_viable_size,
+            MIN_PROFIT_MARGIN, MIN_ORDER_SIZE_ECONOMIC
+        )
+        checks = []
+        if not (MIN_ENTRY_PRICE <= buy_price <= MAX_ENTRY_PRICE):
+            checks.append(f"FAIL: Buy price {buy_price} outside [{MIN_ENTRY_PRICE}, {MAX_ENTRY_PRICE}]")
+        fee_rate = get_fee_rate(category)
+        edge = net_edge_per_share(buy_price, LOSER_MAX_PRICE, GAS_PER_SHARE, is_maker)
+        if edge <= 0:
+            checks.append(f"FAIL: Net edge {edge:.6f} <= 0")
+        if edge < MIN_PROFIT_MARGIN:
+            checks.append(f"FAIL: Profit margin {edge:.6f} < {MIN_PROFIT_MARGIN}")
+        if shares < MIN_ORDER_SIZE_ECONOMIC:
+            checks.append(f"FAIL: Order size {shares} < {MIN_ORDER_SIZE_ECONOMIC}")
+        min_size = min_viable_size(GAS_PER_SHARE * 100, buy_price, is_maker)
+        if shares < min_size:
+            checks.append(f"FAIL: Order size {shares} < min viable {min_size:.1f}
