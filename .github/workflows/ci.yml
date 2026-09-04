@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Verify imports
+        run: |
+          python -c "from config.settings import SweeperConfig; c=SweeperConfig(); print('Config OK:', c.buy_price)"
+          python -c "from modules.safety_rails import SafetyRails; print('SafetyRails OK')"
+          python -c "from modules.order_executor import OrderBuilder; print('OrderBuilder OK')"
+          python -c "from modules.resolution_detection import ResolutionDetector; print('ResolutionDetector OK')"
+          python -c "from modules.market_discovery import MarketDiscovery; print('MarketDiscovery OK')"
+          python -c "from modules.ledger import Ledger; print('Ledger OK')"
+          python -c "from modules.metrics import MetricsCollector; print('Metrics OK')"
+
+      - name: Run synthetic tests
+        run: |
+          python test_synthetic.py
+
+      - name: Run chaos tests
+        run: |
+          python test_chaos.py
+
+      - name: Run paper trading dry run
+        run: |
+          python run_paper.py --cycles 2 --sweeps 3
+
+      - name: Verify --live is blocked
+        run: |
+          python main.py --live 2>&1 | grep -q "FATAL: Live mode is BLOCKED" && echo "Live block OK" || exit 1
+
+      - name: Lint check (syntax)
+        run: |
+          python -m py_compile main.py
+          python -m py_compile config/settings.py
+          python -m py_compile modules/safety_rails.py
+          python -m py_compile modules/order_executor.py
+          python -m py_compile modules/resolution_detection.py
+          python -m py_compile modules/market_discovery.py
+          python -m py_compile modules/ledger.py
+          python -m py_compile modules/metrics.py
+          python -m py_compile modules/fill_confirmation.py
+          python -m py_compile modules/reconciliation.py
+          python -m py_compile modules/gas_manager.py
+          python -m py_compile modules/capital_recycler.py
+          python -m py_compile modules/startup_recovery.py
+          python -m py_compile modules/rate_limiter.py
+          python -m py_compile modules/rpc_pool.py
+          python -m py_compile modules/ws_client.py
+          python -m py_compile modules/paper_trading.py
+          python -m py_compile modules/redemption_manager.py
+          echo "All files compile OK"
