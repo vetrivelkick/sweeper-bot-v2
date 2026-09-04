@@ -15,6 +15,7 @@ AUDIT FIX #14: health_check() method for monitoring/health endpoints
 AUDIT FIX #26: Risk controls - event exposure, drawdown, risk score, concentration
 SECTION 1 AUDIT: Fix preflight check for list-returning validate()
 SECTION 2 AUDIT: SDK version check and canary funded amount in preflight
+SECTION 3 AUDIT: Compliance & identity verification (key format, wallet checksum, sig type, API keys)
 """
 import json, os, time, logging
 from datetime import datetime, timezone
@@ -112,6 +113,19 @@ class SafetyRails:
             ok_chain, chain_id, chain_msg = self.verify_chain()
             if ok_chain: checks.append(f"OK: Chain verified: {chain_msg}")
             else: checks.append(f"FAIL: {chain_msg}"); passed = False
+            # SECTION 3 AUDIT: Additional compliance/identity checks
+            ok_pk, pk_msg = self.validate_private_key_format()
+            if ok_pk: checks.append(f"OK: {pk_msg}")
+            else: checks.append(f"FAIL: {pk_msg}"); passed = False
+            ok_wallet, wallet_msg = self.validate_wallet_address()
+            if ok_wallet: checks.append(f"OK: {wallet_msg}")
+            else: checks.append(f"FAIL: {wallet_msg}"); passed = False
+            ok_sigtype, sigtype_msg = self.validate_signature_type()
+            if ok_sigtype: checks.append(f"OK: {sigtype_msg}")
+            else: checks.append(f"FAIL: {sigtype_msg}"); passed = False
+            ok_apikeys, apikeys_msg = self.validate_api_keys()
+            if ok_apikeys: checks.append(f"OK: {apikeys_msg}")
+            else: checks.append(f"FAIL: {apikeys_msg}"); passed = False
         checks.append("OK: Alert system (logging to file)")
         try:
             test_path = os.path.join(os.path.dirname(self._state_file), '.write_test')
@@ -207,6 +221,69 @@ class SafetyRails:
         if not self.config.funder.startswith("0x") or len(self.config.funder) != 42:
             return False, f"Invalid funder address format: {self.config.funder}"
         return True, f"Funder verified: {self.config.funder[:10]}..."
+
+    def validate_private_key_format(self):
+        """SECTION 3 AUDIT: Validate private key format (0x prefix, 64 hex chars)."""
+        if self.config.paper_mode:
+            return True, "Paper mode - private key format check skipped"
+        if not self.config.private_key:
+            return False, "No private key configured"
+        if not self.config.private_key.startswith("0x"):
+            return False, "Private key must start with 0x"
+        key_hex = self.config.private_key[2:]
+        if len(key_hex) != 64:
+            return False, f"Private key must be 64 hex chars, got {len(key_hex)}"
+        try:
+            int(key_hex, 16)
+        except ValueError:
+            return False, "Private key contains non-hex characters"
+        return True, "Private key format valid (0x + 64 hex)"
+
+    def validate_wallet_address(self):
+        """SECTION 3 AUDIT: Validate wallet address format and EIP-55 checksum."""
+        if self.config.paper_mode:
+            return True, "Paper mode - wallet address check skipped"
+        if not self.config.wallet_address:
+            return False, "No wallet address configured"
+        if not self.config.wallet_address.startswith("0x"):
+            return False, "Wallet address must start with 0x"
+        if len(self.config.wallet_address) != 42:
+            return False, f"Wallet address must be 42 chars, got {len(self.config.wallet_address)}"
+        try:
+            from web3 import Web3
+            if not Web3.is_checksum_address(self.config.wallet_address):
+                return False, f"Wallet address fails EIP-55 checksum: {self.config.wallet_address}"
+        except ImportError:
+            pass
+        return True, f"Wallet address valid: {self.config.wallet_address[:10]}..."
+
+    def validate_signature_type(self):
+        """SECTION 3 AUDIT: Validate signature type is 0-3."""
+        if self.config.paper_mode:
+            return True, "Paper mode - signature type check skipped"
+        valid_types = {0: "EOA", 1: "Proxy", 2: "Safe", 3: "Deposit"}
+        if self.config.signature_type not in valid_types:
+            return False, f"Invalid signature type {self.config.signature_type} (must be 0-3)"
+        type_name = valid_types[self.config.signature_type]
+        return True, f"Signature type {self.config.signature_type} ({type_name}) valid"
+
+    def validate_api_keys(self):
+        """SECTION 3 AUDIT: Validate CLOB API key/secret/passphrase format."""
+        if self.config.paper_mode:
+            return True, "Paper mode - API key check skipped"
+        if not self.config.clob_api_key:
+            return False, "CLOB API key not set"
+        if not self.config.clob_api_secret:
+            return False, "CLOB API secret not set"
+        if not self.config.clob_api_passphrase:
+            return False, "CLOB API passphrase not set"
+        if len(self.config.clob_api_key) < 10:
+            return False, f"CLOB API key too short ({len(self.config.clob_api_key)} chars)"
+        if len(self.config.clob_api_secret) < 10:
+            return False, f"CLOB API secret too short ({len(self.config.clob_api_secret)} chars)"
+        if len(self.config.clob_api_passphrase) < 6:
+            return False, f"CLOB API passphrase too short ({len(self.config.clob_api_passphrase)} chars)"
+        return True, "CLOB API credentials format valid"
 
     def verify_chain(self, w3=None):
         """P0 #15: Fail-closed chain verification."""
