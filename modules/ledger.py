@@ -150,7 +150,7 @@ class DoubleEntryLedger:
         return balanced, total_debit, total_credit, diff
 
     def get_pnl(self):
-        return self.balances.INCOME - self.balances.GAS - self.balances.FEE
+        return -self.balances.INCOME - self.balances.GAS - self.balances.FEE
 
     def get_summary(self):
         balanced, td, tc, diff = self.verify_balanced()
@@ -191,7 +191,7 @@ class DoubleEntryLedger:
         log_fn(f"  Position Cost:    ${b['POSITION']:.4f}")
         log_fn(f"  Fees Paid:        ${b['FEE']:.4f}")
         log_fn(f"  Gas Paid:         ${b['GAS']:.4f}")
-        log_fn(f"  Gross Income:     ${b['INCOME']:.4f}")
+        log_fn(f"  Gross Income:     ${-b['INCOME']:.4f}")
         log_fn(f"  Net PnL:         ${s['pnl']:.4f}  (Income - Gas - Fees)")
         log_fn(f"  Total Recycled:   ${s['total_recycled']:.4f}  ({s['recycle_count']} recycles)")
         log_fn("=" * 60)
