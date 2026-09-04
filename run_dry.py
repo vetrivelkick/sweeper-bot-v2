@@ -5,6 +5,8 @@ FIX #2: Standardized fill probability logic (35% fill, 25% partial, 5% ghost, 35
          Removed extra 30% second-chance fill that made total ~=9%
 FIX #10: Removed unused net_edge_per_share import
 FIX #3: Gas cost uses GAS_PER_SHARE constant (0.001)
+P1: Parameterized min_entry_price (was hardcoded 0.985)
+P1: Fixed dead code - moved metrics.inc before continue
 
 """
 import sys, os, time, json, logging, random
@@ -108,7 +110,7 @@ class AdvancedDryRunner:
             tick_size = getattr(det, 'tick_size', 0.001 if det.winning_price >= 0.999 else 0.01)
             entry_plan = None
             if self.config.prefer_maker and best_ask is not None:
-                entry_plan = plan_entry(best_ask, tick_size, 0.985, self.config.buy_price, self.config.prefer_maker, self.config.allow_taker_fallback)
+                entry_plan = plan_entry(best_ask, tick_size, self.config.min_entry_price, self.config.buy_price, self.config.prefer_maker, self.config.allow_taker_fallback)
             is_maker = (entry_plan is not None and entry_plan[1]) or (self.config.prefer_maker and best_ask is None)
             order_price = entry_plan[0] if entry_plan else self.config.buy_price
             order_detail = entry_plan[2] if entry_plan else "maker bid at buy_price"
@@ -128,9 +130,9 @@ class AdvancedDryRunner:
             if entry_plan is None and best_ask is not None:
                 maker_ceiling = best_ask - tick_size
                 self.log("    Method: REJECTED (no valid entry)")
-                self.log(f"    Reason: best_ask={best_ask}, tick={tick_size}, maker_ceiling={maker_ceiling:.6f}, min_entry=0.985, max_entry={self.config.buy_price}")
-                if maker_ceiling < 0.985:
-                    self.log(f"    -> maker_ceiling {maker_ceiling:.6f} < min_entry 0.985 (no valid maker price)")
+                self.log(f"    Reason: best_ask={best_ask}, tick={tick_size}, maker_ceiling={maker_ceiling:.6f}, min_entry={self.config.min_entry_price}, max_entry={self.config.buy_price}")
+                if maker_ceiling < self.config.min_entry_price:
+                    self.log(f"    -> maker_ceiling {maker_ceiling:.6f} < min_entry {self.config.min_entry_price} (no valid maker price)")
                 if best_ask > self.config.buy_price:
                     self.log(f"    -> best_ask {best_ask} > max_entry {self.config.buy_price} (ask above buy price)")
             elif is_maker:
@@ -144,8 +146,9 @@ class AdvancedDryRunner:
             success, order = self.order_builder.build_and_place(detection_result=det, size=100.0, best_ask=best_ask, tick_size=tick_size, neg_risk=getattr(det, 'neg_risk', False))
             if not success or order is None:
                 self.log(f"    ORDER REJECTED: {order.error if order else 'No entry price'}")
-                self.errors.append(f"Cycle {self.cycle_num} Trade {self.total_trades+1}: Rejected"); continue
+                self.errors.append(f"Cycle {self.cycle_num} Trade {self.total_trades+1}: Rejected")
                 self.metrics.inc("trades_rejected")
+                continue
             if isinstance(order, RestingOrder):
                 self.log(f"    Order ID: {order.order_id} | Status: {order.status.value} | Paper: True")
                 if order.status == OrderStatus.LIVE:
