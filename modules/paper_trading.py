@@ -376,8 +376,7 @@ class AdvancedPaperTrader:
                 best_ask, tick_size, 0.985, self.config.buy_price,
                 self.config.prefer_maker, self.config.allow_taker_fallback)
 
-        is_maker = (entry_plan is not None and entry_plan[1]) or \\
-                   (self.config.prefer_maker and best_ask is None)
+        is_maker = (entry_plan is not None and entry_plan[1]) or (self.config.prefer_maker and best_ask is None)
 
         order_price = entry_plan[0] if entry_plan else self.config.buy_price
         order_detail = entry_plan[2] if entry_plan else "maker bid at buy_price"
