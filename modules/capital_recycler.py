@@ -20,6 +20,7 @@ import time
 import logging
 from dataclasses import dataclass
 from typing import Optional
+from config.settings import MERGE_THRESHOLD_SPREAD, PREFER_MERGE_OVER_REDEEM, REDEMPTION_MIN_WAIT_BLOCKS
 
 logger = logging.getLogger("sweeper.recycle")
 
@@ -51,6 +52,47 @@ class CapitalRecycler:
         self._total_retry_attempts = 0
         self._max_retries = 3
         self._recycle_timeout = 60.0  # seconds before giving up on complementary fill
+
+    def _should_merge_now(self, detection_result, losing_ask_price=None):
+        """SECTION 1 AUDIT: Decide whether to merge now or wait for redemption.
+
+        Returns (should_merge, reason).
+        - If PREFER_MERGE_OVER_REDEEM and losing-side ask <= MERGE_THRESHOLD_SPREAD, merge now.
+        - If losing-side ask > MERGE_THRESHOLD_SPREAD, wait for redemption.
+        - Redemption requires REDEMPTION_MIN_WAIT_BLOCKS after resolution.
+        """
+        if not self.config.prefer_merge_over_redeem:
+            return False, "PREFER_MERGE_OVER_REDEEM=False, waiting for redemption"
+        if losing_ask_price is not None and losing_ask_price <= self.config.merge_threshold_spread:
+            return True, f"Merge now: losing ask {losing_ask_price} <= threshold {self.config.merge_threshold_spread}"
+        if losing_ask_price is not None and losing_ask_price > self.config.merge_threshold_spread:
+            return False, f"Wait for redemption: losing ask {losing_ask_price} > threshold {self.config.merge_threshold_spread}"
+        return True, "Merge now: no ask price, PREFER_MERGE_OVER_REDEEM=True"
+
+    def _check_redemption_wait(self, detection_result, w3=None):
+        """SECTION 1 AUDIT: Check if enough blocks have passed for redemption.
+
+        Returns (can_redeem, blocks_waited, reason).
+        In paper mode, always returns True (simulated).
+        """
+        if self.config.paper_mode:
+            return True, REDEMPTION_MIN_WAIT_BLOCKS, "Paper mode - redemption wait simulated"
+        try:
+            if w3 is None:
+                from web3 import Web3
+                from config.settings import POLYGON_RPC
+                w3 = Web3(Web3.HTTPProvider(self.config.polygon_rpc or POLYGON_RPC))
+            current_block = w3.eth.block_number
+            resolution_block = getattr(detection_result, 'resolution_block', None)
+            if resolution_block is None:
+                return False, 0, f"Unknown resolution block, need {REDEMPTION_MIN_WAIT_BLOCKS} blocks"
+            blocks_passed = current_block - resolution_block
+            if blocks_passed >= REDEMPTION_MIN_WAIT_BLOCKS:
+                return True, blocks_passed, f"Blocks passed: {blocks_passed} >= {REDEMPTION_MIN_WAIT_BLOCKS}"
+            return False, blocks_passed, f"Need {REDEMPTION_MIN_WAIT_BLOCKS - blocks_passed} more blocks"
+        except Exception as e:
+            logger.warning(f"Redemption wait check failed: {e}")
+            return False, 0, f"Check failed: {e}"
 
     def _buy_complementary_paper(self, detection_result, shares):
         losing_token = getattr(detection_result, 'losing_token_id', '')
