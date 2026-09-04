@@ -7,6 +7,7 @@ P1: Real-time order book updates via WebSocket with auto-reconnection.
 - Heartbeat/ping to detect stale connections
 - Graceful shutdown via stop() method
 - Callback-based message handling
+- AUDIT FIX #15: Reconnection metrics, max attempts, status reporting
 
 Usage:
     ws = MarketWSClient(on_message=handler, on_status=status_handler)
@@ -43,6 +44,13 @@ class BaseWSClient:
         self._max_backoff = 30.0
         self._last_ping = 0.0
         self._ping_interval = 15.0  # seconds
+        # AUDIT FIX #15: Reconnection metrics and limits
+        self._max_reconnects = 10  # max reconnection attempts before giving up
+        self._reconnect_count = 0
+        self._total_reconnects = 0
+        self._last_disconnect_time = None
+        self._connected_since = None
+        self._is_connected = False
 
     def start(self):
         """Start the WebSocket client in a background thread."""
@@ -86,8 +94,18 @@ class BaseWSClient:
             if not self._running:
                 break
 
+            # AUDIT FIX #15: Check max reconnection attempts
+            self._reconnect_count += 1
+            self._total_reconnects += 1
+            if self._reconnect_count > self._max_reconnects:
+                logger.error(f"WS max reconnections ({self._max_reconnects}) exceeded - giving up")
+                if self.on_status:
+                    self.on_status(f"max_reconnects_exceeded ({self._max_reconnects})")
+                self._running = False
+                break
+
             # Exponential backoff before reconnecting
-            logger.info(f"WS reconnecting in {self._backoff:.1f}s...")
+            logger.info(f"WS reconnecting in {self._backoff:.1f}s (attempt {self._reconnect_count}/{self._max_reconnects})...")
             if self.on_status:
                 self.on_status(f"reconnecting in {self._backoff:.1f}s")
             time.sleep(self._backoff)
@@ -96,6 +114,9 @@ class BaseWSClient:
     def _on_open(self, ws):
         logger.info(f"WS connected to {self.url}")
         self._backoff = 1.0  # reset backoff on successful connect
+        self._reconnect_count = 0  # AUDIT FIX #15: reset reconnect counter on success
+        self._is_connected = True
+        self._connected_since = time.time()
         if self.on_status:
             self.on_status("connected")
         if self.on_connect:
@@ -113,11 +134,15 @@ class BaseWSClient:
 
     def _on_err(self, ws, error):
         logger.error(f"WS error: {error}")
+        self._is_connected = False
         if self.on_status:
             self.on_status(f"error: {error}")
 
     def _on_close(self, ws, close_status, close_msg):
         logger.warning(f"WS closed: {close_status} {close_msg}")
+        self._is_connected = False
+        self._last_disconnect_time = time.time()
+        self._connected_since = None
         if self.on_status:
             self.on_status("disconnected")
 
@@ -128,6 +153,26 @@ class BaseWSClient:
                 self._ws.send(json.dumps(data))
             except Exception as e:
                 logger.error(f"WS send failed: {e}")
+
+    @property
+    def is_connected(self):
+        """AUDIT FIX #15: Check if WS is currently connected."""
+        return self._is_connected
+
+    def get_status(self):
+        """AUDIT FIX #15: Return WS connection status for monitoring."""
+        return {
+            'url': self.url,
+            'is_connected': self._is_connected,
+            'is_running': self._running,
+            'reconnect_count': self._reconnect_count,
+            'total_reconnects': self._total_reconnects,
+            'max_reconnects': self._max_reconnects,
+            'backoff': round(self._backoff, 2),
+            'connected_since': self._connected_since,
+            'last_disconnect': self._last_disconnect_time,
+            'ping_interval': self._ping_interval,
+        }
 
 
 class MarketWSClient(BaseWSClient):
