@@ -68,7 +68,7 @@ class SweeperBot:
         placed = 0
         for det in sweepable:
             if placed >= 10: break
-                       if self.safety.is_worked(det.condition_id): continue
+            if self.safety.is_worked(det.condition_id): continue
             if not self.rate_limiter.can_request("order"): logger.warning("Order rate limit exhausted"); break
             best_ask = None
             try:
