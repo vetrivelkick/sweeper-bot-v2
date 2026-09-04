@@ -4,6 +4,10 @@ FIX #7: Removed duplicate BotState — now imports from config.settings
 FIX #16: from_dict() no longer pops rate_limit_429_count (persists across restarts)
 P0 #18: get_true_pnl now attempts chain-derived P&L reconciliation in live mode
          (was returning tracked_net_pnl calculated estimate only)
+
+AUDIT FIX #5: Real geoblock API call (GET https://polymarket.com/api/geoblock)
+AUDIT FIX #6: verify_signer() - private key derives wallet address
+AUDIT FIX #7: verify_funder() - funder address validation for proxy wallets
 """
 import json, os, time, logging
 from datetime import datetime, timezone
@@ -70,7 +74,7 @@ class SafetyRails:
         checks = []; passed = True
         if self.config.validate(): checks.append("OK: Config validation passed")
         else: checks.append("FAIL: Config validation failed"); passed = False
-        # P0 #20: Geoblock preflight
+        # AUDIT FIX #5: Real geoblock preflight
         geo_ok, geo_msg = self.check_geoblock()
         if geo_ok: checks.append(f"OK: {geo_msg}")
         else: checks.append(f"FAIL: {geo_msg}"); passed = False
@@ -82,6 +86,14 @@ class SafetyRails:
             if self.config.clob_api_key and self.config.clob_api_secret: checks.append("OK: CLOB API credentials present")
             else: checks.append("FAIL: CLOB API credentials incomplete"); passed = False
             checks.append("OK: Gas balance check (deferred to live mode)")
+            # AUDIT FIX #6: Signer verification
+            ok_signer, signer_msg = self.verify_signer()
+            if ok_signer: checks.append(f"OK: {signer_msg}")
+            else: checks.append(f"FAIL: {signer_msg}"); passed = False
+            # AUDIT FIX #7: Funder verification
+            ok_funder, funder_msg = self.verify_funder()
+            if ok_funder: checks.append(f"OK: {funder_msg}")
+            else: checks.append(f"FAIL: {funder_msg}"); passed = False
             ok_chain, chain_id, chain_msg = self.verify_chain()
             if ok_chain: checks.append(f"OK: Chain verified: {chain_msg}")
             else: checks.append(f"FAIL: {chain_msg}"); passed = False
@@ -107,16 +119,71 @@ class SafetyRails:
         else: checks.append("WARN: Taker-only mode (paying fees)")
         return passed, checks
 
-
     def check_geoblock(self):
-        """P0 #20: Geoblock preflight - check if user's region is allowed for Polymarket trading."""
+        """AUDIT FIX #5: Call real Polymarket geoblock API endpoint.
+        
+        GET https://polymarket.com/api/geoblock -> {"blocked": bool, "country": str}
+        Falls back to static BLOCKED_REGIONS list if API is unreachable.
+        """
         if self.config.paper_mode:
             return True, "Paper mode - geoblock check skipped"
+        try:
+            import requests
+            resp = requests.get("https://polymarket.com/api/geoblock", timeout=5)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("blocked", False):
+                    country = data.get("country", "unknown")
+                    logger.error(f"[GEOBLOCK] Region blocked: {country}")
+                    return False, f"Region {country} is blocked for Polymarket trading"
+                return True, f"Geoblock check passed (country: {data.get('country', 'unknown')})"
+            logger.warning(f"Geoblock API returned {resp.status_code} - falling back to static check")
+        except Exception as e:
+            logger.warning(f"Geoblock API call failed: {e} - falling back to static check")
+        # Fallback to static check
         user_region = getattr(self.config, 'user_region', None)
         if user_region and user_region in BLOCKED_REGIONS:
             logger.error(f"[GEOBLOCK] User region {user_region} is blocked")
             return False, f"Region {user_region} is blocked for Polymarket trading"
-        return True, "Geoblock check passed"
+        return True, "Geoblock check passed (static fallback)"
+
+    def verify_signer(self):
+        """AUDIT FIX #6: Verify private key derives configured wallet address.
+        
+        For EOA (type 0): key must derive wallet_address.
+        For proxy/Safe (types 1-3): key is signer, funder holds funds.
+        """
+        if self.config.paper_mode:
+            return True, "Paper mode - signer verification skipped"
+        if not self.config.private_key:
+            return False, "No private key configured"
+        if not self.config.wallet_address:
+            return False, "No wallet address configured"
+        try:
+            from eth_account import Account
+            derived = Account.from_key(self.config.private_key).address
+            if self.config.signature_type == 0:  # EOA - key must match wallet
+                if derived.lower() != self.config.wallet_address.lower():
+                    return False, f"Key derives {derived} but wallet is {self.config.wallet_address}"
+                return True, f"Signer verified: {derived[:10]}... (EOA)"
+            else:  # Proxy/Safe/Deposit - key is signer, wallet is funder
+                if self.config.funder and derived.lower() == self.config.funder.lower():
+                    return False, "Signer key matches funder (should differ for proxy wallets)"
+                return True, f"Signer verified: {derived[:10]}... (type {self.config.signature_type})"
+        except Exception as e:
+            return False, f"Signer verification failed: {e}"
+
+    def verify_funder(self):
+        """AUDIT FIX #7: Verify funder address for proxy/Safe/deposit wallets."""
+        if self.config.paper_mode:
+            return True, "Paper mode - funder verification skipped"
+        if self.config.signature_type == 0:  # EOA - no funder needed
+            return True, "EOA wallet - funder not required"
+        if not self.config.funder:
+            return False, f"signature_type={self.config.signature_type} requires funder address"
+        if not self.config.funder.startswith("0x") or len(self.config.funder) != 42:
+            return False, f"Invalid funder address format: {self.config.funder}"
+        return True, f"Funder verified: {self.config.funder[:10]}..."
 
     def verify_chain(self, w3=None):
         """P0 #15: Fail-closed chain verification."""
@@ -256,8 +323,6 @@ class SafetyRails:
     def get_true_pnl(self):
         true_pnl = self.state.tracked_net_pnl
         # P0 #18 FIX: In live mode, attempt chain-derived P&L reconciliation
-        # Was: true_pnl = self.state.tracked_net_pnl (calculated estimate only)
-        # Now: Query on-chain pUSD balance as ground truth in live mode
         if not self.config.paper_mode and self.config.wallet_address:
             try:
                 from web3 import Web3
@@ -267,7 +332,6 @@ class SafetyRails:
                 pUSD = w3.eth.contract(address=Web3.to_checksum_address(PUSD), abi=pUSD_abi)
                 chain_balance = pUSD.functions.balanceOf(Web3.to_checksum_address(self.config.wallet_address)).call() / 10**6
                 logger.info(f"[LIVE] Chain pUSD balance: {chain_balance:.2f} | Tracked P&L: {true_pnl:.4f}")
-                # Use chain balance as ground truth for live P&L
                 true_pnl = chain_balance - self.state.total_recycled_usd
             except Exception as e:
                 logger.warning(f"Chain P&L reconciliation failed, using tracked: {e}")
