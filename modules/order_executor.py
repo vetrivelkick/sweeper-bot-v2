@@ -24,6 +24,8 @@ P1 #3: Duplicate order prevention on 425 retries via is_duplicate_order()/record
 
 AUDIT FIX #13: Pass condition_id to check_exposure_before_order for per-market enforcement
 AUDIT FIX #24: Order metrics, latency, slippage tracking
+SECTION 9 AUDIT: Economics gate integration, order size validation, slippage check for taker,
+                 tick size validation, record_fill/rejection/expiry/cancellation calls, order ID uniqueness
 """
 import json, time, random, logging
 from decimal import Decimal, ROUND_DOWN
@@ -153,6 +155,7 @@ class OrderBuilder:
                 self._resting.pop(order_id, None)
                 self._reserved.pop(order_id, None)
                 order.status = OrderStatus.CANCELLED
+                self.record_cancellation()
                 logger.info(f"Cancelled {order_id}")
                 return True
             except Exception as e:
@@ -174,7 +177,13 @@ class OrderBuilder:
         else:
             price = self.config.buy_price
         tick_str = f"{tick_size}" if isinstance(tick_size, float) else str(tick_size)
-        order_id = f"sweep_{detection_result.condition_id[:16]}_{int(time.time())}"
+        # SECTION 9 AUDIT: Validate tick size
+        _valid_ticks = {'0.0001', '0.001', '0.01', '0.1'}
+        if tick_str not in _valid_ticks:
+            logger.warning(f"Invalid tick size: {tick_str}, defaulting to 0.001")
+            tick_str = '0.001'
+        # SECTION 9 AUDIT: Order ID uniqueness with random suffix
+        order_id = f"sweep_{detection_result.condition_id[:16]}_{int(time.time())}_{self._rng.randint(1000, 9999)}"
         if is_maker:
             order = RestingOrder(order_id=order_id, condition_id=detection_result.condition_id, token_id=detection_result.winning_token_id,
                 market_question=detection_result.question, side="BUY", price=price, shares=size, tick_size=tick_str, neg_risk=neg_risk, post_only=True, is_maker=True)
@@ -184,6 +193,30 @@ class OrderBuilder:
         if self._safety and self._safety.state.is_killed:
             logger.warning(f"Order blocked - kill switch: {self._safety.state.kill_reason}")
             return False, None
+        # SECTION 9 AUDIT: Economics gate check before order placement
+        if self._safety:
+            _cat = getattr(detection_result, 'category', 'other')
+            ok_econ, econ_msg = self._safety.check_economics_gate(
+                buy_price=price, shares=size, category=_cat,
+                is_maker=is_maker, condition_id=detection_result.condition_id)
+            if not ok_econ:
+                logger.warning(f"Order blocked - economics gate: {econ_msg}")
+                return False, None
+        # SECTION 9 AUDIT: Validate order size against economic minimums
+        from config.settings import MIN_ORDER_SIZE_ECONOMIC, min_viable_size as _mvs
+        if size < MIN_ORDER_SIZE_ECONOMIC:
+            logger.warning(f"Order size {size} < MIN_ORDER_SIZE_ECONOMIC {MIN_ORDER_SIZE_ECONOMIC}")
+            return False, None
+        _mv = _mvs(GAS_PER_SHARE * 100, price, is_maker)
+        if size < _mv:
+            logger.warning(f"Order size {size} < min viable {_mv:.1f}")
+            return False, None
+        # SECTION 9 AUDIT: Slippage check for taker orders
+        if not is_maker and self._safety:
+            _slip = self._safety.estimate_slippage(size)
+            if not _slip['within_threshold']:
+                logger.warning(f"Taker blocked - slippage {_slip['estimated_slippage']:.6f} > max {_slip['max_slippage']}")
+                return False, None
         if self._safety:
             order_cost = size * price
             ok_exp, exp_msg = self._safety.check_exposure_before_order(order_cost, self.list_open_orders(), condition_id=detection_result.condition_id)
@@ -217,7 +250,14 @@ class OrderBuilder:
         if self._safety and self._safety.state.is_killed:
             logger.warning(f"Complementary buy blocked - kill switch: {self._safety.state.kill_reason}")
             return False, None
+        # SECTION 9 AUDIT: Economics gate for complementary buy
         if self._safety:
+            ok_econ, econ_msg = self._safety.check_economics_gate(
+                buy_price=self.config.loser_max_price, shares=size, category='other',
+                is_maker=False, condition_id=detection_result.condition_id)
+            if not ok_econ:
+                logger.warning(f"Complementary buy blocked - economics gate: {econ_msg}")
+                return False, None
             order_cost = size * self.config.loser_max_price
             ok_exp, exp_msg = self._safety.check_exposure_before_order(order_cost, self.list_open_orders(), condition_id=detection_result.condition_id)
             if not ok_exp:
@@ -240,6 +280,7 @@ class OrderBuilder:
                 self._resting[order.order_id] = order
                 self._reserved[order.order_id] = 0.0
                 logger.info(f"[PAPER] GTC maker FILL: {shares} @ {price} {'GHOST' if ghost else 'OK'} for {order.market_question[:40]}")
+                self.record_fill(order)
                 return True, order
             elif roll < self.config.fill_probability + self.config.partial_fill_probability:
                 shares = max(1.0, int(size * self.config.partial_fill_ratio))
@@ -265,6 +306,7 @@ class OrderBuilder:
             order.status = OrderStatus.SIGNED; order.submitted_at = time.time(); order.matched_at = time.time()
             order.fill_amount = size; order.tx_hash = f"paper_tx_{int(time.time())}"
             logger.info(f"[PAPER] FAK taker FILL: BUY {size} @ {price} for {order.condition_id[:16]}")
+            self.record_fill(order)
             return True, order
 
     def _live_place(self, order, is_maker, post_only, order_type):
@@ -304,6 +346,7 @@ class OrderBuilder:
                         fill = float(response.get("size_matched", 0))
                         if isinstance(order, RestingOrder): order.filled_shares = fill; order.avg_fill_price = order.price
                         else: order.fill_amount = fill
+                        self.record_fill(order)
                         logger.info(f"[LIVE] Order MATCHED: {fill} shares, tx={order.tx_hash}")
                     elif response.get("orderID"):
                         order.status = OrderStatus.LIVE
@@ -371,6 +414,7 @@ class OrderBuilder:
             order.status = OrderStatus.FAILED; order.error = RejectCode.REGION_RESTRICTED.value; logger.error("Region restricted")
         else:
             order.status = OrderStatus.FAILED; order.error = err_msg; logger.error(f"Order rejected: {err_msg}")
+        self.record_rejection()
 
     def get_order(self, order_id, ask_source=None):
         order = self._resting.get(order_id)
@@ -378,6 +422,7 @@ class OrderBuilder:
         elapsed = time.monotonic() - order.placed_at
         if elapsed > self.config.resting_order_timeout:
             order.status = OrderStatus.EXPIRED; self._reserved.pop(order_id, None)
+            self.record_expiry()
             logger.info(f"Resting order EXPIRED after {elapsed:.1f}s: {order.market_question[:40]}"); return order
         if order.is_paper:
             if ask_source:
