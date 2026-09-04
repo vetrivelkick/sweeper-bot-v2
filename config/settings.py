@@ -101,6 +101,14 @@ UNSUPPORTED_RESOLUTION_SOURCES = ["manual", "unresolved", "ambiguous", "cancelle
 # Maximum acceptable probability that resolution is overturned
 MAX_RESOLUTION_DISPUTE_RISK = 0.02  # 2% max
 
+# SECTION 5 AUDIT: UMA resolution verification
+UMA_CHALLENGE_PERIOD_HOURS = 2  # UMA Optimistic Oracle challenge period
+UMA_ADAPTER_ADDRESSES = [
+    "0x157Ce2d672854c848c9b79C49a8Cc6cc89176a49",  # UmaCtfAdapter v3.0
+    "0x6A9D222616C90FcA5754cd1333cFD9b7fb6a4F74",  # UmaCtfAdapter v2.0
+    "0xCB1822859cEF82Cd2Eb4E6276C7916e692995130",  # UmaCtfAdapter v1.0
+]
+
 # Merge-now vs wait-for-redemption decision rules
 MERGE_THRESHOLD_SPREAD = 0.02  # If losing-side ask <= this, merge now
 PREFER_MERGE_OVER_REDEEM = True  # Merge is cheaper when both sides available

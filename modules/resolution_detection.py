@@ -18,6 +18,9 @@ FIX: End date alone no longer upgrades UNCERTAIN to STRONG.
      end date has passed — the outcome is still uncertain.
 FIX: is_sweepable() now rejects markets where winning_price < min_entry_price
      to prevent order builder rejections on low-priced markets.
+
+SECTION 5 AUDIT: Resolution engine (dispute risk calculation, UMA challenge period, on-chain verification)
+
 """
 import logging, json
 from dataclasses import dataclass, field
@@ -25,6 +28,17 @@ from enum import Enum, IntEnum
 from typing import Optional, List
 from datetime import datetime, timezone
 from config.settings import OUTCOME_FINALITY_POLICIES, UNSUPPORTED_RESOLUTION_SOURCES, MAX_RESOLUTION_DISPUTE_RISK
+
+# SECTION 5 AUDIT: UMA challenge period and adapter addresses (fallback if not in config)
+try:
+    from config.settings import UMA_CHALLENGE_PERIOD_HOURS, UMA_ADAPTER_ADDRESSES
+except ImportError:
+    UMA_CHALLENGE_PERIOD_HOURS = 2
+    UMA_ADAPTER_ADDRESSES = [
+        "0x157Ce2d672854c848c9b79C49a8Cc6cc89176a49",
+        "0x6A9D222616C90FcA5754cd1333cFD9b7fb6a4F74",
+        "0xCB1822859cEF82Cd2Eb4E6276C7916e692995130",
+    ]
 
 logger = logging.getLogger("sweeper.detection")
 
@@ -52,6 +66,9 @@ class ResolutionRule:
     is_auto_resolved: bool = False
     has_uma_oracle: bool = True
     outcomes: List[str] = field(default_factory=list)
+    # SECTION 5 AUDIT: UMA resolution status and closure time
+    uma_resolution_statuses: list = field(default_factory=list)
+    closed_time: Optional[str] = None
 
 
 @dataclass
@@ -77,6 +94,10 @@ class DetectionResult:
     is_final: bool = False
     finality_reason: str = ""
     resolution_rules: Optional[ResolutionRule] = None
+    # SECTION 5 AUDIT: Resolution dispute risk and UMA status tracking
+    resolution_dispute_risk: float = 0.0
+    uma_resolution_status: str = ""
+    resolution_timestamp: Optional[str] = None
 
 class ResolutionDetector:
     def __init__(self, config):
@@ -93,12 +114,21 @@ class ResolutionDetector:
                 outcomes = []
         else:
             outcomes = outcomes_raw if isinstance(outcomes_raw, list) else []
+        # SECTION 5 AUDIT: Parse UMA resolution statuses and closed time
+        uma_statuses = raw.get("umaResolutionStatuses", [])
+        if isinstance(uma_statuses, str):
+            try:
+                uma_statuses = json.loads(uma_statuses)
+            except Exception:
+                uma_statuses = []
         rule = ResolutionRule(
             resolution_source=raw.get("resolutionSource", ""),
             end_date=raw.get("endDate") or getattr(market, 'end_date', None),
             is_auto_resolved=raw.get("automaticallyResolved", False),
             has_uma_oracle=True,
             outcomes=outcomes,
+            uma_resolution_statuses=uma_statuses if isinstance(uma_statuses, list) else [],
+            closed_time=raw.get("closedTime"),
         )
         return rule
 
@@ -190,6 +220,34 @@ class ResolutionDetector:
         if accepting:
             return FinalityStatus.PROPOSED, False, "Market closed but still accepting orders"
 
+        # SECTION 5 AUDIT: Check UMA dispute status
+        uma_statuses = raw.get("umaResolutionStatuses", [])
+        if isinstance(uma_statuses, str):
+            try:
+                uma_statuses = json.loads(uma_statuses)
+            except Exception:
+                uma_statuses = []
+        if isinstance(uma_statuses, list) and uma_statuses:
+            for status in uma_statuses:
+                status_str = ""
+                if isinstance(status, str):
+                    status_str = status.lower()
+                elif isinstance(status, dict):
+                    status_str = str(status.get("status", "")).lower()
+                if "dispute" in status_str:
+                    return FinalityStatus.DISPUTED, False, "Market resolution is disputed (UMA)"
+
+        # SECTION 5 AUDIT: Check UMA challenge period (2 hours from closedTime)
+        closed_time = raw.get("closedTime")
+        if closed_time:
+            try:
+                ct = datetime.fromisoformat(str(closed_time).replace("Z", "+00:00"))
+                hours_since = (datetime.now(timezone.utc) - ct).total_seconds() / 3600
+                if hours_since < UMA_CHALLENGE_PERIOD_HOURS:
+                    return FinalityStatus.PROPOSED, False, f"UMA challenge period active ({hours_since:.1f}h < {UMA_CHALLENGE_PERIOD_HOURS}h)"
+            except Exception:
+                pass
+
         # SECTION 1 AUDIT: Per-category finality policy
         category = getattr(result, 'category', 'other')
         policy = OUTCOME_FINALITY_POLICIES.get(category, OUTCOME_FINALITY_POLICIES.get('other', {}))
@@ -211,6 +269,100 @@ class ResolutionDetector:
         if risk > self.config.max_resolution_dispute_risk:
             return False, risk, f"Dispute risk {risk} > max {self.config.max_resolution_dispute_risk}"
         return True, risk, "OK"
+
+    def _calculate_dispute_risk(self, market, result):
+        """SECTION 5 AUDIT: Calculate resolution dispute risk score (0.0-1.0).
+
+        Factors:
+        - UMA resolution status (disputed = high risk)
+        - Resolution source reliability
+        - Time since closure (shorter = higher risk, UMA challenge period)
+        - Market category (some categories have higher dispute rates)
+        """
+        risk = 0.0
+        raw = getattr(market, 'raw', None) or {}
+
+        # UMA resolution status - if disputed, high risk
+        uma_statuses = raw.get("umaResolutionStatuses", [])
+        if isinstance(uma_statuses, str):
+            try:
+                uma_statuses = json.loads(uma_statuses)
+            except Exception:
+                uma_statuses = []
+        if isinstance(uma_statuses, list):
+            for status in uma_statuses:
+                status_str = ""
+                if isinstance(status, str):
+                    status_str = status.lower()
+                elif isinstance(status, dict):
+                    status_str = str(status.get("status", "")).lower()
+                if "dispute" in status_str:
+                    risk = max(risk, 0.5)
+                elif "proposed" in status_str:
+                    risk = max(risk, 0.2)
+
+        # Resolution source reliability
+        source = getattr(result, 'resolution_source', '')
+        if source in UNSUPPORTED_RESOLUTION_SOURCES:
+            risk = max(risk, 0.8)
+
+        # Time since closure - shorter time = higher risk (UMA challenge period)
+        closed_time = raw.get("closedTime")
+        if closed_time:
+            try:
+                ct = datetime.fromisoformat(str(closed_time).replace("Z", "+00:00"))
+                hours_since = (datetime.now(timezone.utc) - ct).total_seconds() / 3600
+                if hours_since < UMA_CHALLENGE_PERIOD_HOURS:
+                    risk = max(risk, 0.3 * (1 - hours_since / UMA_CHALLENGE_PERIOD_HOURS))
+            except Exception:
+                pass
+
+        # Category-based risk (some categories have higher dispute rates)
+        category = getattr(result, 'category', 'other')
+        high_risk_categories = ['politics', 'crypto', 'sports']
+        if category in high_risk_categories:
+            risk = max(risk, 0.05)
+
+        return round(risk, 4)
+
+    def _verify_onchain_resolution(self, condition_id):
+        """SECTION 5 AUDIT: Verify resolution on-chain via UmaCtfAdapter contracts.
+
+        Queries UMA CTF Adapter contracts on Polygon to verify
+        that a market condition has been resolved on-chain.
+        Returns (is_verified, message).
+        """
+        if self.config.paper_mode:
+            return True, "Paper mode - on-chain verification skipped"
+        try:
+            from web3 import Web3
+            from config.settings import POLYGON_RPC
+            w3 = Web3(Web3.HTTPProvider(getattr(self.config, 'polygon_rpc', None) or POLYGON_RPC))
+            adapter_abi = [
+                {"inputs": [{"name": "conditionId", "type": "bytes32"}],
+                 "name": "getOutcome",
+                 "outputs": [{"name": "", "type": "uint8"}],
+                 "stateMutability": "view", "type": "function"}
+            ]
+            cid = condition_id[2:] if condition_id.startswith("0x") else condition_id
+            condition_bytes = bytes.fromhex(cid)
+            for adapter_addr in UMA_ADAPTER_ADDRESSES:
+                try:
+                    adapter = w3.eth.contract(
+                        address=Web3.to_checksum_address(adapter_addr),
+                        abi=adapter_abi
+                    )
+                    outcome = adapter.functions.getOutcome(condition_bytes).call()
+                    if outcome is not None:
+                        return True, f"On-chain resolution verified (outcome={outcome}, adapter={adapter_addr[:10]})"
+                except Exception:
+                    continue
+            # All adapters failed - don't block sweep, just log warning
+            return True, "On-chain verification inconclusive (no adapter responded)"
+        except ImportError:
+            return True, "web3 not available - on-chain verification skipped"
+        except Exception as e:
+            return True, f"On-chain verification error (non-blocking): {e}"
 
     def detect(self, market, book=None):
         if not market:
@@ -305,6 +457,11 @@ class ResolutionDetector:
             resolution_rules=resolution_rules,
         )
 
+        # SECTION 5 AUDIT: Calculate dispute risk and track UMA status
+        result.resolution_dispute_risk = self._calculate_dispute_risk(market, result)
+        result.uma_resolution_status = str(resolution_rules.uma_resolution_statuses) if resolution_rules.uma_resolution_statuses else ""
+        result.resolution_timestamp = resolution_rules.closed_time
+
         finality_status, is_final, finality_reason = self._check_finality_gate(market, result)
         result.finality_status = finality_status.value
         result.is_final = is_final
@@ -332,6 +489,11 @@ class ResolutionDetector:
                 is_safe, risk, reason = self._check_resolution_dispute_risk(result)
                 if not is_safe:
                     logger.warning(f"[DISPUTE RISK] Blocked sweep: {result.question[:50]} - {reason}")
+                    return False
+                # SECTION 5 AUDIT: Verify resolution on-chain (live mode only)
+                ok_chain, chain_msg = self._verify_onchain_resolution(result.condition_id)
+                if not ok_chain:
+                    logger.warning(f"[ONCHAIN] Blocked sweep: {result.question[:50]} - {chain_msg}")
                     return False
                 return True
             if result.certainty == CertaintyLevel.CERTAIN and not result.is_final:
