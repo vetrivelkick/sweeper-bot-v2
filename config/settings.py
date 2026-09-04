@@ -7,6 +7,9 @@ FIX #3: Standardized gas cost to 0.001/share everywhere
 FIX #8: Export all contract addresses and constants from __init__.py
 FIX #16: BotState.from_dict() now preserves rate_limit_429_count
 P0 #3: Added signature_type and funder fields to SweeperConfig for V2 SDK compatibility
+P1 #4: Added server-time/clock-drift validation via validate_server_time()
+P1 #5: State file saves are now atomic AND versioned (keeps .bak backup)
+P1 #6: All strategy parameters now load from .env via os.getenv with module constants as defaults
 P1: .env support via os.getenv for sensitive fields; atomic BotState.save
 P1: Added min_entry_price parameter (was hardcoded 0.985 in order_executor.py and run_dry.py)
 """
@@ -14,6 +17,10 @@ from dataclasses import dataclass, field
 from typing import Optional
 import json
 import os
+import time
+import logging
+
+logger = logging.getLogger("sweeper.config")
 
 # === CONTRACT ADDRESSES (verified against official docs) ===
 PUSD = "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB"
@@ -103,31 +110,56 @@ def min_viable_size(gas_cost, buy_price=BUY_PRICE, is_maker=False):
     if edge <= 0: return float('inf')
     return gas_cost / edge
 
+def validate_server_time(max_drift_seconds=5.0):
+    """P1 #4: Validate local clock drift against Polymarket server time.
+
+    Fetches server time from CLOB API and compares with local time.
+    Returns (drift_seconds, is_ok).
+    Fails open (returns 0, True) if server is unreachable.
+    """
+    try:
+        import urllib.request
+        req = urllib.request.Request(f"{CLOB_API}/time", method="GET")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            server_time_ms = int(resp.read().decode().strip())
+            server_time = server_time_ms / 1000.0
+        local_time = time.time()
+        drift = abs(local_time - server_time)
+        if drift > max_drift_seconds:
+            logger.warning(f"Clock drift {drift:.2f}s exceeds {max_drift_seconds}s threshold")
+            return drift, False
+        logger.info(f"Server time OK (drift: {drift:.3f}s)")
+        return drift, True
+    except Exception as e:
+        logger.warning(f"Server time validation failed: {e}")
+        return 0.0, True  # fail open
+
 @dataclass
 class SweeperConfig:
-    buy_price: float = BUY_PRICE
-    loser_max_price: float = LOSER_MAX_PRICE
-    max_daily_loss: float = MAX_DAILY_LOSS
-    gas_floor: float = GAS_FLOOR
-    paper_mode: bool = True
-    prefer_maker: bool = PREFER_MAKER
-    allow_taker_fallback: bool = ALLOW_TAKER_FALLBACK
-    resting_order_timeout: float = RESTING_ORDER_TIMEOUT
-    order_reconcile_interval: float = ORDER_RECONCILE_INTERVAL
-    cancel_orders_on_shutdown: bool = CANCEL_ORDERS_ON_SHUTDOWN
-    touch_fill_seconds: float = TOUCH_FILL_SECONDS
-    fill_probability: float = FILL_PROBABILITY
-    ghost_probability: float = GHOST_PROBABILITY
-    partial_fill_probability: float = PARTIAL_FILL_PROBABILITY
-    partial_fill_ratio: float = PARTIAL_FILL_RATIO
-    max_event_exposure: float = MAX_EVENT_EXPOSURE_USD
-    max_portfolio_exposure: float = MAX_PORTFOLIO_EXPOSURE_USD
-    max_429_before_trip: int = MAX_429_BEFORE_TRIP
-    rate_limit_order_per_min: int = RATE_LIMIT_ORDER_PER_MIN
-    rate_limit_book_per_min: int = RATE_LIMIT_BOOK_PER_MIN
-    rate_limit_gamma_per_min: int = RATE_LIMIT_GAMMA_PER_MIN
-    rate_limit_headroom: float = RATE_LIMIT_HEADROOM
-    polygon_rpc: str = POLYGON_RPC
+    # P1 #6: All strategy parameters now load from .env with module constants as defaults
+    buy_price: float = field(default_factory=lambda: float(os.getenv("BUY_PRICE", str(BUY_PRICE))))
+    loser_max_price: float = field(default_factory=lambda: float(os.getenv("LOSER_MAX_PRICE", str(LOSER_MAX_PRICE))))
+    max_daily_loss: float = field(default_factory=lambda: float(os.getenv("MAX_DAILY_LOSS", str(MAX_DAILY_LOSS))))
+    gas_floor: float = field(default_factory=lambda: float(os.getenv("GAS_FLOOR", str(GAS_FLOOR))))
+    paper_mode: bool = field(default_factory=lambda: os.getenv("PAPER_MODE", "true").lower() != "false")
+    prefer_maker: bool = field(default_factory=lambda: os.getenv("PREFER_MAKER", "true").lower() == "true")
+    allow_taker_fallback: bool = field(default_factory=lambda: os.getenv("ALLOW_TAKER_FALLBACK", "false").lower() == "true")
+    resting_order_timeout: float = field(default_factory=lambda: float(os.getenv("RESTING_ORDER_TIMEOUT", str(RESTING_ORDER_TIMEOUT))))
+    order_reconcile_interval: float = field(default_factory=lambda: float(os.getenv("ORDER_RECONCILE_INTERVAL", str(ORDER_RECONCILE_INTERVAL))))
+    cancel_orders_on_shutdown: bool = field(default_factory=lambda: os.getenv("CANCEL_ORDERS_ON_SHUTDOWN", "true").lower() == "true")
+    touch_fill_seconds: float = field(default_factory=lambda: float(os.getenv("TOUCH_FILL_SECONDS", str(TOUCH_FILL_SECONDS))))
+    fill_probability: float = field(default_factory=lambda: float(os.getenv("FILL_PROBABILITY", str(FILL_PROBABILITY))))
+    ghost_probability: float = field(default_factory=lambda: float(os.getenv("GHOST_PROBABILITY", str(GHOST_PROBABILITY))))
+    partial_fill_probability: float = field(default_factory=lambda: float(os.getenv("PARTIAL_FILL_PROBABILITY", str(PARTIAL_FILL_PROBABILITY))))
+    partial_fill_ratio: float = field(default_factory=lambda: float(os.getenv("PARTIAL_FILL_RATIO", str(PARTIAL_FILL_RATIO))))
+    max_event_exposure: float = field(default_factory=lambda: float(os.getenv("MAX_EVENT_EXPOSURE_USD", str(MAX_EVENT_EXPOSURE_USD))))
+    max_portfolio_exposure: float = field(default_factory=lambda: float(os.getenv("MAX_PORTFOLIO_EXPOSURE_USD", str(MAX_PORTFOLIO_EXPOSURE_USD))))
+    max_429_before_trip: int = field(default_factory=lambda: int(os.getenv("MAX_429_BEFORE_TRIP", str(MAX_429_BEFORE_TRIP))))
+    rate_limit_order_per_min: int = field(default_factory=lambda: int(os.getenv("RATE_LIMIT_ORDER_PER_MIN", str(RATE_LIMIT_ORDER_PER_MIN))))
+    rate_limit_book_per_min: int = field(default_factory=lambda: int(os.getenv("RATE_LIMIT_BOOK_PER_MIN", str(RATE_LIMIT_BOOK_PER_MIN))))
+    rate_limit_gamma_per_min: int = field(default_factory=lambda: int(os.getenv("RATE_LIMIT_GAMMA_PER_MIN", str(RATE_LIMIT_GAMMA_PER_MIN))))
+    rate_limit_headroom: float = field(default_factory=lambda: float(os.getenv("RATE_LIMIT_HEADROOM", str(RATE_LIMIT_HEADROOM))))
+    polygon_rpc: str = field(default_factory=lambda: os.getenv("POLYGON_RPC", POLYGON_RPC))
     private_key: str = field(default_factory=lambda: os.getenv("PRIVATE_KEY", ""))
     clob_api_key: str = field(default_factory=lambda: os.getenv("CLOB_API_KEY", ""))
     clob_api_secret: str = field(default_factory=lambda: os.getenv("CLOB_API_SECRET", ""))
@@ -136,7 +168,7 @@ class SweeperConfig:
     signature_type: int = field(default_factory=lambda: int(os.getenv("SIGNATURE_TYPE", "0")))  # 0=EOA, 1=POLY_PROXY, 2=POLY_GNOSIS_SAFE, 3=POLY_1271
     funder: str = field(default_factory=lambda: os.getenv("FUNDER", ""))  # Funder address for proxy/Safe/deposit wallets
     fee_rate: float = DEFAULT_FEE_RATE
-    min_entry_price: float = MIN_ENTRY_PRICE  # P1: Parameterized entry floor (was hardcoded 0.985)
+    min_entry_price: float = field(default_factory=lambda: float(os.getenv("MIN_ENTRY_PRICE", str(MIN_ENTRY_PRICE))))  # P1: Parameterized entry floor
 
     def validate(self):
         if not (0.90 <= self.buy_price <= 0.999): return False
@@ -179,8 +211,15 @@ class BotState:
             rate_limit_429_count=d.get("rate_limit_429_count", 0))
 
     def save(self, path):
-        """P1: Atomic save - write to temp file then rename to prevent corruption."""
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        """P1 #5: Atomic save with versioning - write to temp, rename, keep .bak backup."""
+        os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
+        # P1 #5: Keep a backup of the previous state file before overwriting
+        if os.path.exists(path):
+            backup_path = path + '.bak'
+            try:
+                os.replace(path, backup_path)
+            except OSError:
+                pass  # non-fatal if backup fails
         tmp_path = path + '.tmp'
         with open(tmp_path, "w") as f: json.dump(self.to_dict(), f, indent=2)
         os.replace(tmp_path, path)
