@@ -3,7 +3,7 @@ Sweeper Bot V2 - Order Builder with GTC Post-Only + Queued Positions
 
 FIX #2: Standardized fill probability logic (35% fill, 25% partial, 5% ghost, 35% expired)
 FIX #3: Gas cost standardized to 0.001/share
-FIX #5: V2 SDK migration: chain_id=137 -> chain=137
+FIX #5: V2 SDK migration: chain=137 -> chain=137
 FIX #9: Added 425 exponential backoff retry (1s->2s->4s...->30s, max 10 retries)
 FIX #17: plan_entry uses round() instead of int() for tick alignment
 FIX #18: Allow taker fallback when best_ask <= max_entry even if allow_taker is False
@@ -21,6 +21,8 @@ P0 #7: Store real exchange-assigned orderID from response, replacing fabricated 
 P1: Parameterized min_entry_price (was hardcoded 0.985) - now uses self.config.min_entry_price
 P1 #2: 429 handling now wired to rate limiter via handle_429()
 P1 #3: Duplicate order prevention on 425 retries via is_duplicate_order()/record_order_id()
+
+AUDIT FIX #13: Pass condition_id to check_exposure_before_order for per-market enforcement
 """
 import json, time, random, logging
 from decimal import Decimal, ROUND_DOWN
@@ -181,7 +183,7 @@ class OrderBuilder:
             return False, None
         if self._safety:
             order_cost = size * price
-            ok_exp, exp_msg = self._safety.check_exposure_before_order(order_cost, self.list_open_orders())
+            ok_exp, exp_msg = self._safety.check_exposure_before_order(order_cost, self.list_open_orders(), condition_id=detection_result.condition_id)  # AUDIT FIX #13
             if not ok_exp:
                 logger.warning(f"Order blocked - exposure: {exp_msg}")
                 return False, None
@@ -210,7 +212,7 @@ class OrderBuilder:
             return False, None
         if self._safety:
             order_cost = size * self.config.loser_max_price
-            ok_exp, exp_msg = self._safety.check_exposure_before_order(order_cost, self.list_open_orders())
+            ok_exp, exp_msg = self._safety.check_exposure_before_order(order_cost, self.list_open_orders(), condition_id=detection_result.condition_id)  # AUDIT FIX #13
             if not ok_exp:
                 logger.warning(f"Complementary buy blocked - exposure: {exp_msg}")
                 return False, None
