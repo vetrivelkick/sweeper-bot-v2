@@ -107,6 +107,13 @@ class MetricsCollector:
             ("rejections_cancel_only", "Cancel-only mode rejections"),
             ("rpc_errors", "RPC connection errors"),
             ("ws_reconnects", "WebSocket reconnections"),
+            # AUDIT FIX #16: New metrics for audit fixes
+            ("fill_matched_offchain", "Fills matched off-chain (Fix #6)"),
+            ("fill_trade_pending", "Fills pending on-chain trade (Fix #6)"),
+            ("fill_confirmed", "Fills confirmed on-chain (Fix #6)"),
+            ("block_confirmations", "Block confirmations checked (Fix #6)"),
+            ("per_market_exposure_breaches", "Per-market exposure limit hits (Fix #8)"),
+            ("health_checks", "Health check calls (Fix #9)"),
         ]
         for name, help_text in counters:
             self.counters[name] = Counter(name, help_text)
@@ -123,6 +130,12 @@ class MetricsCollector:
             ("ghost_fill_rate", "Ghost fill rate percentage"),
             ("win_rate", "Win rate percentage"),
             ("uptime_seconds", "Bot uptime in seconds"),
+            # AUDIT FIX #16: New gauges for audit fixes
+            ("per_market_exposure", "Current per-market exposure USD (Fix #8)"),
+            ("health_status", "Bot health status: 0=healthy 1=degraded 2=killed (Fix #9)"),
+            ("ws_connected", "WS connection state: 1=connected 0=disconnected (Fix #10)"),
+            ("ws_reconnect_count", "WS reconnection attempts (Fix #10)"),
+            ("block_confirmation_depth", "Block confirmation depth (Fix #6)"),
         ]
         for name, help_text in gauges:
             self.gauges[name] = Gauge(name, help_text)
@@ -282,6 +295,21 @@ class AlertManager:
                 return True
         return False
 
+    def check_health(self) -> bool:
+        """AUDIT FIX #16: Check bot health status and alert if degraded/killed."""
+        if hasattr(self.safety, 'health_check'):
+            hc = self.safety.health_check()
+            status_map = {'healthy': 0, 'degraded': 1, 'killed': 2}
+            self.metrics.set('health_status', status_map.get(hc.get('status', 'healthy'), 0))
+            self.metrics.inc('health_checks')
+            if hc.get('is_killed'):
+                self.metrics.record_alert('HEALTH_KILLED', 'CRITICAL', f"Bot killed: {hc.get('kill_reason', 'unknown')}")
+                return True
+            if hc.get('status') == 'degraded':
+                self.metrics.record_alert('HEALTH_DEGRADED', 'WARNING', f"Bot degraded: exposure within_limits={hc.get('within_limits')}")
+                return True
+        return False
+
     def check_all(self, resting_orders=None, gas_manager=None, consecutive_losses=0, total_trades=0, ghost_count=0) -> List[str]:
         """Run all alert checks. Returns list of triggered alert types."""
         triggered = []
@@ -291,4 +319,5 @@ class AlertManager:
         if gas_manager and self.check_gas(gas_manager): triggered.append("GAS_LOW")
         if self.check_consecutive_losses(consecutive_losses): triggered.append("CONSECUTIVE_LOSS")
         if self.check_ghost_rate(total_trades, ghost_count): triggered.append("GHOST_FILL_SPIKE")
+        if self.check_health(): triggered.append("HEALTH")
         return triggered
