@@ -13,6 +13,7 @@ AUDIT FIX #8: Per-market exposure limit in check_exposure_before_order
 AUDIT FIX #9: Remote order cancellation on kill switch in main.py
 AUDIT FIX #14: health_check() method for monitoring/health endpoints
 AUDIT FIX #26: Risk controls - event exposure, drawdown, risk score, concentration
+SECTION 1 AUDIT: Fix preflight check for list-returning validate()
 """
 import json, os, time, logging
 from datetime import datetime, timezone
@@ -83,8 +84,10 @@ class SafetyRails:
 
     def preflight_check(self):
         checks = []; passed = True
-        if self.config.validate(): checks.append("OK: Config validation passed")
-        else: checks.append("FAIL: Config validation failed"); passed = False
+        # SECTION 1 AUDIT: Handle list-returning validate() (AUDIT FIX #30)
+        val_errors = self.config.validate()
+        if not val_errors: checks.append("OK: Config validation passed")
+        else: checks.append(f"FAIL: Config validation failed: {val_errors}"); passed = False
         # AUDIT FIX #5: Real geoblock preflight
         geo_ok, geo_msg = self.check_geoblock()
         if geo_ok: checks.append(f"OK: {geo_msg}")
