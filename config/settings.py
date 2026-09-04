@@ -12,6 +12,7 @@ P1 #5: State file saves are now atomic AND versioned (keeps .bak backup)
 P1 #6: All strategy parameters now load from .env via os.getenv with module constants as defaults
 P1: .env support via os.getenv for sensitive fields; atomic BotState.save
 P1: Added min_entry_price parameter (was hardcoded 0.985 in order_executor.py and run_dry.py)
+
 """
 from dataclasses import dataclass, field
 from typing import Optional
@@ -153,6 +154,7 @@ class SweeperConfig:
     partial_fill_probability: float = field(default_factory=lambda: float(os.getenv("PARTIAL_FILL_PROBABILITY", str(PARTIAL_FILL_PROBABILITY))))
     partial_fill_ratio: float = field(default_factory=lambda: float(os.getenv("PARTIAL_FILL_RATIO", str(PARTIAL_FILL_RATIO))))
     max_event_exposure: float = field(default_factory=lambda: float(os.getenv("MAX_EVENT_EXPOSURE_USD", str(MAX_EVENT_EXPOSURE_USD))))
+    max_per_market_exposure: float = field(default_factory=lambda: float(os.getenv("MAX_PER_MARKET_EXPOSURE", "200.0")))  # AUDIT FIX #8: Per-market risk limit
     max_portfolio_exposure: float = field(default_factory=lambda: float(os.getenv("MAX_PORTFOLIO_EXPOSURE_USD", str(MAX_PORTFOLIO_EXPOSURE_USD))))
     max_429_before_trip: int = field(default_factory=lambda: int(os.getenv("MAX_429_BEFORE_TRIP", str(MAX_429_BEFORE_TRIP))))
     rate_limit_order_per_min: int = field(default_factory=lambda: int(os.getenv("RATE_LIMIT_ORDER_PER_MIN", str(RATE_LIMIT_ORDER_PER_MIN))))
