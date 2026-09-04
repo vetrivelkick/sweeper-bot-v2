@@ -3,6 +3,8 @@
 P0 #14: Post-resolution redemption of winning tokens for pUSD.
          Burns winning outcome tokens via CtfCollateralAdapter.redeemPositions
          after the market has resolved and payouts have been reported.
+         - Fixed unsigned .transact() to use signed transactions with private key
+         - Fixed outcome indices [0, 1] (was [1, 2] - 1-indexed was wrong for binary markets)
 
 """
 import time
@@ -30,6 +32,27 @@ class RedemptionManager:
         self._redeem_count = 0
         self._approval_cache = set()
 
+    def _send_signed_tx(self, w3, contract_fn, wallet, gas=300000):
+        """P0 #14: Build, sign, and send a transaction using the private key.
+        
+        Replaces unsigned .transact({'from': wallet}) calls which only work
+        for nodes with unlocked accounts. Production Polygon requires
+        signed transactions with the private key.
+        """
+        from eth_account import Account
+        from web3 import Web3
+        nonce = w3.eth.get_transaction_count(Web3.to_checksum_address(wallet))
+        tx = contract_fn.build_transaction({
+            'from': wallet,
+            'gas': gas,
+            'nonce': nonce,
+            'chainId': 137,
+            'gasPrice': w3.eth.gas_price,
+        })
+        signed = Account.sign_transaction(tx, self.config.private_key)
+        tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+        return w3.eth.wait_for_transaction_receipt(tx_hash)
+
     def _ensure_erc1155_approval(self, w3, ctf_addr, adapter_addr, wallet_addr):
         if adapter_addr.lower() in self._approval_cache:
             return True
@@ -42,8 +65,8 @@ class RedemptionManager:
             ctf = w3.eth.contract(address=Web3.to_checksum_address(ctf_addr), abi=erc1155_abi)
             approved = ctf.functions.isApprovedForAll(Web3.to_checksum_address(wallet_addr), Web3.to_checksum_address(adapter_addr)).call()
             if not approved:
-                tx = ctf.functions.setApprovalForAll(Web3.to_checksum_address(adapter_addr), True).transact({'from': wallet_addr})
-                receipt = w3.eth.wait_for_transaction_receipt(tx)
+                # P0 #14: Use signed transaction instead of unsigned .transact()
+                receipt = self._send_signed_tx(w3, ctf.functions.setApprovalForAll(Web3.to_checksum_address(adapter_addr), True), wallet_addr, gas=200000)
                 if receipt['status'] == 1:
                     logger.info(f"ERC1155 approval granted to adapter {adapter_addr}")
                 else:
@@ -85,8 +108,9 @@ class RedemptionManager:
             cid_hex = condition_id.replace('0x', '')
             condition_id_bytes = bytes.fromhex(cid_hex)
             
-            tx = adapter.functions.redeemPositions("0x0000000000000000000000000000000000000000", b'\x00' * 32, condition_id_bytes, [1, 2]).transact({'from': wallet, 'gas': 300000})
-            receipt = w3.eth.wait_for_transaction_receipt(tx)
+            # P0 #14: Use signed transaction + fix outcome indices [0, 1] (was [1, 2])
+            # Binary markets use 0-indexed outcomes: YES=0, NO=1
+            receipt = self._send_signed_tx(w3, adapter.functions.redeemPositions("0x0000000000000000000000000000000000000000", b'\x00' * 32, condition_id_bytes, [0, 1]), wallet, gas=300000)
             if receipt['status'] == 1:
                 usdc_recovered = shares
                 self._total_redeemed += usdc_recovered
