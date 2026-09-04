@@ -27,7 +27,8 @@ SYNTHETIC_MARKETS = [
         slug="btc-100k", yes_token_id="12345", no_token_id="67890",
         yes_price=0.999, no_price=0.001, end_date="2026-12-31T23:59:59Z",
         volume_24hr=50000, liquidity=30000, neg_risk=False, accepting_orders=True,
-        sweep_score=0.0, category="crypto", raw={"tags": [{"label": "Crypto", "slug": "crypto"}]}
+        sweep_score=0.0, category="crypto", tick_size=0.001,
+        raw={"tags": [{"label": "Crypto", "slug": "crypto"}], "closed": True, "active": False, "acceptingOrders": False, "outcomePrices": ["0.999", "0.001"]}
     ),
     CandidateMarket(
         condition_id="0xdef456abc123def456abc123def456abc123def456abc123def456abc123def456",
@@ -35,7 +36,8 @@ SYNTHETIC_MARKETS = [
         slug="lakers-nba", yes_token_id="11111", no_token_id="22222",
         yes_price=0.005, no_price=0.995, end_date="2026-06-30T23:59:59Z",
         volume_24hr=30000, liquidity=20000, neg_risk=False, accepting_orders=True,
-        sweep_score=0.0, category="sports", raw={"tags": [{"label": "Sports", "slug": "sports"}]}
+        sweep_score=0.0, category="sports", tick_size=0.001,
+        raw={"tags": [{"label": "Sports", "slug": "sports"}], "closed": True, "active": False, "acceptingOrders": False, "outcomePrices": ["0.005", "0.995"]}
     ),
     CandidateMarket(
         condition_id="0xghi789def456abc123def456abc123def456abc123def456abc123def456abc123",
@@ -43,7 +45,8 @@ SYNTHETIC_MARKETS = [
         slug="election-2026", yes_token_id="33333", no_token_id="44444",
         yes_price=0.999, no_price=0.001, end_date="2026-11-05T23:59:59Z",
         volume_24hr=100000, liquidity=50000, neg_risk=True, accepting_orders=True,
-        sweep_score=0.0, category="politics", raw={"tags": [{"label": "Politics", "slug": "politics"}]}
+        sweep_score=0.0, category="politics", tick_size=0.001,
+        raw={"tags": [{"label": "Politics", "slug": "politics"}], "closed": True, "active": False, "acceptingOrders": False, "outcomePrices": ["0.999", "0.001"]}
     ),
     CandidateMarket(
         condition_id="0xjkl012def456abc123def456abc123def456abc123def456abc123def456abc123",
@@ -51,7 +54,8 @@ SYNTHETIC_MARKETS = [
         slug="fed-rates-q4", yes_token_id="55555", no_token_id="66666",
         yes_price=0.99, no_price=0.01, end_date="2026-12-31T23:59:59Z",
         volume_24hr=20000, liquidity=15000, neg_risk=False, accepting_orders=True,
-        sweep_score=0.0, category="finance", raw={"tags": [{"label": "Finance", "slug": "finance"}]}
+        sweep_score=0.0, category="finance", tick_size=0.001,
+        raw={"tags": [{"label": "Finance", "slug": "finance"}], "closed": True, "active": False, "acceptingOrders": False, "outcomePrices": ["0.99", "0.01"]}
     ),
     CandidateMarket(
         condition_id="0xmno345def456abc123def456abc123def456abc123def456abc123def456abc123",
@@ -59,7 +63,8 @@ SYNTHETIC_MARKETS = [
         slug="ceasefire-2026", yes_token_id="77777", no_token_id="88888",
         yes_price=0.999, no_price=0.001, end_date="2026-12-31T23:59:59Z",
         volume_24hr=15000, liquidity=10000, neg_risk=False, accepting_orders=True,
-        sweep_score=0.0, category="geopolitics", raw={"tags": [{"label": "Geopolitics", "slug": "geopolitics"}]}
+        sweep_score=0.0, category="geopolitics", tick_size=0.001,
+        raw={"tags": [{"label": "Geopolitics", "slug": "geopolitics"}], "closed": True, "active": False, "acceptingOrders": False, "outcomePrices": ["0.999", "0.001"]}
     ),
 ]
 
