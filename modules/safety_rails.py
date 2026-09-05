@@ -18,6 +18,7 @@ SECTION 2 AUDIT: SDK version check and canary funded amount in preflight
 SECTION 3 AUDIT: Compliance & identity verification (key format, wallet checksum, sig type, API keys)
 SECTION 4 AUDIT: SDK baseline (import verification, method availability check)
 SECTION 8 AUDIT: Economics gate enforcement (check_economics_gate, validate_economics_config, get_economics_metrics, estimate_slippage, calculate_break_even)
+SECTION 18 AUDIT: Risk controls - check_risk_before_trade, circuit breaker, risk_adjusted_size, check_liquidity, auto_degrade, stress_test
 """
 import json, os, time, logging
 from datetime import datetime, timezone
@@ -81,6 +82,8 @@ class SafetyRails:
         self._log_dir = getattr(config, 'log_dir', 'logs')
         self._consecutive_losses = 0
         self._max_consecutive_losses = 5
+        self._circuit_breaker_active = False  # SECTION 18 AUDIT
+        self._circuit_breaker_until = 0.0  # SECTION 18 AUDIT
         # AUDIT FIX #26: Risk control tracking
         self._max_drawdown_limit = 0.20  # 20% max drawdown from peak
         os.makedirs(os.path.dirname(self._state_file), exist_ok=True)
@@ -638,6 +641,110 @@ class SafetyRails:
             'concentration': concentration,
             'rate_limit_429s': self.state.rate_limit_429_count,
             'within_limits': exposure['within_limits'] and not self.state.is_killed,
+        }
+
+    # SECTION 18 AUDIT: Risk control methods
+    def check_risk_before_trade(self, order_cost, shares, condition_id=None, resting_orders=None, liquidity_usd=None):
+        """SECTION 18 AUDIT: Comprehensive pre-trade risk gate."""
+        if self.state.is_killed:
+            return False, f"Kill switch active: {self.state.kill_reason}"
+        active, remaining = self.check_circuit_breaker()
+        if active:
+            return False, f"Circuit breaker active, {remaining:.0f}s remaining"
+        ok_exp, exp_msg = self.check_exposure_before_order(order_cost, resting_orders, condition_id)
+        if not ok_exp:
+            return False, exp_msg
+        if not self.check_max_positions():
+            return False, f"Max open positions reached: {len(self.state.open_positions)}/{self.state.max_open_positions}"
+        if condition_id:
+            ok_evt, evt_msg = self.check_event_exposure(condition_id, order_cost, resting_orders)
+            if not ok_evt:
+                return False, evt_msg
+        if liquidity_usd is not None:
+            ok_liq, liq_msg = self.check_liquidity(liquidity_usd)
+            if not ok_liq:
+                return False, liq_msg
+        score = self.get_risk_score()
+        threshold = getattr(self.config, 'risk_score_degrade_threshold', 75.0)
+        if score >= threshold:
+            return False, f"Risk score {score} >= degrade threshold {threshold}"
+        max_pct = getattr(self.config, 'max_position_size_pct', 0.25)
+        max_cost = self.config.max_portfolio_exposure * max_pct
+        if order_cost > max_cost:
+            return False, f"Order cost ${order_cost:.2f} exceeds max position size ${max_cost:.2f} ({max_pct*100:.0f}% of portfolio)"
+        return True, "OK"
+
+    def trigger_circuit_breaker(self, reason="Circuit breaker triggered"):
+        """SECTION 18 AUDIT: Activate circuit breaker with cooldown period."""
+        cooldown = getattr(self.config, 'circuit_breaker_cooldown', 300)
+        self._circuit_breaker_active = True
+        self._circuit_breaker_until = time.time() + cooldown
+        logger.warning(f"CIRCUIT BREAKER: {reason} - cooldown {cooldown}s")
+
+    def check_circuit_breaker(self):
+        """SECTION 18 AUDIT: Check if circuit breaker is active. Returns (active, remaining_seconds)."""
+        if not self._circuit_breaker_active:
+            return False, 0
+        remaining = self._circuit_breaker_until - time.time()
+        if remaining <= 0:
+            self._circuit_breaker_active = False
+            self._circuit_breaker_until = 0.0
+            logger.info("Circuit breaker expired, trading resumed")
+            return False, 0
+        return True, remaining
+
+    def risk_adjusted_size(self, base_shares, base_cost):
+        """SECTION 18 AUDIT: Adjust position size based on risk score."""
+        score = self.get_risk_score()
+        if score >= 75:
+            multiplier = 0.25
+        elif score >= 50:
+            multiplier = 0.50
+        elif score >= 25:
+            multiplier = 0.75
+        else:
+            multiplier = 1.0
+        adjusted_shares = int(base_shares * multiplier)
+        adjusted_cost = base_cost * multiplier
+        return adjusted_shares, adjusted_cost
+
+    def check_liquidity(self, market_liquidity_usd):
+        """SECTION 18 AUDIT: Check if market has sufficient liquidity."""
+        min_liq = getattr(self.config, 'min_liquidity_usd', 100.0)
+        if market_liquidity_usd < min_liq:
+            return False, f"Liquidity ${market_liquidity_usd:.2f} below min ${min_liq:.2f}"
+        return True, "OK"
+
+    def auto_degrade(self):
+        """SECTION 18 AUDIT: Auto-degrade from live to paper mode when risk score is too high."""
+        if self.config.paper_mode:
+            return False, ""
+        score = self.get_risk_score()
+        threshold = getattr(self.config, 'risk_score_degrade_threshold', 75.0)
+        if score >= threshold:
+            self.config.paper_mode = True
+            logger.warning(f"AUTO-DEGRADE: Risk score {score} >= {threshold}, switching to paper mode")
+            return True, f"Degraded to paper mode at risk score {score}"
+        return False, ""
+
+    def stress_test(self, price_drop_pct=0.05, gas_spike_pct=0.50):
+        """SECTION 18 AUDIT: Simulate adverse market conditions."""
+        total_exposure = sum(p.get('cost', 0) for p in self.state.open_positions.values() if isinstance(p, dict))
+        position_loss = total_exposure * price_drop_pct
+        gas_cost = sum(p.get('shares', 0) for p in self.state.open_positions.values() if isinstance(p, dict)) * 0.001 * (1 + gas_spike_pct)
+        total_stress_loss = position_loss + gas_cost
+        current_pnl = self.state.tracked_net_pnl
+        pnl_after = current_pnl - total_stress_loss
+        max_loss = self.config.max_daily_loss
+        would_survive = abs(pnl_after) < max_loss
+        return {
+            'scenario': f"Price drop {price_drop_pct*100:.1f}% + Gas spike {gas_spike_pct*100:.1f}%",
+            'position_loss': round(position_loss, 4),
+            'gas_loss': round(gas_cost, 4),
+            'total_stress_loss': round(total_stress_loss, 4),
+            'pnl_after_stress': round(pnl_after, 4),
+            'max_daily_loss': max_loss,
+            'would_survive': would_survive,
         }
 
     def check_economics_gate(self, buy_price, shares, category="other", is_maker=False, condition_id=None):
