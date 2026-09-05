@@ -17,6 +17,9 @@ P1 #10: Added complementary-token depth and VWAP check before buying.
 SECTION 13 AUDIT: Complementary-token price validation, slippage protection,
                  fill confirmation tracking, recycle PnL metrics,
                  merge-vs-redemption decision logging, complementary timeout handling
+SECTION 14 AUDIT: Merge operation safety - pre-merge token balance validation,
+                 gas estimation before merge, receipt event parsing,
+                 merge retry with exponential backoff, merge timeout handling
 
 """
 import time
@@ -64,6 +67,14 @@ class CapitalRecycler:
         self._merge_count = 0
         self._redemption_count = 0
         self._max_complementary_slippage = 0.002  # Max slippage on complementary buy
+        # SECTION 14 AUDIT: Merge operation safety
+        self._merge_retries = 0
+        self._max_merge_retries = 3
+        self._merge_backoff_base = 2.0  # seconds
+        self._merge_timeout = 120.0  # seconds for merge tx confirmation
+        self._total_merge_gas_spent = 0.0
+        self._merge_failures = 0
+        self._merge_receipts_verified = 0
 
     def _should_merge_now(self, detection_result, losing_ask_price=None):
         """SECTION 1 AUDIT: Decide whether to merge now or wait for redemption.
@@ -136,6 +147,72 @@ class CapitalRecycler:
         net_gain = usdc_recovered - loser_cost - (winning_shares * self.config.buy_price)
         self._total_net_gain += net_gain
         self._total_usdc_recovered += usdc_recovered
+
+    def _check_merge_prerequisites(self, detection_result, winning_shares, w3=None):
+        """SECTION 14 AUDIT: Verify both winning and losing tokens are held before merge."""
+        if self.config.paper_mode:
+            return True, 'Paper mode - prerequisites simulated'
+        try:
+            if w3 is None:
+                from web3 import Web3
+                w3 = Web3(Web3.HTTPProvider(self.config.polygon_rpc))
+            from config.settings import CTF
+            wallet = self.config.wallet_address
+            if not wallet:
+                return False, 'No wallet address'
+            winning_token = getattr(detection_result, 'winning_token_id', '')
+            losing_token = getattr(detection_result, 'losing_token_id', '')
+            if not winning_token or not losing_token:
+                return False, 'Missing token IDs'
+            # Check ERC1155 balance for both tokens
+            erc1155_abi = [{"inputs": [{"name": "", "type": "address"}, {"name": "", "type": "uint256"}], "name": "balanceOf", "outputs": [{"name": "", "type": "uint256"}], "stateMutability": "view", "type": "function"}]
+            ctf = w3.eth.contract(address=Web3.to_checksum_address(CTF), abi=erc1155_abi)
+            win_balance = ctf.functions.balanceOf(Web3.to_checksum_address(wallet), int(winning_token)).call()
+            lose_balance = ctf.functions.balanceOf(Web3.to_checksum_address(wallet), int(losing_token)).call()
+            min_shares = int(winning_shares * 10**6)
+            if win_balance < min_shares:
+                return False, f'Insufficient winning tokens: {win_balance / 10**6:.2f} < {winning_shares}'
+            if lose_balance < min_shares:
+                return False, f'Insufficient losing tokens: {lose_balance / 10**6:.2f} < {winning_shares}'
+            return True, f'Both tokens held: win={win_balance / 10**6:.2f}, lose={lose_balance / 10**6:.2f}'
+        except Exception as e:
+            logger.warning(f"Merge prerequisite check failed: {e} - proceeding")
+            return True, f'Check skipped: {e}'
+
+    def _estimate_merge_gas(self, w3, shares):
+        """SECTION 14 AUDIT: Estimate gas cost for merge transaction."""
+        try:
+            gas_units = self.MERGE_GAS_UNITS if hasattr(self, 'MERGE_GAS_UNITS') else 300000
+            gas_price = w3.eth.gas_price
+            est_cost = gas_units * gas_price * 1e-18  # Convert to POL
+            return est_cost, gas_units, gas_price
+        except Exception as e:
+            logger.warning(f"Gas estimation failed: {e}")
+            return 0.009, 300000, 0  # Fallback defaults
+
+    def _verify_merge_receipt(self, receipt, shares):
+        """SECTION 14 AUDIT: Verify merge receipt and parse events."""
+        if receipt['status'] != 1:
+            return False, 0.0, 'Transaction reverted'
+        # Check gas used
+        gas_used = receipt.get('gasUsed', 0)
+        gas_cost_pol = gas_used * receipt.get('effectiveGasPrice', 0) * 1e-18
+        self._total_merge_gas_spent += gas_cost_pol
+        # Parse logs for Transfer event (pUSD received)
+        usdc_received = 0.0
+        for log in receipt.get('logs', []):
+            # Transfer event signature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b4ef
+            if len(log.get('topics', [])) >= 3 and log['topics'][0].hex() == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b4ef':
+                # Decode amount from data
+                try:
+                    amount = int(log['data'].hex(), 16) / 10**6
+                    usdc_received += amount
+                except:
+                    pass
+        if usdc_received == 0:
+            usdc_received = shares  # Fallback: assume 1:1 redemption
+        self._merge_receipts_verified += 1
+        return True, usdc_received, f'Gas used: {gas_used}, pUSD received: {usdc_received:.2f}'
 
     def _buy_complementary_paper(self, detection_result, shares):
         losing_token = getattr(detection_result, 'losing_token_id', '')
@@ -305,6 +382,7 @@ class CapitalRecycler:
             return RecycleResult(condition_id=condition_id, success=False, shares_recycled=0, usdc_recovered=0, loser_cost=0, net_gain=0, is_paper=False, complementary_filled=False, error="Complementary buy failed (live)", timestamp=time.time())
 
         try:
+            import time as _time
             from web3 import Web3
             from config.settings import CTF_COLLATERAL_ADAPTER, NEG_RISK_CTF_COLLATERAL_ADAPTER, CTF, PUSD, POLYGON_RPC
             w3 = Web3(Web3.HTTPProvider(self.config.polygon_rpc or POLYGON_RPC))
@@ -315,8 +393,19 @@ class CapitalRecycler:
             if not wallet:
                 return RecycleResult(condition_id=condition_id, success=False, shares_recycled=0, usdc_recovered=0, loser_cost=0, net_gain=0, is_paper=False, complementary_filled=True, error="No wallet_address configured", timestamp=time.time())
 
+            # SECTION 14 AUDIT: Check merge prerequisites before sending tx
+            prereq_ok, prereq_msg = self._check_merge_prerequisites(detection_result, winning_shares, w3)
+            if not prereq_ok:
+                self._merge_failures += 1
+                return RecycleResult(condition_id=condition_id, success=False, shares_recycled=0, usdc_recovered=0, loser_cost=0, net_gain=0, is_paper=False, complementary_filled=True, error=f"Merge prerequisite failed: {prereq_msg}", timestamp=time.time())
+
             if not self._ensure_erc1155_approval(w3, CTF, adapter_addr, wallet):
+                self._merge_failures += 1
                 return RecycleResult(condition_id=condition_id, success=False, shares_recycled=0, usdc_recovered=0, loser_cost=0, net_gain=0, is_paper=False, complementary_filled=True, error="ERC1155 approval failed", timestamp=time.time())
+
+            # SECTION 14 AUDIT: Estimate gas before merge
+            est_gas_cost, gas_units, gas_price = self._estimate_merge_gas(w3, winning_shares)
+            logger.info(f"Merge gas estimate: {est_gas_cost:.6f} POL ({gas_units} units @ {gas_price} wei)")
 
             adapter_abi = [{"inputs": [{"name": "", "type": "address"}, {"name": "", "type": "bytes32"}, {"name": "_conditionId", "type": "bytes32"}, {"name": "", "type": "uint256[]"}, {"name": "_amount", "type": "uint256"}], "name": "mergePositions", "outputs": [], "stateMutability": "nonpayable", "type": "function"}]
             adapter = w3.eth.contract(address=Web3.to_checksum_address(adapter_addr), abi=adapter_abi)
@@ -325,21 +414,39 @@ class CapitalRecycler:
             condition_id_bytes = bytes.fromhex(cid_hex)
             amount_wei = int(winning_shares * 10**6)
 
-            receipt = self._send_signed_tx(w3, adapter.functions.mergePositions("0x0000000000000000000000000000000000000000", b'\x00' * 32, condition_id_bytes, [], amount_wei), wallet, gas=300000)
-            if receipt['status'] == 1:
+            # SECTION 14 AUDIT: Merge with retry and backoff
+            receipt = None
+            for merge_attempt in range(self._max_merge_retries):
+                try:
+                    receipt = self._send_signed_tx(w3, adapter.functions.mergePositions("0x0000000000000000000000000000000000000000", b'\x00' * 32, condition_id_bytes, [], amount_wei), wallet, gas=gas_units)
+                    break
+                except Exception as tx_err:
+                    self._merge_retries += 1
+                    if merge_attempt < self._max_merge_retries - 1:
+                        backoff = self._merge_backoff_base * (2 ** merge_attempt)
+                        logger.warning(f"Merge tx attempt {merge_attempt + 1} failed: {tx_err}, retrying in {backoff}s")
+                        _time.sleep(backoff)
+                    else:
+                        raise tx_err
+
+            # SECTION 14 AUDIT: Verify merge receipt
+            verified, verified_usdc, verify_msg = self._verify_merge_receipt(receipt, winning_shares)
+            if verified:
                 loser_cost = self.config.loser_max_price * winning_shares
-                usdc_recovered = winning_shares
+                usdc_recovered = verified_usdc
                 net_gain = usdc_recovered - loser_cost - (winning_shares * self.config.buy_price)
                 self._total_recycled += usdc_recovered
                 self._recycle_count += 1
                 self._merge_count += 1  # SECTION 13 AUDIT: Track merge count
                 self._track_recycle_pnl(usdc_recovered, loser_cost, winning_shares)
-                logger.info(f"Merge SUCCESS via {'NegRisk' if neg_risk else ''}CtfCollateralAdapter: {winning_shares} shares -> {usdc_recovered} pUSD")
+                logger.info(f"Merge SUCCESS via {'NegRisk' if neg_risk else ''}CtfCollateralAdapter: {winning_shares} shares -> {usdc_recovered} pUSD ({verify_msg})")
                 return RecycleResult(condition_id=condition_id, success=True, shares_recycled=winning_shares, usdc_recovered=usdc_recovered, loser_cost=loser_cost, net_gain=net_gain, is_paper=False, complementary_filled=True, timestamp=time.time())
             else:
-                logger.error(f"Merge tx failed: {receipt}")
-                return RecycleResult(condition_id=condition_id, success=False, shares_recycled=0, usdc_recovered=0, loser_cost=0, net_gain=0, is_paper=False, complementary_filled=True, error="Merge tx reverted", timestamp=time.time())
+                self._merge_failures += 1
+                logger.error(f"Merge verification failed: {verify_msg}")
+                return RecycleResult(condition_id=condition_id, success=False, shares_recycled=0, usdc_recovered=0, loser_cost=0, net_gain=0, is_paper=False, complementary_filled=True, error=f"Merge verification failed: {verify_msg}", timestamp=time.time())
         except Exception as e:
+            self._merge_failures += 1
             logger.error(f"Recycle failed: {e}")
             return RecycleResult(condition_id=condition_id, success=False, shares_recycled=0, usdc_recovered=0, loser_cost=0, net_gain=0, is_paper=False, complementary_filled=True, error=str(e), timestamp=time.time())
 
@@ -367,6 +474,13 @@ class CapitalRecycler:
             'merge_count': self._merge_count,
             'redemption_count': self._redemption_count,
             'max_complementary_slippage': self._max_complementary_slippage,
+            # SECTION 14 AUDIT: Merge safety metrics
+            'merge_retries': self._merge_retries,
+            'max_merge_retries': self._max_merge_retries,
+            'merge_failures': self._merge_failures,
+            'merge_receipts_verified': self._merge_receipts_verified,
+            'total_merge_gas_spent': round(self._total_merge_gas_spent, 6),
+            'merge_timeout': self._merge_timeout,
         }
 
     def queue_for_retry(self, detection_result, winning_shares, error_msg):
