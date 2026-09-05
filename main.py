@@ -231,14 +231,13 @@ class SweeperBot:
         net = gross - fee - (self.config.loser_max_price * filled_shares) - gas_cost
         self.safety.update_scoreboard(buys=[{}], redeems=[{}], merges=[{"amount": filled_shares}], net_pnl=net)
         self.safety.state.daily_pnl = round(self.safety.state.daily_pnl + net, 4)
-        self.safety.state.cumulative_pnl = round(self.safety.state.cumulative_pnl + net, 4)
         self.metrics.inc("trades_total")
         self.metrics.inc("trades_won")
         if is_maker:
             self.metrics.inc("maker_fills")
         else:
             self.metrics.inc("taker_fills")
-        self.metrics.set("pnl_cumulative", self.safety.state.cumulative_pnl)
+        self.metrics.set("pnl_cumulative", round(self.safety.state.tracked_net_pnl, 4))
         self.metrics.set("pnl_daily", self.safety.state.daily_pnl)
         logger.info(f"Trade complete: {'MAKER' if is_maker else 'TAKER'} | PnL: ${net:.4f} | Daily: ${self.safety.state.daily_pnl:.4f}")
 
