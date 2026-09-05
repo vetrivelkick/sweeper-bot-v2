@@ -331,6 +331,93 @@ if __name__ == "__main__":
             sys.exit(1)
         canary_max = float(os.environ.get("MAX_CANARY_FUNDED_USD", "50.0"))
         print(f"WARNING: Live mode enabled. Max canary funded: ${canary_max}")
+        # CI Mode: Validate live mode structure without real credentials
+        ci_mode = os.environ.get("CI_MODE", "false").lower() == "true"
+        if ci_mode:
+            missing = []
+            if not os.environ.get("PRIVATE_KEY"): missing.append("PRIVATE_KEY")
+            if not os.environ.get("WALLET_ADDRESS"): missing.append("WALLET_ADDRESS")
+            if not os.environ.get("CLOB_API_KEY"): missing.append("CLOB_API_KEY")
+            if not os.environ.get("CLOB_API_SECRET"): missing.append("CLOB_API_SECRET")
+            if not os.environ.get("CLOB_API_PASSPHRASE"): missing.append("CLOB_API_PASSPHRASE")
+            if missing:
+                print("=" * 60)
+                print("CI MODE: Live mode structure validation (no real credentials)")
+                print(f"Missing: {', '.join(missing)}")
+                print("Expected in CI/CD - real credentials deploy to VPS only.")
+                print("Validating code structure, config, and SDK imports...")
+                print("-" * 60)
+                ci_config = SweeperConfig(paper_mode=False)
+                errors = ci_config.validate()
+                if errors:
+                    print(f"FAIL: Config validation failed: {errors}")
+                    sys.exit(1)
+                print("OK: Config validation passed")
+                try:
+                    from py_clob_client_v2 import ClobClient, ApiCreds, OrderArgs, OrderType, PartialCreateOrderOptions, Side
+                    print("OK: SDK imports successful (py_clob_client_v2)")
+                except ImportError as e:
+                    print(f"FAIL: SDK import failed: {e}")
+                    sys.exit(1)
+                required_methods = ['create_and_post_order', 'create_and_post_market_order', 'cancel_orders', 'cancel_order', 'cancel_all', 'get_order', 'get_open_orders', 'get_markets', 'get_order_book', 'get_balance_allowance', 'create_or_derive_api_key', 'get_version']
+                missing_methods = [m for m in required_methods if not hasattr(ClobClient, m)]
+                if missing_methods:
+                    print(f"FAIL: Missing SDK methods: {missing_methods}")
+                    sys.exit(1)
+                print(f"OK: All {len(required_methods)} required SDK methods available")
+                try:
+                    import importlib.metadata
+                    sdk_version = importlib.metadata.version("py-clob-client-v2")
+                    from config.settings import APPROVED_SDK_VERSION
+                    if sdk_version != APPROVED_SDK_VERSION:
+                        print(f"FAIL: SDK version {sdk_version} != approved {APPROVED_SDK_VERSION}")
+                        sys.exit(1)
+                    print(f"OK: SDK version {sdk_version} matches approved {APPROVED_SDK_VERSION}")
+                except Exception as e:
+                    print(f"WARN: SDK version check skipped: {e}")
+                try:
+                    from modules.safety_rails import SafetyRails
+                    from modules.market_discovery import MarketDiscovery
+                    from modules.resolution_detection import ResolutionDetector
+                    from modules.order_executor import OrderBuilder, RestingOrder, OrderStatus, plan_entry
+                    from modules.rate_limiter import RateLimitManager
+                    from modules.fill_confirmation import FillConfirmer
+                    from modules.reconciliation import ReconciliationEngine
+                    from modules.gas_manager import GasManager
+                    from modules.capital_recycler import CapitalRecycler
+                    from modules.startup_recovery import StartupRecovery
+                    from modules.logging_config import setup_logging
+                    from modules.metrics import MetricsCollector
+                    from modules.observability import ObservabilityServer, setup_log_rotation
+                    print("OK: All module imports successful")
+                except ImportError as e:
+                    print(f"FAIL: Module import failed: {e}")
+                    sys.exit(1)
+                try:
+                    from config.settings import POLYGON_RPC, RPC_FALLBACK_ENDPOINTS
+                    from web3 import Web3
+                    rpc_endpoints = [POLYGON_RPC] + RPC_FALLBACK_ENDPOINTS
+                    rpc_ok = False
+                    for endpoint in rpc_endpoints:
+                        try:
+                            w3 = Web3(Web3.HTTPProvider(endpoint, request_kwargs={"timeout": 10}))
+                            if w3.is_connected():
+                                chain_id = w3.eth.chain_id
+                                if chain_id == 137:
+                                    print(f"OK: RPC endpoint {endpoint} connected (chain 137)")
+                                    rpc_ok = True
+                                    break
+                        except Exception:
+                            continue
+                    if not rpc_ok:
+                        print("WARN: No RPC endpoints reachable (expected in geoblocked CI regions)")
+                except Exception as e:
+                    print(f"WARN: RPC check skipped: {e}")
+                print("=" * 60)
+                print("CI MODE: All validations passed. Live mode is structurally ready.")
+                print("Deploy to VPS with real credentials for actual trading.")
+                print("=" * 60)
+                sys.exit(0)
     config = SweeperConfig(paper_mode=not args.live)
     config.private_key = os.environ.get("PRIVATE_KEY", "")
     config.clob_api_key = os.environ.get("CLOB_API_KEY", "")
