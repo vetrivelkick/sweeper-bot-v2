@@ -19,6 +19,7 @@ SECTION 3 AUDIT: Compliance & identity verification (key format, wallet checksum
 SECTION 4 AUDIT: SDK baseline (import verification, method availability check)
 SECTION 8 AUDIT: Economics gate enforcement (check_economics_gate, validate_economics_config, get_economics_metrics, estimate_slippage, calculate_break_even)
 SECTION 18 AUDIT: Risk controls - check_risk_before_trade, circuit breaker, risk_adjusted_size, check_liquidity, auto_degrade, stress_test
+FIX: load_state() resets kill switch in paper mode; verify_chain() tries all RPC fallbacks
 """
 import json, os, time, logging
 from datetime import datetime, timezone
@@ -342,28 +343,35 @@ class SafetyRails:
             return False, f"SDK method check failed: {e}"
 
     def verify_chain(self, w3=None):
-        """P0 #15: Fail-closed chain verification."""
+        """P0 #15: Fail-closed chain verification with RPC fallback."""
         if self.config.paper_mode:
             return True, 137, "Paper mode - chain check skipped"
-        try:
-            from web3 import Web3
-            from config.settings import POLYGON_RPC
-            if w3 is None:
-                w3 = Web3(Web3.HTTPProvider(self.config.polygon_rpc or POLYGON_RPC))
-            chain_id = w3.eth.chain_id
-            if chain_id != 137:
-                self.state.is_killed = True
-                self.state.kill_reason = f"Wrong chain: {chain_id} (expected 137/Polygon)"
-                logger.critical(f"KILL SWITCH: {self.state.kill_reason}")
-                self.dump_state()
-                return False, chain_id, self.state.kill_reason
-            return True, chain_id, "OK: Polygon (137)"
-        except Exception as e:
-            self.state.is_killed = True
-            self.state.kill_reason = f"Chain verification failed: {e}"
-            logger.critical(f"KILL SWITCH: {self.state.kill_reason}")
-            self.dump_state()
-            return False, None, str(e)
+        from web3 import Web3
+        from config.settings import POLYGON_RPC, RPC_FALLBACK_ENDPOINTS
+        rpc_endpoints = [self.config.polygon_rpc or POLYGON_RPC] + RPC_FALLBACK_ENDPOINTS
+        seen = set()
+        rpc_endpoints = [e for e in rpc_endpoints if not (e in seen or seen.add(e))]
+        for endpoint in rpc_endpoints:
+            try:
+                if w3 is None:
+                    w3 = Web3(Web3.HTTPProvider(endpoint, request_kwargs={"timeout": 10}))
+                chain_id = w3.eth.chain_id
+                if chain_id != 137:
+                    self.state.is_killed = True
+                    self.state.kill_reason = f"Wrong chain: {chain_id} (expected 137/Polygon)"
+                    logger.critical(f"KILL SWITCH: {self.state.kill_reason}")
+                    self.dump_state()
+                    return False, chain_id, self.state.kill_reason
+                return True, chain_id, f"OK: Polygon (137) via {endpoint}"
+            except Exception as e:
+                logger.warning(f"RPC endpoint {endpoint} failed: {e}")
+                w3 = None
+                continue
+        self.state.is_killed = True
+        self.state.kill_reason = "Chain verification failed: all RPC endpoints unreachable"
+        logger.critical(f"KILL SWITCH: {self.state.kill_reason}")
+        self.dump_state()
+        return False, None, self.state.kill_reason
 
     def check_exposure_before_order(self, order_cost, resting_orders=None, condition_id=None):
         """P0 #17 + AUDIT FIX #8: Check portfolio AND per-market exposure limits."""
@@ -470,6 +478,11 @@ class SafetyRails:
             try:
                 with open(self._state_file, 'r') as f: data = json.load(f)
                 self.state = SafetyBotState.from_dict(data)
+                # FIX: Reset kill switch in paper mode (previous live mode kill should not block paper trading)
+                if self.config.paper_mode and self.state.is_killed:
+                    self.state.is_killed = False
+                    self.state.kill_reason = None
+                    logger.info("Kill switch reset (paper mode - previous live mode kill cleared)")
                 logger.info(f"State loaded: {len(self.state.worked_markets)} worked, {len(self.state.open_positions)} positions")
                 return True
             except Exception as e: logger.error(f"State load failed: {e}")
