@@ -10,6 +10,8 @@ AUDIT FIX #18: State persistence verification, backup, and validation.
 - backup_state(): Backup old state file before recovery
 - State version field for forward compatibility
 - Enhanced recovery status reporting
+SECTION 16 AUDIT: State versioning, migration logic, integrity verification,
+                 corruption recovery from backup, state schema validation
 """
 import time
 import json
@@ -39,6 +41,8 @@ class StartupRecovery:
         self._recovery_status = {
             'state_verified': False,
             'state_backup_created': False,
+            'state_migrated': False,
+            'state_integrity_ok': False,
             'orders_recovered': 0,
             'trades_recovered': 0,
             'positions_recovered': 0,
@@ -94,6 +98,51 @@ class StartupRecovery:
             self._recovery_status['errors'].append(f"backup: {e}")
             return False
 
+    def migrate_state(self, data):
+        """SECTION 16 AUDIT: Migrate state data from old version to current."""
+        version = data.get('state_version', 1)
+        if version < 2:
+            # v1 -> v2: Add state_version field, ensure all required fields exist
+            data['state_version'] = 2
+            for field_name in REQUIRED_STATE_FIELDS:
+                if field_name not in data:
+                    if field_name == 'open_positions':
+                        data[field_name] = {}
+                    elif field_name == 'worked_markets':
+                        data[field_name] = []
+                    else:
+                        data[field_name] = 0
+            logger.info(f"State migrated from v{version} to v2")
+            self._recovery_status['state_migrated'] = True
+        return data
+
+    def verify_state_integrity(self, data):
+        """SECTION 16 AUDIT: Verify state data integrity beyond basic field checks."""
+        issues = []
+        # Check field types
+        if not isinstance(data.get('daily_pnl', 0), (int, float)):
+            issues.append('daily_pnl is not numeric')
+        if not isinstance(data.get('open_positions', {}), dict):
+            issues.append('open_positions is not a dict')
+        if not isinstance(data.get('worked_markets', []), (list, set)):
+            issues.append('worked_markets is not a list/set')
+        if not isinstance(data.get('total_buys', 0), int):
+            issues.append('total_buys is not an int')
+        # Check for negative values that should be non-negative
+        daily_pnl = data.get('daily_pnl', 0)
+        if isinstance(daily_pnl, (int, float)) and daily_pnl < -1000:
+            issues.append(f'daily_pnl suspiciously low: {daily_pnl}')
+        total_recycled = data.get('total_recycled', 0)
+        if isinstance(total_recycled, (int, float)) and total_recycled < 0:
+            issues.append(f'total_recycled is negative: {total_recycled}')
+        # Check saved_at timestamp is reasonable
+        saved_at = data.get('saved_at', 0)
+        if isinstance(saved_at, (int, float)) and saved_at > 0 and saved_at > time.time() + 86400:
+            issues.append(f'saved_at is in the future: {saved_at}')
+        if not issues:
+            self._recovery_status['state_integrity_ok'] = True
+        return issues
+
     def get_recovery_status(self):
         """AUDIT FIX #18: Return detailed recovery status for monitoring."""
         self._recovery_status['timestamp'] = time.time()
@@ -102,11 +151,26 @@ class StartupRecovery:
     def recover(self):
         """Recover resting orders and positions from remote state.
         AUDIT FIX #18: Now includes state verification and backup before recovery.
+        SECTION 16 AUDIT: Now includes state migration and integrity verification.
         """
         # AUDIT FIX #18: Verify and backup state before recovery
         state_ok, state_msg = self.verify_state()
         if os.path.exists(self._state_file):
             self.backup_state()
+            # SECTION 16 AUDIT: Migrate and verify state integrity
+            try:
+                with open(self._state_file, 'r') as f:
+                    raw_data = json.load(f)
+                raw_data = self.migrate_state(raw_data)
+                integrity_issues = self.verify_state_integrity(raw_data)
+                if integrity_issues:
+                    logger.warning(f"State integrity issues: {integrity_issues}")
+                    self._recovery_status['errors'].extend(integrity_issues)
+                else:
+                    logger.info("State integrity check passed")
+            except Exception as e:
+                logger.warning(f"State migration/integrity check failed: {e}")
+
         if state_ok:
             self.safety.load_state()
             logger.info("Local state loaded successfully")
@@ -114,13 +178,13 @@ class StartupRecovery:
             logger.warning(f"State load skipped: {state_msg}")
 
         if self.config.paper_mode:
-            logger.info("Startup recovery: Paper mode — remote recovery skipped")
+            logger.info("Startup recovery: Paper mode -- remote recovery skipped")
             self._recovery_status['timestamp'] = time.time()
             return self.get_recovery_status()
 
         client = self.builder._get_client()
         if not client:
-            logger.warning("Startup recovery: CLOB V2 client not available — skipping")
+            logger.warning("Startup recovery: CLOB V2 client not available -- skipping")
             self._recovery_status['errors'].append("CLOB client not available")
             self._recovery_status['timestamp'] = time.time()
             return self.get_recovery_status()
