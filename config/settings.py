@@ -75,6 +75,11 @@ PARTIAL_FILL_RATIO = 0.4
 MAX_EVENT_EXPOSURE_USD = 500.0
 MAX_PORTFOLIO_EXPOSURE_USD = 2000.0
 MAX_429_BEFORE_TRIP = 3
+# SECTION 18 AUDIT: Risk control parameters
+CIRCUIT_BREAKER_COOLDOWN_SECONDS = 300  # 5 min cooldown after circuit breaker trip
+MIN_LIQUIDITY_USD = 100.0  # Minimum market liquidity to trade
+RISK_SCORE_DEGRADE_THRESHOLD = 75.0  # Auto-degrade to paper at this risk score
+MAX_POSITION_SIZE_PCT = 0.25  # Max 25% of portfolio per single trade
 MIN_ENTRY_PRICE = 0.985  # P1: Parameterized entry floor
 
 # === SECTION 1 AUDIT: STRATEGY SPECIFICATION ===
@@ -200,6 +205,11 @@ class SweeperConfig:
     max_per_market_exposure: float = field(default_factory=lambda: float(os.getenv("MAX_PER_MARKET_EXPOSURE", "200.0")))  # AUDIT FIX #8: Per-market risk limit
     max_portfolio_exposure: float = field(default_factory=lambda: float(os.getenv("MAX_PORTFOLIO_EXPOSURE_USD", str(MAX_PORTFOLIO_EXPOSURE_USD))))
     max_429_before_trip: int = field(default_factory=lambda: int(os.getenv("MAX_429_BEFORE_TRIP", str(MAX_429_BEFORE_TRIP))))
+    # SECTION 18 AUDIT: Risk control parameters
+    circuit_breaker_cooldown: float = field(default_factory=lambda: float(os.getenv("CIRCUIT_BREAKER_COOLDOWN_SECONDS", "300")))
+    min_liquidity_usd: float = field(default_factory=lambda: float(os.getenv("MIN_LIQUIDITY_USD", "100.0")))
+    risk_score_degrade_threshold: float = field(default_factory=lambda: float(os.getenv("RISK_SCORE_DEGRADE_THRESHOLD", "75.0")))
+    max_position_size_pct: float = field(default_factory=lambda: float(os.getenv("MAX_POSITION_SIZE_PCT", "0.25")))
     rate_limit_order_per_min: int = field(default_factory=lambda: int(os.getenv("RATE_LIMIT_ORDER_PER_MIN", str(RATE_LIMIT_ORDER_PER_MIN))))
     rate_limit_book_per_min: int = field(default_factory=lambda: int(os.getenv("RATE_LIMIT_BOOK_PER_MIN", str(RATE_LIMIT_BOOK_PER_MIN))))
     rate_limit_gamma_per_min: int = field(default_factory=lambda: int(os.getenv("RATE_LIMIT_GAMMA_PER_MIN", str(RATE_LIMIT_GAMMA_PER_MIN))))
