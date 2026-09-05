@@ -261,6 +261,8 @@ class BotState:
     open_orders: list = field(default_factory=list)
     reserved_collateral: float = 0.0
     rate_limit_429_count: int = 0
+    state_version: int = 2  # SECTION 16 AUDIT: State version for forward compatibility
+    saved_at: float = 0.0  # SECTION 16 AUDIT: Timestamp of last save
 
     def to_dict(self):
         return {"worked_markets": list(self.worked_markets), "open_positions": self.open_positions,
@@ -268,7 +270,8 @@ class BotState:
             "total_buys": self.total_buys, "total_redeems": self.total_redeems,
             "total_merges": self.total_merges, "total_recycled": self.total_recycled,
             "open_orders": self.open_orders, "reserved_collateral": self.reserved_collateral,
-            "rate_limit_429_count": self.rate_limit_429_count}
+            "rate_limit_429_count": self.rate_limit_429_count,
+            "state_version": self.state_version, "saved_at": self.saved_at}
 
     @classmethod
     def from_dict(cls, d):
@@ -278,7 +281,8 @@ class BotState:
             total_redeems=d.get("total_redeems", 0), total_merges=d.get("total_merges", 0),
             total_recycled=d.get("total_recycled", 0.0), open_orders=d.get("open_orders", []),
             reserved_collateral=d.get("reserved_collateral", 0.0),
-            rate_limit_429_count=d.get("rate_limit_429_count", 0))
+            rate_limit_429_count=d.get("rate_limit_429_count", 0),
+            state_version=d.get("state_version", 1), saved_at=d.get("saved_at", 0.0))
 
     def save(self, path):
         """P1 #5: Atomic save with versioning - write to temp, rename, keep .bak backup."""
@@ -290,13 +294,29 @@ class BotState:
             except OSError:
                 pass
         tmp_path = path + '.tmp'
+        self.saved_at = time.time()  # SECTION 16 AUDIT: Record save timestamp
         with open(tmp_path, "w") as f: json.dump(self.to_dict(), f, indent=2)
         os.replace(tmp_path, path)
 
     @classmethod
     def load(cls, path):
+        """SECTION 16 AUDIT: Load state with corruption recovery from backup."""
         if os.path.exists(path):
-            with open(path) as f: return cls.from_dict(json.load(f))
+            try:
+                with open(path) as f: return cls.from_dict(json.load(f))
+            except (json.JSONDecodeError, Exception) as e:
+                logger.warning(f"State file corrupted: {e}, trying backup")
+                backup_path = path + '.bak'
+                if os.path.exists(backup_path):
+                    try:
+                        with open(backup_path) as f:
+                            state = cls.from_dict(json.load(f))
+                        logger.info(f"State recovered from backup: {backup_path}")
+                        return state
+                    except Exception:
+                        logger.error("Backup also corrupted, starting fresh")
+                else:
+                    logger.warning("No backup available, starting fresh")
         return cls()
 
 # === SECTION 8 AUDIT: ECONOMICS GATE ===
