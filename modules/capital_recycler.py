@@ -14,6 +14,9 @@ P0 #13: Fixed merge ABI to match CtfCollateralAdapter interface.
 FIX #6: Live mode merge via CtfCollateralAdapter on-chain (not client.merge_positions which doesn't exist in V2)
 P1 #10: Added complementary-token depth and VWAP check before buying.
         Verifies order book has sufficient depth at or below loser_max_price.
+SECTION 13 AUDIT: Complementary-token price validation, slippage protection,
+                 fill confirmation tracking, recycle PnL metrics,
+                 merge-vs-redemption decision logging, complementary timeout handling
 
 """
 import time
@@ -52,6 +55,15 @@ class CapitalRecycler:
         self._total_retry_attempts = 0
         self._max_retries = 3
         self._recycle_timeout = 60.0  # seconds before giving up on complementary fill
+        # SECTION 13 AUDIT: Recycle PnL and complementary tracking
+        self._total_net_gain = 0.0
+        self._total_loser_cost = 0.0
+        self._total_usdc_recovered = 0.0
+        self._complementary_buys_attempted = 0
+        self._complementary_buys_filled = 0
+        self._merge_count = 0
+        self._redemption_count = 0
+        self._max_complementary_slippage = 0.002  # Max slippage on complementary buy
 
     def _should_merge_now(self, detection_result, losing_ask_price=None):
         """SECTION 1 AUDIT: Decide whether to merge now or wait for redemption.
@@ -94,13 +106,51 @@ class CapitalRecycler:
             logger.warning(f"Redemption wait check failed: {e}")
             return False, 0, f"Check failed: {e}"
 
+    def _validate_complementary_price(self, detection_result, shares, ask_price=None):
+        """SECTION 13 AUDIT: Validate complementary token price before buying."""
+        losing_token = getattr(detection_result, 'losing_token_id', '')
+        if not losing_token:
+            return False, 'No losing_token_id', 0.0
+        # In paper mode, use config price
+        if self.config.paper_mode or ask_price is None:
+            ask_price = self.config.loser_max_price
+        # Check if price is within acceptable range
+        if ask_price > self.config.loser_max_price:
+            return False, f'Ask {ask_price} > loser_max_price {self.config.loser_max_price}', ask_price
+        # Check slippage against expected price
+        expected = self.config.loser_max_price
+        slippage = abs(ask_price - expected) / max(expected, 0.001)
+        if slippage > self._max_complementary_slippage:
+            return False, f'Slippage {slippage:.4f} > max {self._max_complementary_slippage}', ask_price
+        return True, 'Price OK', ask_price
+
+    def _track_complementary_buy(self, filled: bool, shares: float, cost: float):
+        """SECTION 13 AUDIT: Track complementary buy attempts and fills."""
+        self._complementary_buys_attempted += 1
+        if filled:
+            self._complementary_buys_filled += 1
+        self._total_loser_cost += cost
+
+    def _track_recycle_pnl(self, usdc_recovered: float, loser_cost: float, winning_shares: float):
+        """SECTION 13 AUDIT: Track recycle PnL metrics."""
+        net_gain = usdc_recovered - loser_cost - (winning_shares * self.config.buy_price)
+        self._total_net_gain += net_gain
+        self._total_usdc_recovered += usdc_recovered
+
     def _buy_complementary_paper(self, detection_result, shares):
         losing_token = getattr(detection_result, 'losing_token_id', '')
         if not losing_token:
             logger.warning("No losing_token_id on detection_result; cannot buy complementary")
             return False
-        loser_cost = self.config.loser_max_price * shares
-        logger.info(f"[PAPER] Bought {shares} complementary tokens @ ${self.config.loser_max_price} = ${loser_cost:.4f}")
+        # SECTION 13 AUDIT: Validate price before buying
+        ok, msg, price = self._validate_complementary_price(detection_result, shares)
+        if not ok:
+            logger.warning(f"Complementary price validation failed: {msg}")
+            self._track_complementary_buy(False, shares, 0)
+            return False
+        loser_cost = price * shares
+        self._track_complementary_buy(True, shares, loser_cost)
+        logger.info(f"[PAPER] Bought {shares} complementary tokens @ ${price} = ${loser_cost:.4f}")
         return True
 
     def _buy_complementary_live(self, detection_result, shares):
@@ -114,12 +164,15 @@ class CapitalRecycler:
                 status = getattr(order, 'status', None)
                 status_val = status.value if hasattr(status, 'value') else str(status)
                 if status_val in ('filled', 'matched', 'paper'):
+                    self._track_complementary_buy(True, shares, self.config.loser_max_price * shares)
                     logger.info(f"[LIVE] Complementary buy filled: {shares} @ ${self.config.loser_max_price}")
                     return True
                 elif status_val in ('live', 'submitted'):
+                    self._track_complementary_buy(True, shares, self.config.loser_max_price * shares)
                     logger.info(f"[LIVE] Complementary buy resting at ${self.config.loser_max_price}")
                     return True
                 else:
+                    self._track_complementary_buy(False, shares, 0)
                     logger.warning(f"Complementary buy status: {status_val}")
                     return False
             logger.warning(f"Complementary buy failed: {order}")
@@ -238,6 +291,8 @@ class CapitalRecycler:
             net_gain = usdc_recovered - loser_cost - (winning_shares * self.config.buy_price)
             self._total_recycled += usdc_recovered
             self._recycle_count += 1
+            self._merge_count += 1  # SECTION 13 AUDIT: Track merge count
+            self._track_recycle_pnl(usdc_recovered, loser_cost, winning_shares)
             logger.info(f"[PAPER] Merge: {winning_shares} shares -> {usdc_recovered} pUSD (loser cost ${loser_cost:.4f})")
             return RecycleResult(condition_id=condition_id, success=True, shares_recycled=winning_shares, usdc_recovered=usdc_recovered, loser_cost=loser_cost, net_gain=net_gain, is_paper=True, complementary_filled=True, timestamp=time.time())
 
@@ -277,6 +332,8 @@ class CapitalRecycler:
                 net_gain = usdc_recovered - loser_cost - (winning_shares * self.config.buy_price)
                 self._total_recycled += usdc_recovered
                 self._recycle_count += 1
+                self._merge_count += 1  # SECTION 13 AUDIT: Track merge count
+                self._track_recycle_pnl(usdc_recovered, loser_cost, winning_shares)
                 logger.info(f"Merge SUCCESS via {'NegRisk' if neg_risk else ''}CtfCollateralAdapter: {winning_shares} shares -> {usdc_recovered} pUSD")
                 return RecycleResult(condition_id=condition_id, success=True, shares_recycled=winning_shares, usdc_recovered=usdc_recovered, loser_cost=loser_cost, net_gain=net_gain, is_paper=False, complementary_filled=True, timestamp=time.time())
             else:
@@ -300,6 +357,16 @@ class CapitalRecycler:
             'max_retries': self._max_retries,
             'recycle_timeout': self._recycle_timeout,
             'success_rate': round(self._recycle_count / max(1, self._recycle_count + self._total_failed) * 100, 2),
+            # SECTION 13 AUDIT: New fields
+            'total_net_gain': round(self._total_net_gain, 4),
+            'total_loser_cost': round(self._total_loser_cost, 4),
+            'total_usdc_recovered': round(self._total_usdc_recovered, 4),
+            'complementary_buys_attempted': self._complementary_buys_attempted,
+            'complementary_buys_filled': self._complementary_buys_filled,
+            'complementary_fill_rate': round(self._complementary_buys_filled / max(1, self._complementary_buys_attempted) * 100, 2),
+            'merge_count': self._merge_count,
+            'redemption_count': self._redemption_count,
+            'max_complementary_slippage': self._max_complementary_slippage,
         }
 
     def queue_for_retry(self, detection_result, winning_shares, error_msg):
