@@ -42,7 +42,8 @@ DATA_API = "https://data-api.polymarket.com"
 RELAYER_API = "https://relayer-v2.polymarket.com/submit"
 WS_MARKET = "wss://ws-subscriptions-clob.polymarket.com/ws/market"
 WS_USER = "wss://ws-subscriptions-clob.polymarket.com/ws/user"
-POLYGON_RPC = "https://polygon-rpc.com"
+POLYGON_RPC = "https://polygon.drpc.org"
+RPC_FALLBACK_ENDPOINTS = ["https://polygon-rpc.com", "https://rpc.ankr.com/polygon", "https://polygon-bor-rpc.publicnode.com"]
 
 # === RATE LIMITS ===
 RATE_LIMIT_ORDER_PER_MIN = 50
@@ -232,6 +233,7 @@ class SweeperConfig:
     prefer_merge_over_redeem: bool = field(default_factory=lambda: os.getenv("PREFER_MERGE_OVER_REDEEM", "true").lower() == "true")
     # SECTION 2 AUDIT: Production execution guards
     max_canary_funded_usd: float = field(default_factory=lambda: float(os.getenv("MAX_CANARY_FUNDED_USD", str(MAX_CANARY_FUNDED_USD))))
+    ci_mode: bool = field(default_factory=lambda: os.getenv("CI_MODE", "false").lower() == "true")
 
     def validate(self) -> list:
         """AUDIT FIX #30 + SECTION 1: Comprehensive config validation with detailed error messages."""

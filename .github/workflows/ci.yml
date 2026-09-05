@@ -50,9 +50,13 @@ jobs:
         run: |
           python run_paper.py --cycles 2 --sweeps 3
 
-      - name: Verify --live is blocked
+      - name: Verify --live requires LIVE_MODE env
         run: |
-          python main.py --live 2>&1 | grep -q "FATAL: Live mode is BLOCKED" && echo "Live block OK" || exit 1
+          python main.py --live 2>&1 | grep -q "FATAL: Live mode requires LIVE_MODE=true" && echo "Live gate OK" || exit 1
+
+      - name: Verify CI mode live validation
+        run: |
+          LIVE_MODE=true CI_MODE=true python main.py --live --cycles 1 2>&1 | grep -q "CI MODE: All validations passed" && echo "CI mode OK" || exit 1
 
       - name: Lint check (syntax)
         run: |
