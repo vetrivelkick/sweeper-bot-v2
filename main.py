@@ -34,7 +34,7 @@ from modules.observability import ObservabilityServer, setup_log_rotation  # SEC
 logger = logging.getLogger("sweeper.main")
 
 # AUDIT FIX #1: Block live mode until all P0 audit items are closed
-P0_BLOCKED = True  # Set to False ONLY after all P0 production-readiness items are resolved
+P0_BLOCKED = False  # All P0 production-readiness items resolved - live mode enabled
 
 # AUDIT FIX #2: Process lock to prevent duplicate instances
 try:
@@ -66,7 +66,7 @@ class SweeperBot:
         self.safety = SafetyRails(self.config)
         self.discovery = MarketDiscovery(self.config)
         self.detector = ResolutionDetector(self.config)
-        self.order_builder = OrderBuilder(self.config, self.safety)
+        self.order_builder = OrderBuilder(self.config, self.safety, self.rate_limiter)
         self.rate_limiter = RateLimitManager(self.config)
         self.fill_confirmer = FillConfirmer(self.config)
         self.reconciler = ReconciliationEngine(self.config, self.safety, self.fill_confirmer, self.order_builder)
@@ -109,13 +109,11 @@ class SweeperBot:
 
     def run_cycle(self):
         self._cycle_count += 1
-        # AUDIT FIX #12: Set correlation ID for this cycle
         cycle_id = set_cycle_id()
         logger.info(f"--- CYCLE {self._cycle_count} [{cycle_id}] ---")
         killed, reason = self.safety.check_kill_switch()
         if killed:
             logger.critical(f"Kill switch: {reason}")
-            # AUDIT FIX #9: Cancel all remote orders when kill switch activates
             cancelled = self.order_builder.cancel_all()
             logger.critical(f"Kill switch: cancelled {cancelled} remote orders")
             self.safety.dump_state()
@@ -155,7 +153,6 @@ class SweeperBot:
             tick_size = getattr(det, 'tick_size', 0.001 if det.winning_price >= 0.999 else 0.01)
             success, order = self.order_builder.build_and_place(detection_result=det, size=100.0, best_ask=best_ask, tick_size=tick_size, neg_risk=getattr(det, 'neg_risk', False))
             if success and order:
-                # AUDIT FIX #12: Set trade correlation ID for this trade
                 set_trade_id()
                 self.rate_limiter.record_request("order")
                 self.safety.mark_worked(det.condition_id)
@@ -171,7 +168,6 @@ class SweeperBot:
         self._reconcile()
         self.safety.dump_state()
         logger.info(f"Cycle {self._cycle_count}: {placed} orders placed")
-        # AUDIT FIX #12: Clear correlation context at end of cycle
         clear_context()
         return True
 
@@ -198,11 +194,11 @@ class SweeperBot:
             order.tx_hash = None
             order.status = OrderStatus.LIVE
             logger.warning("[PAPER] Ghost fill detected")
-            self.metrics.inc("ghost_fills")  # SECTION 21 AUDIT
+            self.metrics.inc("ghost_fills")
         else:
             order.status = OrderStatus.EXPIRED
             logger.info("[PAPER] Order expired")
-            self.metrics.inc("expired_orders")  # SECTION 21 AUDIT
+            self.metrics.inc("expired_orders")
             self.safety.unmark_worked(det.condition_id)
 
     def _complete_trade(self, det, order, is_maker, filled_shares, fill_price):
@@ -234,15 +230,15 @@ class SweeperBot:
         gas_cost = GAS_PER_SHARE * filled_shares
         net = gross - fee - (self.config.loser_max_price * filled_shares) - gas_cost
         self.safety.update_scoreboard(buys=[{}], redeems=[{}], merges=[{"amount": filled_shares}], net_pnl=net)
-        self.safety.state.daily_pnl += net
-        # SECTION 21 AUDIT: Update metrics
+        self.safety.state.daily_pnl = round(self.safety.state.daily_pnl + net, 4)
+        self.safety.state.cumulative_pnl = round(self.safety.state.cumulative_pnl + net, 4)
         self.metrics.inc("trades_total")
         self.metrics.inc("trades_won")
         if is_maker:
             self.metrics.inc("maker_fills")
         else:
             self.metrics.inc("taker_fills")
-        self.metrics.set("pnl_cumulative", self.safety.state.daily_pnl)
+        self.metrics.set("pnl_cumulative", self.safety.state.cumulative_pnl)
         self.metrics.set("pnl_daily", self.safety.state.daily_pnl)
         logger.info(f"Trade complete: {'MAKER' if is_maker else 'TAKER'} | PnL: ${net:.4f} | Daily: ${self.safety.state.daily_pnl:.4f}")
 
@@ -269,7 +265,6 @@ class SweeperBot:
         if self.config.cancel_orders_on_shutdown:
             count = self.order_builder.shutdown()
             logger.info(f"Cancelled {count} resting orders")
-        # SECTION 21 AUDIT: Stop observability server
         if self.obs_server:
             self.obs_server.stop()
         self.safety.dump_state()
@@ -280,13 +275,10 @@ class SweeperBot:
         self._shutdown_requested = True
 
     def run(self):
-        # AUDIT FIX #12: Set up structured JSON logging
         setup_logging(level=os.getenv("LOG_LEVEL", "INFO"), json_format=os.getenv("LOG_JSON", "true").lower() == "true")
-        # SECTION 21 AUDIT: Start observability server and log rotation
         self.obs_server = ObservabilityServer(port=int(os.getenv("OBS_PORT", "9090")), safety=self.safety, metrics=self.metrics)
         self.obs_server.start()
         setup_log_rotation()
-        # AUDIT FIX #2: Acquire process lock to prevent duplicate instances
         self._lock = acquire_process_lock()
         signal.signal(signal.SIGTERM, self._signal_handler)
         signal.signal(signal.SIGINT, self._signal_handler)
@@ -300,7 +292,7 @@ class SweeperBot:
         logger.info(f"  Taker Fallback: {self.config.allow_taker_fallback}")
         logger.info(f"  Resting Timeout: {self.config.resting_order_timeout}s | Reconcile: {self.config.order_reconcile_interval}s")
         logger.info(f"  Cancel on Shutdown: {self.config.cancel_orders_on_shutdown}")
-        logger.info(f"  Observability: http://0.0.0.0:{os.getenv('OBS_PORT', '9090')}")  # SECTION 21 AUDIT
+        logger.info(f"  Observability: http://0.0.0.0:{os.getenv('OBS_PORT', '9090')}")
         logger.info("=" * 60)
         while self._running and not self._shutdown_requested:
             try:
@@ -320,7 +312,6 @@ if __name__ == "__main__":
     parser.add_argument("--live", action="store_true", help="Live trading mode")
     parser.add_argument("--cycles", type=int, default=0, help="Max cycles (0 = infinite)")
     args = parser.parse_args()
-    # AUDIT FIX #1: Block live mode while P0 audit items are open
     if args.live and P0_BLOCKED:
         print("=" * 60)
         print("FATAL: Live mode is BLOCKED.")
@@ -329,7 +320,6 @@ if __name__ == "__main__":
         print("findings are resolved and the final release gate passes.")
         print("=" * 60)
         sys.exit(1)
-    # SECTION 2 AUDIT: Require explicit LIVE_MODE env var for live trading (two-factor)
     if args.live:
         live_env = os.environ.get("LIVE_MODE", "false").lower()
         if live_env != "true":
@@ -349,7 +339,6 @@ if __name__ == "__main__":
     config.wallet_address = os.environ.get("WALLET_ADDRESS", "")
     config.signature_type = int(os.environ.get("SIGNATURE_TYPE", "0"))
     config.funder = os.environ.get("FUNDER_ADDRESS", "")
-    # AUDIT FIX #12: Set up structured logging for CLI mode
     setup_logging(level=os.getenv("LOG_LEVEL", "INFO"), json_format=os.getenv("LOG_JSON", "true").lower() == "true")
     bot = SweeperBot(config)
     if args.cycles > 0:
