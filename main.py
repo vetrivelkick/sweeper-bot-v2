@@ -11,6 +11,7 @@ AUDIT FIX #2: Add process lock to prevent duplicate bot instances
 AUDIT FIX #9: Cancel all remote orders when kill switch activates
 AUDIT FIX #12: Structured JSON logging with correlation IDs
 SECTION 2 AUDIT: Two-factor live mode activation (LIVE_MODE env var + --live flag)
+SECTION 21 AUDIT: Integrate observability server and metrics collector
 """
 import sys, os, time, json, signal, logging, threading
 from datetime import datetime, timezone
@@ -27,6 +28,8 @@ from modules.gas_manager import GasManager
 from modules.capital_recycler import CapitalRecycler
 from modules.startup_recovery import StartupRecovery
 from modules.logging_config import setup_logging, set_correlation_id, set_trade_id, set_cycle_id, clear_context  # AUDIT FIX #12
+from modules.metrics import MetricsCollector  # SECTION 21 AUDIT
+from modules.observability import ObservabilityServer, setup_log_rotation  # SECTION 21 AUDIT
 
 logger = logging.getLogger("sweeper.main")
 
@@ -73,6 +76,8 @@ class SweeperBot:
         self._cycle_count = 0
         self._shutdown_requested = False
         self._lock = None
+        self.metrics = MetricsCollector()  # SECTION 21 AUDIT
+        self.obs_server = None  # SECTION 21 AUDIT
 
     def startup_reconcile(self):
         logger.info("=" * 60)
@@ -193,9 +198,11 @@ class SweeperBot:
             order.tx_hash = None
             order.status = OrderStatus.LIVE
             logger.warning("[PAPER] Ghost fill detected")
+            self.metrics.inc("ghost_fills")  # SECTION 21 AUDIT
         else:
             order.status = OrderStatus.EXPIRED
             logger.info("[PAPER] Order expired")
+            self.metrics.inc("expired_orders")  # SECTION 21 AUDIT
             self.safety.unmark_worked(det.condition_id)
 
     def _complete_trade(self, det, order, is_maker, filled_shares, fill_price):
@@ -228,6 +235,15 @@ class SweeperBot:
         net = gross - fee - (self.config.loser_max_price * filled_shares) - gas_cost
         self.safety.update_scoreboard(buys=[{}], redeems=[{}], merges=[{"amount": filled_shares}], net_pnl=net)
         self.safety.state.daily_pnl += net
+        # SECTION 21 AUDIT: Update metrics
+        self.metrics.inc("trades_total")
+        self.metrics.inc("trades_won")
+        if is_maker:
+            self.metrics.inc("maker_fills")
+        else:
+            self.metrics.inc("taker_fills")
+        self.metrics.set("pnl_cumulative", self.safety.state.daily_pnl)
+        self.metrics.set("pnl_daily", self.safety.state.daily_pnl)
         logger.info(f"Trade complete: {'MAKER' if is_maker else 'TAKER'} | PnL: ${net:.4f} | Daily: ${self.safety.state.daily_pnl:.4f}")
 
     def _reconcile(self):
@@ -253,6 +269,9 @@ class SweeperBot:
         if self.config.cancel_orders_on_shutdown:
             count = self.order_builder.shutdown()
             logger.info(f"Cancelled {count} resting orders")
+        # SECTION 21 AUDIT: Stop observability server
+        if self.obs_server:
+            self.obs_server.stop()
         self.safety.dump_state()
         logger.info("Shutdown complete")
 
@@ -263,6 +282,10 @@ class SweeperBot:
     def run(self):
         # AUDIT FIX #12: Set up structured JSON logging
         setup_logging(level=os.getenv("LOG_LEVEL", "INFO"), json_format=os.getenv("LOG_JSON", "true").lower() == "true")
+        # SECTION 21 AUDIT: Start observability server and log rotation
+        self.obs_server = ObservabilityServer(port=int(os.getenv("OBS_PORT", "9090")), safety=self.safety, metrics=self.metrics)
+        self.obs_server.start()
+        setup_log_rotation()
         # AUDIT FIX #2: Acquire process lock to prevent duplicate instances
         self._lock = acquire_process_lock()
         signal.signal(signal.SIGTERM, self._signal_handler)
@@ -277,6 +300,7 @@ class SweeperBot:
         logger.info(f"  Taker Fallback: {self.config.allow_taker_fallback}")
         logger.info(f"  Resting Timeout: {self.config.resting_order_timeout}s | Reconcile: {self.config.order_reconcile_interval}s")
         logger.info(f"  Cancel on Shutdown: {self.config.cancel_orders_on_shutdown}")
+        logger.info(f"  Observability: http://0.0.0.0:{os.getenv('OBS_PORT', '9090')}")  # SECTION 21 AUDIT
         logger.info("=" * 60)
         while self._running and not self._shutdown_requested:
             try:
