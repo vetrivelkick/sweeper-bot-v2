@@ -21,7 +21,7 @@ Features:
 Usage:
     python3 run_paper.py [--cycles N] [--sweeps N]
 """
-import sys, os, time, json, logging, random
+import sys, os, time, json, logging, random, argparse
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_DOWN
 from dataclasses import dataclass, field, asdict
@@ -624,6 +624,8 @@ class AdvancedPaperTrader:
             self.trade_records.append(record)
             self._sep("-")
             self._log_both("")
+            if self.total_trades > 0:
+                self.metrics.set("win_rate", round(self.winning_trades / self.total_trades * 100, 2))
             return
 
         if not order.tx_hash:
@@ -653,6 +655,8 @@ class AdvancedPaperTrader:
             self.trade_records.append(record)
             self._sep("-")
             self._log_both("")
+            if self.total_trades > 0:
+                self.metrics.set("win_rate", round(self.winning_trades / self.total_trades * 100, 2))
             return
 
         filled_shares = order.filled_shares if order.filled_shares > 0 else 100.0
@@ -665,8 +669,8 @@ class AdvancedPaperTrader:
         loser_cost = self.config.loser_max_price * filled_shares
         gas_cost = GAS_PER_SHARE * filled_shares
         net_pnl = gross - fee - loser_cost - gas_cost
-        self.cumulative_pnl += net_pnl
-        self.daily_pnl += net_pnl
+        self.cumulative_pnl = round(self.cumulative_pnl + net_pnl, 4)
+        self.daily_pnl = round(self.daily_pnl + net_pnl, 4)
         self._update_performance(net_pnl, True)
         self.metrics.set("pnl_cumulative", self.cumulative_pnl)
         self.metrics.set("pnl_daily", self.daily_pnl)
@@ -848,3 +852,11 @@ class AdvancedPaperTrader:
         avg_pnl = (self.cumulative_pnl / self.total_trades) if self.total_trades > 0 else 0.0
         self._log_both(f"  Avg PnL/Trade: ${avg_pnl:.4f} | Max Drawdown: ${self._max_drawdown:.4f}")
         self._log_both(f"  Max Win Streak: {self._max_consecutive_wins} | Max Loss Streak: {self._max_consecutive_losses}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Sweeper Bot V2 - Advanced Paper Trading")
+    parser.add_argument("--cycles", type=int, default=3, help="Number of cycles to run")
+    parser.add_argument("--sweeps", type=int, default=10, help="Max sweeps per cycle")
+    args = parser.parse_args()
+    bot = AdvancedPaperTrader()
+    bot.run(cycles=args.cycles, max_sweeps=args.sweeps)
