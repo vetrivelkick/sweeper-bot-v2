@@ -28,6 +28,8 @@ Usage:
     ledger.dump()
 
 AUDIT FIX #28: Trade history, daily PnL tracking, ledger status
+SECTION 17 AUDIT: Per-trade gas/fee tracking, redemption entries, ledger persistence,
+                 reconciliation with BotState, recycle entries
 """
 import json, os, time, logging
 from dataclasses import dataclass, field, asdict
@@ -70,6 +72,9 @@ class DoubleEntryLedger:
         self._trade_history: List[dict] = []
         self._max_history = 500
         self._daily_pnl: dict = {}  # date_str -> pnl
+        # SECTION 17 AUDIT: Per-trade gas/fee tracking for accurate net PnL
+        self._trade_gas: dict = {}
+        self._trade_fee: dict = {}
         os.makedirs(log_dir, exist_ok=True)
         self._ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         self._ledger_file = os.path.join(log_dir, f"ledger_{self._ts}.json")
@@ -113,6 +118,7 @@ class DoubleEntryLedger:
     def record_fee(self, trade_id, fee_amount, is_maker=True):
         if is_maker or fee_amount <= 0:
             return
+        self._trade_fee[trade_id] = self._trade_fee.get(trade_id, 0.0) + fee_amount  # SECTION 17 AUDIT
         self._add_entry(trade_id, "FEE_PAID", "FEE", fee_amount, 0.0,
                         f"Taker fee ${fee_amount:.4f}")
         self._add_entry(trade_id, "FEE_PAID", "USDC", 0.0, fee_amount,
@@ -122,6 +128,7 @@ class DoubleEntryLedger:
     def record_gas(self, trade_id, gas_cost):
         if gas_cost <= 0:
             return
+        self._trade_gas[trade_id] = self._trade_gas.get(trade_id, 0.0) + gas_cost  # SECTION 17 AUDIT
         self._add_entry(trade_id, "GAS_PAID", "GAS", gas_cost, 0.0,
                         f"Gas cost ${gas_cost:.4f}")
         self._add_entry(trade_id, "GAS_PAID", "USDC", 0.0, gas_cost,
@@ -143,15 +150,20 @@ class DoubleEntryLedger:
         self._total_recycled += recovered
         self._recycle_count += 1
         # AUDIT FIX #28: Track trade history
-        net_pnl = gross_profit - self.balances.GAS - self.balances.FEE
+        gas_for_trade = self._trade_gas.get(trade_id, 0.0)  # SECTION 17 AUDIT: Per-trade gas
+        fee_for_trade = self._trade_fee.get(trade_id, 0.0)  # SECTION 17 AUDIT: Per-trade fee
+        net_pnl = gross_profit - gas_for_trade - fee_for_trade
         self._trade_history.append({
             'trade_id': trade_id,
             'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+            'type': 'MERGE',
             'shares': shares,
             'winning_cost': round(winning_cost, 4),
             'loser_cost': round(loser_cost, 4),
             'recovered': round(recovered, 4),
             'gross_profit': round(gross_profit, 4),
+            'gas_cost': round(gas_for_trade, 4),
+            'fee_cost': round(fee_for_trade, 4),
             'net_pnl': round(net_pnl, 4),
         })
         if len(self._trade_history) > self._max_history:
@@ -160,6 +172,78 @@ class DoubleEntryLedger:
         date_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
         self._daily_pnl[date_str] = self._daily_pnl.get(date_str, 0.0) + net_pnl
         logger.info(f"[LEDGER] Trade {trade_id}: MERGE {shares:.0f} pairs -> ${recovered:.4f} pUSD (profit ${gross_profit:.4f})")
+
+
+    def record_redeem(self, trade_id, shares, winning_cost):
+        """SECTION 17 AUDIT: Record redemption of winning tokens for USDC."""
+        recovered = shares * 1.0
+        gross_profit = recovered - winning_cost
+
+        self._add_entry(trade_id, "REDEEM", "POSITION", 0.0, winning_cost,
+                        f"Redeem {shares:.0f} winning tokens (cost basis ${winning_cost:.4f})")
+        self._add_entry(trade_id, "REDEEM", "USDC", recovered, 0.0,
+                        f"Recover ${recovered:.4f} USDC from redemption")
+        self._add_entry(trade_id, "REDEEM", "INCOME", 0.0, gross_profit,
+                        f"Gross profit from redemption: ${gross_profit:.4f}")
+        self._total_recycled += recovered
+        self._recycle_count += 1
+        gas_for_trade = self._trade_gas.get(trade_id, 0.0)
+        fee_for_trade = self._trade_fee.get(trade_id, 0.0)
+        net_pnl = gross_profit - gas_for_trade - fee_for_trade
+        self._trade_history.append({
+            'trade_id': trade_id,
+            'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+            'type': 'REDEEM',
+            'shares': shares,
+            'winning_cost': round(winning_cost, 4),
+            'loser_cost': 0.0,
+            'recovered': round(recovered, 4),
+            'gross_profit': round(gross_profit, 4),
+            'gas_cost': round(gas_for_trade, 4),
+            'fee_cost': round(fee_for_trade, 4),
+            'net_pnl': round(net_pnl, 4),
+        })
+        if len(self._trade_history) > self._max_history:
+            self._trade_history = self._trade_history[-self._max_history:]
+        date_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+        self._daily_pnl[date_str] = self._daily_pnl.get(date_str, 0.0) + net_pnl
+        logger.info(f"[LEDGER] Trade {trade_id}: REDEEM {shares:.0f} -> ${recovered:.4f} USDC (profit ${gross_profit:.4f})")
+
+    def record_recycle(self, trade_id, shares, winning_cost, complementary_cost):
+        """SECTION 17 AUDIT: Record complementary-token recycle (buy loser + merge)."""
+        total_cost = winning_cost + complementary_cost
+        recovered = shares * 1.0
+        gross_profit = recovered - total_cost
+
+        self._add_entry(trade_id, "RECYCLE", "POSITION", 0.0, total_cost,
+                        f"Recycle {shares:.0f} pairs (cost ${total_cost:.4f})")
+        self._add_entry(trade_id, "RECYCLE", "USDC", recovered, 0.0,
+                        f"Recover ${recovered:.4f} USDC from recycle")
+        self._add_entry(trade_id, "RECYCLE", "INCOME", 0.0, gross_profit,
+                        f"Gross profit from recycle: ${gross_profit:.4f}")
+        self._total_recycled += recovered
+        self._recycle_count += 1
+        gas_for_trade = self._trade_gas.get(trade_id, 0.0)
+        fee_for_trade = self._trade_fee.get(trade_id, 0.0)
+        net_pnl = gross_profit - gas_for_trade - fee_for_trade
+        self._trade_history.append({
+            'trade_id': trade_id,
+            'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+            'type': 'RECYCLE',
+            'shares': shares,
+            'winning_cost': round(winning_cost, 4),
+            'complementary_cost': round(complementary_cost, 4),
+            'recovered': round(recovered, 4),
+            'gross_profit': round(gross_profit, 4),
+            'gas_cost': round(gas_for_trade, 4),
+            'fee_cost': round(fee_for_trade, 4),
+            'net_pnl': round(net_pnl, 4),
+        })
+        if len(self._trade_history) > self._max_history:
+            self._trade_history = self._trade_history[-self._max_history:]
+        date_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+        self._daily_pnl[date_str] = self._daily_pnl.get(date_str, 0.0) + net_pnl
+        logger.info(f"[LEDGER] Trade {trade_id}: RECYCLE {shares:.0f} -> ${recovered:.4f} USDC (profit ${gross_profit:.4f})")
 
     def record_pnl(self, trade_id, net_pnl):
         """No-op: PnL is automatically calculated as INCOME - GAS - FEE."""
@@ -212,6 +296,39 @@ class DoubleEntryLedger:
             'trade_history_size': len(self._trade_history),
             'daily_pnl_entries': len(self._daily_pnl),
             'accounts': asdict(self.balances),
+        }
+
+
+    @classmethod
+    def load(cls, ledger_file):
+        """SECTION 17 AUDIT: Load ledger from JSON file for persistence across restarts."""
+        ledger = cls(log_dir=os.path.dirname(ledger_file))
+        try:
+            with open(ledger_file, 'r') as f:
+                entries = json.load(f)
+            for e in entries:
+                entry = LedgerEntry(**e)
+                ledger.entries.append(entry)
+                if entry.entry_id >= ledger._next_id:
+                    ledger._next_id = entry.entry_id + 1
+                balance = getattr(ledger.balances, entry.account, 0.0)
+                balance = balance + entry.debit - entry.credit
+                setattr(ledger.balances, entry.account, balance)
+            logger.info(f"Loaded {len(ledger.entries)} entries from {ledger_file}")
+        except Exception as e:
+            logger.warning(f"Failed to load ledger: {e}")
+        return ledger
+
+    def reconcile_with_state(self, bot_state):
+        """SECTION 17 AUDIT: Reconcile ledger PnL with BotState PnL."""
+        ledger_pnl = self.get_pnl()
+        state_pnl = getattr(bot_state, 'cumulative_pnl', 0.0)
+        diff = abs(ledger_pnl - state_pnl)
+        return {
+            'ledger_pnl': round(ledger_pnl, 4),
+            'state_pnl': round(state_pnl, 4),
+            'difference': round(diff, 4),
+            'reconciled': diff < 0.01,
         }
 
     def dump(self):
