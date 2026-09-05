@@ -1,5 +1,6 @@
 # Sweeper Bot V2 - Docker Compose
 # AUDIT FIX #17: Container orchestration
+# SECTION 21 AUDIT: Use observability server health endpoint
 version: '3.8'
 
 services:
@@ -23,7 +24,7 @@ services:
           memory: 256M
           cpus: '0.25'
     healthcheck:
-      test: ["CMD", "python3", "-c", "import sys; sys.path.insert(0,'.'); from modules.safety_rails import SafetyRails; from config.settings import SweeperConfig; c=SweeperConfig(); s=SafetyRails(c); hc=s.health_check(); exit(0 if hc['status'] in ('healthy','degraded') else 1)"]
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9090/health')"]
       interval: 60s
       timeout: 10s
       retries: 3
