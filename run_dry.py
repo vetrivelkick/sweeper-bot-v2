@@ -11,7 +11,7 @@ P1 #16: Added win rate disclaimer (simulated, not historically replayed)
 P1 #2,#3: Wired rate_limiter to OrderBuilder for 429/425 handling
 
 """
-import sys, os, time, json, logging, random
+import sys, os, time, json, logging, random, argparse
 from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import SweeperConfig, fee_per_share, GAS_PER_SHARE, get_fee_rate  # FIX #10: removed unused net_edge_per_share
@@ -24,6 +24,7 @@ from modules.fill_confirmation import FillConfirmer
 from modules.reconciliation import ReconciliationEngine
 from modules.gas_manager import GasManager
 from modules.capital_recycler import CapitalRecycler
+from modules.ledger import DoubleEntryLedger
 from modules.metrics import MetricsCollector, AlertManager
 
 LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
@@ -53,6 +54,15 @@ class AdvancedDryRunner:
         self.resting_orders = 0; self.expired_orders = 0; self.partial_fills = 0; self.ghost_fills = 0
         self.total_recycled = 0.0; self.recycle_count = 0
         self.errors = []; self.cycle_num = 0
+        self.ledger = DoubleEntryLedger()
+        self.trade_records = []
+        self._pnl_history = []
+        self._peak_pnl = 0.0
+        self._max_drawdown = 0.0
+        self._max_consecutive_wins = 0
+        self._max_consecutive_losses = 0
+        self._current_win_streak = 0
+        self._current_loss_streak = 0
         self.metrics = MetricsCollector(log_dir=LOG_DIR)
         self.alerts = AlertManager(self.config, self.safety, self.metrics)
 
@@ -169,9 +179,13 @@ class AdvancedDryRunner:
                     elif fill_result == "ghost":
                         self.ghost_fills += 1; self.log("    Result: GHOST FILL (off-chain match, on-chain revert)")
                         self.metrics.inc("ghost_fills")
+                        if self.total_trades > 0:
+                            self.metrics.set("win_rate", round(self.winning_trades / self.total_trades * 100, 2))
                     elif fill_result == "expired":
                         self.expired_orders += 1; self.log("    Result: EXPIRED | Market released"); self.safety.unmark_worked(det.condition_id)
                         self.metrics.inc("expired_orders")
+                        if self.total_trades > 0:
+                            self.metrics.set("win_rate", round(self.winning_trades / self.total_trades * 100, 2))
                 elif order.status in (OrderStatus.MATCHED, OrderStatus.FILLED):
                     self.maker_fills += 1; filled = order.filled_shares if order.filled_shares > 0 else 100.0
                     self.metrics.inc("maker_fills")
@@ -269,7 +283,7 @@ class AdvancedDryRunner:
         self.log(f"    Type: {'GTC POST-ONLY MAKER' if is_maker else 'FAK TAKER'}")
         self.log(f"    Gross Edge: ${gross:.4f} | Fee: ${fee:.4f} ({'ZERO - MAKER' if is_maker else 'taker'}) | Loser: ${loser_cost:.4f} | Gas: ${gas_cost:.4f}")
         self.log(f"    Net PnL: +${net_pnl:.4f}")
-        self.cumulative_pnl += net_pnl; self.daily_pnl += net_pnl
+        self.cumulative_pnl = round(self.cumulative_pnl + net_pnl, 4); self.daily_pnl = round(self.daily_pnl + net_pnl, 4)
         self.metrics.set("pnl_cumulative", self.cumulative_pnl)
         self.metrics.set("pnl_daily", self.daily_pnl)
         if self.total_trades > 0:
@@ -333,5 +347,9 @@ class AdvancedDryRunner:
         self.log(f"  Summary: {summary_path}")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Sweeper Bot V2 - Advanced Dry Run")
+    parser.add_argument("--cycles", type=int, default=3, help="Number of cycles to run")
+    parser.add_argument("--sweeps", type=int, default=10, help="Max sweeps per cycle")
+    args = parser.parse_args()
     bot = AdvancedDryRunner()
-    bot.run(cycles=3, max_sweeps=10)
+    bot.run(cycles=args.cycles, max_sweeps=args.sweeps)
