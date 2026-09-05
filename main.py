@@ -12,9 +12,12 @@ AUDIT FIX #9: Cancel all remote orders when kill switch activates
 AUDIT FIX #12: Structured JSON logging with correlation IDs
 SECTION 2 AUDIT: Two-factor live mode activation (LIVE_MODE env var + --live flag)
 SECTION 21 AUDIT: Integrate observability server and metrics collector
+FIX: Added load_dotenv() to automatically load .env file on startup
 """
 import sys, os, time, json, signal, logging, threading
 from datetime import datetime, timezone
+from dotenv import load_dotenv
+load_dotenv()
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import SweeperConfig, fee_per_share, net_edge_per_share, GAS_PER_SHARE, get_fee_rate
 from modules.safety_rails import SafetyRails
