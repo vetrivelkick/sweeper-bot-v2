@@ -110,6 +110,30 @@ class SweeperBot:
         logger.info("Startup reconciliation COMPLETE")
         return True
 
+    def get_usdc_balance(self):
+        """Get actual USDC balance for pre-trade logging."""
+        if self.config.paper_mode:
+            return -1.0
+        try:
+            addr = getattr(self.config, 'wallet_address', '')
+            if not addr:
+                return -1.0
+            rpc = getattr(self.config, 'polygon_rpc', '') or getattr(self.config, 'rpc_url', '')
+            if not rpc:
+                return -1.0
+            import requests
+            contract = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa8414C"
+            data = "0x70a08231000000000000000000000000" + addr[2:].lower()
+            r = requests.post(rpc, json={"method": "eth_call", "params": [{"to": contract, "data": data}, "latest"], "id": 1, "jsonrpc": "2.0"})
+            result = r.json().get("result", "0x0")
+            if not result or result == "0x":
+                result = "0x0"
+            bal = int(result, 16) / 1e6
+            return bal
+        except Exception as e:
+            logger.warning(f"USDC balance check failed: {e}")
+            return -1.0
+
     def run_cycle(self):
         self._cycle_count += 1
         cycle_id = set_cycle_id()
@@ -136,6 +160,12 @@ class SweeperBot:
             except Exception:
                 pass
         logger.info(f"{len(sweepable)} sweepable markets")
+        if not self.config.paper_mode:
+            usdc_bal = self.get_usdc_balance()
+            if usdc_bal >= 0:
+                logger.info(f"[WALLET] Cycle start USDC balance: ")
+            else:
+                logger.info('[WALLET] USDC balance unavailable - continuing')
         placed = 0
         for det in sweepable:
             if placed >= 10:
@@ -145,6 +175,14 @@ class SweeperBot:
             if not self.rate_limiter.can_request("order"):
                 logger.warning("Order rate limit exhausted")
                 break
+            if not self.config.paper_mode:
+                usdc_bal = self.get_usdc_balance()
+                order_cost = 100.0 * self.config.buy_price
+                if usdc_bal >= 0 and usdc_bal < order_cost:
+                    logger.warning(f"[WALLET] Insufficient USDC:  < needed  - skipping trade")
+                    break
+                if usdc_bal >= 0:
+                    logger.info(f"[WALLET] Pre-trade USDC:  | Order cost: ")
             best_ask = None
             try:
                 book = self.discovery.get_market_book(det.winning_token_id)
