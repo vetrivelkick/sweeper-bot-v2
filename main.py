@@ -122,10 +122,7 @@ class SweeperBot:
             self.safety.dump_state()
             return False
         try:
-            if self.config.paper_mode:
-                candidates = self.discovery.discover_candidates(max_markets=100)
-            else:
-                candidates = self.discovery.discover_all_markets(max_markets=100)
+            candidates = self.discovery.discover_candidates(max_markets=100)
             logger.info(f"Discovered {len(candidates)} markets")
         except Exception as e:
             logger.error(f"Discovery failed: {e}")
