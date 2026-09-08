@@ -120,6 +120,7 @@ class MarketDiscovery:
         markets = []
         offset = 0
         limit = min(max_markets, 200)
+        batch_size = limit
         total_fetched = 0
         while total_fetched < max_markets:
             batch_size
