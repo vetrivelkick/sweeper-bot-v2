@@ -176,4 +176,8 @@ class MarketDiscovery:
             except Exception as ex:
                 print("DEBUG API ERROR: " + str(ex))
                 break
+        hp = sum(1 for m in markets if m.yes_price >= 0.95 or m.no_price >= 0.95)
+        print(f"DEBUG: {hp} markets with price >= 0.95 out of {len(markets)}")
+        if markets:
+            print(f"DEBUG: top: {markets[0].question[:50]} | yes={markets[0].yes_price:.4f}")
         return markets

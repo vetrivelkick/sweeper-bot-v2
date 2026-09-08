@@ -480,7 +480,7 @@ class ResolutionDetector:
         if result.winning_price < self.config.min_entry_price:
             return False
         if self.config.paper_mode:
-            if result.certainty in (CertaintyLevel.CERTAIN, CertaintyLevel.STRONG):
+            if result.certainty in (CertaintyLevel.CERTAIN, CertaintyLevel.STRONG, CertaintyLevel.WEAK):
                 return True
             return False
         else:
