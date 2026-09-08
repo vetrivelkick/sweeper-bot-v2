@@ -499,4 +499,9 @@ class ResolutionDetector:
             if result.certainty == CertaintyLevel.CERTAIN and not result.is_final:
                 logger.warning(f"[FINALITY GATE] Blocked sweep: {result.question[:50]} - {result.finality_reason}")
                 return False
-            return False  # P0 #1 FIX: fail-closed for all other cases (STRONG+non-final, WEAK, UNCERTAIN)
+            
+        # P0 FIX: Allow STRONG near-final
+        if outcome == "STRONG" and price > 0.50:
+            logger.info("  NEAR-FINAL: STRONG+high-price accepted")
+            return True
+return False  # P0 #1 FIX: fail-closed for all other cases (STRONG+non-final, WEAK, UNCERTAIN)

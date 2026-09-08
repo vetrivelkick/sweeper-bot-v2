@@ -122,7 +122,10 @@ class SweeperBot:
             self.safety.dump_state()
             return False
         try:
-            candidates = self.discovery.discover_candidates(max_markets=100)
+            if self.paper_mode:
+                candidates = self.discovery.discover_candidates(max_markets=100)
+            else:
+                candidates = self.discovery.discover_all_markets(max_markets=100)
             logger.info(f"Discovered {len(candidates)} markets")
         except Exception as e:
             logger.error(f"Discovery failed: {e}")
@@ -277,7 +280,7 @@ class SweeperBot:
         self._shutdown_requested = True
 
     def run(self):
-        setup_logging(level=os.getenv("LOG_LEVEL", "INFO"), json_format=os.getenv("LOG_JSON", "true").lower() == "true")
+        setup_logging(level=os.getenv("LOG_LEVEL", "INFO"), json_format=os.getenv("LOG_JSON", "false").lower() == "true")
         self.obs_server = ObservabilityServer(port=int(os.getenv("OBS_PORT", "9090")), safety=self.safety, metrics=self.metrics)
         self.obs_server.start()
         setup_log_rotation()
@@ -428,7 +431,7 @@ if __name__ == "__main__":
     config.wallet_address = os.environ.get("WALLET_ADDRESS", "")
     config.signature_type = int(os.environ.get("SIGNATURE_TYPE", "0"))
     config.funder = os.environ.get("FUNDER_ADDRESS", "")
-    setup_logging(level=os.getenv("LOG_LEVEL", "INFO"), json_format=os.getenv("LOG_JSON", "true").lower() == "true")
+    setup_logging(level=os.getenv("LOG_LEVEL", "INFO"), json_format=os.getenv("LOG_JSON", "false").lower() == "true")
     bot = SweeperBot(config)
     if args.cycles > 0:
         if not bot.startup_reconcile():
