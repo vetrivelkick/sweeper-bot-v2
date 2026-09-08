@@ -122,7 +122,7 @@ class SweeperBot:
             self.safety.dump_state()
             return False
         try:
-            if self.paper_mode:
+            if self.config.paper_mode:
                 candidates = self.discovery.discover_candidates(max_markets=100)
             else:
                 candidates = self.discovery.discover_all_markets(max_markets=100)
