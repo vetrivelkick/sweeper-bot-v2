@@ -108,11 +108,11 @@ class SafetyRails:
             if self.config.clob_api_key and self.config.clob_api_secret: checks.append("OK: CLOB API credentials present")
             else: checks.append("FAIL: CLOB API credentials incomplete"); passed = False
             checks.append("OK: Gas balance check (deferred to live mode)")
-            if not self.check_usdc_balance():
-                checks.append("FAIL: Insufficient USDC")
-                passed = False
-            else:
+            usdc_ok = self.check_usdc_balance()
+            if usdc_ok:
                 checks.append("OK: USDC balance OK")
+            else:
+                checks.append("WARN: Insufficient USDC - bot will run but orders may fail without funding")
             # AUDIT FIX #6: Signer verification
             ok_signer, signer_msg = self.verify_signer()
             if ok_signer: checks.append(f"OK: {signer_msg}")
