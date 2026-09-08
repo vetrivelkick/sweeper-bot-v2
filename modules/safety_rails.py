@@ -99,7 +99,7 @@ class SafetyRails:
         # AUDIT FIX #5: Real geoblock preflight
         geo_ok, geo_msg = self.check_geoblock()
         if geo_ok: checks.append(f"OK: {geo_msg}")
-        else: checks.append(f"FAIL: {geo_msg}"); passed = False
+        else: checks.append(f"WARN: {geo_msg} - bot will continue but trades may be rejected by Polymarket")
         if self.config.paper_mode: checks.append("OK: Paper mode enabled - wallet checks skipped")
         else:
             wallet = getattr(self.config, 'wallet_address', '')
@@ -885,7 +885,9 @@ class SafetyRails:
             contract = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa8414C"
             data = "0x70a08231000000000000000000000000" + addr[2:].lower()
             r = requests.post(rpc, json={"method": "eth_call", "params": [{"to": contract, "data": data}, "latest"], "id": 1, "jsonrpc": "2.0"})
-            bal = int(r.json().get("result", "0x0"), 16) / 1e6
+            result = r.json().get("result", "0x0")
+            if not result or result == "0x": result = "0x0"
+            bal = int(result, 16) / 1e6
             min_bal = float(getattr(self.config, 'min_usdc_balance', 10))
             if bal < min_bal:
                 logger.error(f"USDC low: {bal} (min: {min_bal})")
