@@ -115,6 +115,7 @@ class MarketDiscovery:
         return None
 
     def discover_candidates(self, max_markets=200):
+        import json
         self._seen_condition_ids.clear()
         markets = []
         offset = 0
@@ -128,11 +129,9 @@ class MarketDiscovery:
             try:
                 import requests as req
                 r = req.get(url, timeout=10)
-                print("DEBUG API: status=" + str(r.status_code))
                 if r.status_code != 200:
                     break
                 data = r.json()
-                print("DEBUG API: got " + str(len(data)) + " markets")
                 if not data:
                     break
                 for m in data:
@@ -142,7 +141,11 @@ class MarketDiscovery:
                             continue
                         self._seen_condition_ids.add(cid)
                         tk = m.get("tokens", [])
+                        if isinstance(tk, str):
+                            tk = json.loads(tk)
                         pr = m.get("outcomePrices", [])
+                        if isinstance(pr, str):
+                            pr = json.loads(pr)
                         yp = float(pr[0]) if pr else 0.0
                         try:
                             cat = detect_category(m.get("question", ""), m.get("tags") if isinstance(m.get("tags"), list) else None)
@@ -173,5 +176,4 @@ class MarketDiscovery:
             except Exception as ex:
                 print("DEBUG API ERROR: " + str(ex))
                 break
-        print("DEBUG: discovered " + str(len(markets)) + " markets")
         return markets
