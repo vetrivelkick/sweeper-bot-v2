@@ -110,7 +110,7 @@ class SafetyRails:
             checks.append("OK: Gas balance check (deferred to live mode)")
             if not self.check_usdc_balance():
                 checks.append("FAIL: Insufficient USDC")
-                all_ok = False
+                passed = False
             else:
                 checks.append("OK: USDC balance OK")
             # AUDIT FIX #6: Signer verification
@@ -488,11 +488,11 @@ class SafetyRails:
                     self.state.is_killed = False
                     self.state.kill_reason = None
                     logger.info("Kill switch reset (paper mode - previous live mode kill cleared)")
-                if not getattr(self, 'paper_mode', True):
-                if self.state.open_positions:
-                    logger.info(f"Clearing {len(self.state.open_positions)} paper-mode phantom positions")
-                    self.state.open_positions.clear()
-                logger.info(f"State loaded: {len(self.state.worked_markets)} worked, {len(self.state.open_positions)} positions")
+                if not self.config.paper_mode:
+                    if self.state.open_positions:
+                        logger.info(f"Clearing {len(self.state.open_positions)} paper-mode phantom positions")
+                        self.state.open_positions.clear()
+                    logger.info(f"State loaded: {len(self.state.worked_markets)} worked, {len(self.state.open_positions)} positions")
                 return True
             except Exception as e: logger.error(f"State load failed: {e}")
         return False
@@ -873,10 +873,12 @@ class SafetyRails:
         try:
             if not hasattr(self, 'config') or not self.config:
                 return True
-            addr = self.config.get("USDC_ADDRESS", "")
+            if self.config.paper_mode:
+                return True
+            addr = getattr(self.config, 'wallet_address', '')
             if not addr:
                 return True
-            rpc = self.config.get("RPC_URL", "")
+            rpc = getattr(self.config, 'polygon_rpc', '') or getattr(self.config, 'rpc_url', '')
             if not rpc:
                 return True
             import requests
@@ -884,7 +886,7 @@ class SafetyRails:
             data = "0x70a08231000000000000000000000000" + addr[2:].lower()
             r = requests.post(rpc, json={"method": "eth_call", "params": [{"to": contract, "data": data}, "latest"], "id": 1, "jsonrpc": "2.0"})
             bal = int(r.json().get("result", "0x0"), 16) / 1e6
-            min_bal = float(self.config.get("MIN_USDC_BALANCE", "10"))
+            min_bal = float(getattr(self.config, 'min_usdc_balance', 10))
             if bal < min_bal:
                 logger.error(f"USDC low: {bal} (min: {min_bal})")
                 return False
