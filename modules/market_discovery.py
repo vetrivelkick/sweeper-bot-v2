@@ -143,6 +143,14 @@ class MarketDiscovery:
                         tk = m.get("tokens", [])
                         if isinstance(tk, str):
                             tk = json.loads(tk)
+                        if not tk:
+                            if len(markets) == 0:
+                                print("DEBUG ALL KEYS:", list(m.keys()))
+                            cids = m.get("clobTokenIds", [])
+                            if isinstance(cids, str):
+                                cids = json.loads(cids)
+                            if cids and len(cids) >= 2:
+                                tk = [{"token_id": cids[0]}, {"token_id": cids[1]}]
                         pr = m.get("outcomePrices", [])
                         if isinstance(pr, str):
                             pr = json.loads(pr)

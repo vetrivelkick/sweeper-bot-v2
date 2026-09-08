@@ -1,0 +1,1367 @@
+========================================================================
+  SWEEPER BOT V2 - ADVANCED PAPER TRADING ENGINE
+========================================================================
+  Mode:            PAPER
+  Buy Price:       $0.99
+  Order Method:    GTC POST-ONLY MAKER (zero fees)
+  Taker Fallback:  DISABLED
+  Fill Prob:       35%
+  Partial Prob:    25%
+  Ghost Prob:      5%
+  Expire Prob:     35%
+  Gas Cost:        $0.001/share
+  Loser Max:       $0.005/share
+  Maker Edge:     $0.004000/share
+  Taker Edge:     $0.003604/share
+  Resting Timeout: 120s
+  Max Loss/Day:   $50.0
+  Max Exposure:   $2000.0
+  Cycles:         3
+  Max Sweeps/Cycle: 5
+  Main Log:        /buildkite/builds/fo3s0a7oab75c-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_main_20260908_152059.log
+  Trade Log:      /buildkite/builds/fo3s0a7oab75c-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_trades_20260908_152059.log
+========================================================================
+
+[PREFLIGHT] Running pre-flight checks...
+  OK: Config validation passed
+  OK: Paper mode - geoblock check skipped
+  OK: Paper mode enabled - wallet checks skipped
+  OK: Alert system (logging to file)
+  OK: State file directory writable
+  OK: Buy price 0.99 in valid range
+  OK: Maker edge $0.004000/share (zero fees)
+  OK: Taker edge $0.003604/share (if fallback used)
+  OK: GTC post-only maker mode (PREFER_MAKER=True)
+  OK: Taker fallback disabled
+  WARN: SDK version check skipped: No package metadata was found for py-clob-client-v2
+  OK: Paper mode - SDK import check skipped
+  OK: Paper mode - SDK method check skipped
+  OK: OK: Economics config valid
+[PREFLIGHT] PASSED
+[GAS] 10.0 POL | Floor: 0.5
+
+[RATE LIMITS] Initial budget:
+  order: 40
+  book: 160
+  gamma: 160
+  api_key: 64
+  relayer: 16
+
+========================================================================
+  CYCLE 1
+========================================================================
+
+[DISCOVERY] Fetching live markets from Gamma API...
+[DISCOVERY] Found 100 candidate markets
+
+[MARKET DATA] Top 5 candidates:
+  1. Genoa: Thiago Seyboth Wild vs Francesco Ferrari
+     Vol: $1,575,013 | YES=0.583 | NO=0.417 | Score: 918232.3416 | Cat: other
+  2. Israel closes its airspace by September 30?
+     Vol: $793,457 | YES=0.959 | NO=0.041 | Score: 760925.1442 | Cat: other
+  3. Counter-Strike: G2 vs Astralis (BO3) - FISSURE PLAYGROUND Gr
+     Vol: $695,908 | YES=0.455 | NO=0.545 | Score: 316638.1511 | Cat: other
+  4. Will there be no change in Fed interest rates after the Sept
+     Vol: $646,962 | YES=0.455 | NO=0.545 | Score: 294367.6233 | Cat: finance
+  5. Will BV Borussia 09 Dortmund win on 2026-09-08?
+     Vol: $445,898 | YES=0.535 | NO=0.465 | Score: 238555.5554 | Cat: sports
+
+[DETECTION] Running resolution detection...
+[DETECTION] 41 sweepable markets
+
+[PRICE ACTION] Sweepable markets:
+  1. Will the Fed decrease interest rates by 25 bps after the Sep
+     Win: NO @ 0.9955 | Lose @ 0.0045 | Spread: 0.9910
+     Certainty: 1 | Confidence: 99.55% | Reason: Price hint 0.9955 >= 0.99 (secondary only)
+     Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+  2. Counter-Strike: GamerLegion vs FURIA (BO3) - FISSURE PLAYGRO
+     Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+     Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+     Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  3. Counter-Strike: G2 vs Astralis - Map 1 Winner
+     Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+     Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+     Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  4. Will Glenn Youngkin win the 2028 US Presidential Election?
+     Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+     Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+     Category: politics | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+  5. Will Shakhtar Donetsk win the 2026-27 UEFA Champions League 
+     Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+     Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+     Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  6. Map Handicap: G2 (-1.5) vs Astralis (+1.5)
+     Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+     Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+     Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  7. Will RB Leipzig win the 2026-27 UEFA Champions League Champi
+     Win: NO @ 0.9935 | Lose @ 0.0065 | Spread: 0.9870
+     Certainty: 1 | Confidence: 99.35% | Reason: Price hint 0.9935 >= 0.99 (secondary only)
+     Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  8. Will the Fed increase interest rates by 50+ bps after the Se
+     Win: NO @ 0.9955 | Lose @ 0.0045 | Spread: 0.9910
+     Certainty: 1 | Confidence: 99.55% | Reason: Price hint 0.9955 >= 0.99 (secondary only)
+     Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+  9. Will Eric Trump win the 2028 Republican presidential nominat
+     Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+     Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+     Category: politics | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+  10. Will the Fed decrease interest rates by 50+ bps after the Se
+     Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+     Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+     Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+
+------------------------------------------------------------------------
+  TRADE #1 - CYCLE 1
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Will the Fed decrease interest rates by 25 bps after the Septembe
+  Condition            0xac02cbb049e46d6a3627c0fdf52fa554982a9025d4596820...
+  Category             finance
+  End Date             2026-09-16T00:00:00Z
+  Neg Risk             True
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         NO @ $0.9955
+  Losing Side          YES @ $0.0045
+  Spread               0.9910
+  Certainty            1 (99.55%)
+  Detection            Price hint 0.9955 >= 0.99 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.04
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [~] PARTIAL FILL
+  Filled Shares        40 / 100
+  Fill Price           $0.99
+  TX Hash              paper_tx_1788880859
+  Status               PARTIAL
++------------------------------------------------------------------------+
+
++-  PNL BREAKDOWN -------------------------------------------------------+
+  Order Type           GTC MAKER
+  Gross Edge           +$0.4000  (40 x ($1.00 - $0.99))
+  Fee                  $0.0000  (ZERO - MAKER)
+  Loser Cost           -$0.2000  (40 x $0.005)
+  Gas Cost             -$0.0400  (40 x $0.001)
+
+  Net PnL              +$0.1600
+  Cumulative           $0.1600
+  Daily                $0.1600 / Max: $50.0
+  Win Rate             1/1 = 100.0%
++------------------------------------------------------------------------+
+
++-  SETTLEMENT (CAPITAL RECYCLE) ----------------------------------------+
+  Loser Buy            $0.005/share
+  Merge                40 YES + 40 NO -> 40 pUSD
+  Adapter              NegRiskCtfCollateralAdapter
+  Recycle              SUCCESS - 40 shares -> $40.00 pUSD
+  Recovered            $40.00 pUSD
+  Loser Cost           $0.2000
++------------------------------------------------------------------------+
+
+  [OK] TRADE #1 COMPLETE - MAKER (ZERO FEES)
+      Net PnL: +$0.1600 | Cumulative: $0.1600
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+  TRADE #2 - CYCLE 1
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Counter-Strike: GamerLegion vs FURIA (BO3) - FISSURE PLAYGROUND G
+  Condition            0x42ec61e0269cd99507c19b4c2a2ecff6d342bc1cac858c03...
+  Category             other
+  End Date             2026-09-08T17:50:00Z
+  Neg Risk             False
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         NO @ $0.9995
+  Losing Side          YES @ $0.0005
+  Spread               0.9990
+  Certainty            1 (99.95%)
+  Detection            Price hint 0.9995 >= 0.999 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.05
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [X] EXPIRED
+  Status               EXPIRED
++------------------------------------------------------------------------+
+
+  [X] TRADE #2 EXPIRED - No fill
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+  TRADE #3 - CYCLE 1
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Counter-Strike: G2 vs Astralis - Map 1 Winner
+  Condition            0x7af4dd71211a14d31f45d455a783fca12250c8ca8fc36c27...
+  Category             other
+  End Date             2026-09-08T19:45:00Z
+  Neg Risk             False
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         NO @ $0.9995
+  Losing Side          YES @ $0.0005
+  Spread               0.9990
+  Certainty            1 (99.95%)
+  Detection            Price hint 0.9995 >= 0.999 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.05
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [~] PARTIAL FILL
+  Filled Shares        40 / 100
+  Fill Price           $0.99
+  TX Hash              paper_tx_1788880859
+  Status               PARTIAL
++------------------------------------------------------------------------+
+
++-  PNL BREAKDOWN -------------------------------------------------------+
+  Order Type           GTC MAKER
+  Gross Edge           +$0.4000  (40 x ($1.00 - $0.99))
+  Fee                  $0.0000  (ZERO - MAKER)
+  Loser Cost           -$0.2000  (40 x $0.005)
+  Gas Cost             -$0.0400  (40 x $0.001)
+
+  Net PnL              +$0.1600
+  Cumulative           $0.3200
+  Daily                $0.3200 / Max: $50.0
+  Win Rate             2/3 = 66.7%
++------------------------------------------------------------------------+
+
++-  SETTLEMENT (CAPITAL RECYCLE) ----------------------------------------+
+  Loser Buy            $0.005/share
+  Merge                40 YES + 40 NO -> 40 pUSD
+  Adapter              CtfCollateralAdapter
+  Recycle              SUCCESS - 40 shares -> $40.00 pUSD
+  Recovered            $40.00 pUSD
+  Loser Cost           $0.2000
++------------------------------------------------------------------------+
+
+  [OK] TRADE #3 COMPLETE - MAKER (ZERO FEES)
+      Net PnL: +$0.1600 | Cumulative: $0.3200
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+  TRADE #4 - CYCLE 1
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Will Glenn Youngkin win the 2028 US Presidential Election?
+  Condition            0xc4435df23facee8c4cd86090310c7835c2a0425646b2588b...
+  Category             politics
+  End Date             2028-11-07T00:00:00Z
+  Neg Risk             True
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         NO @ $0.9985
+  Losing Side          YES @ $0.0015
+  Spread               0.9970
+  Certainty            1 (99.85%)
+  Detection            Price hint 0.9985 >= 0.99 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.04
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [~] PARTIAL FILL
+  Filled Shares        40 / 100
+  Fill Price           $0.99
+  TX Hash              paper_tx_1788880859
+  Status               PARTIAL
++------------------------------------------------------------------------+
+
++-  PNL BREAKDOWN -------------------------------------------------------+
+  Order Type           GTC MAKER
+  Gross Edge           +$0.4000  (40 x ($1.00 - $0.99))
+  Fee                  $0.0000  (ZERO - MAKER)
+  Loser Cost           -$0.2000  (40 x $0.005)
+  Gas Cost             -$0.0400  (40 x $0.001)
+
+  Net PnL              +$0.1600
+  Cumulative           $0.4800
+  Daily                $0.4800 / Max: $50.0
+  Win Rate             3/4 = 75.0%
++------------------------------------------------------------------------+
+
++-  SETTLEMENT (CAPITAL RECYCLE) ----------------------------------------+
+  Loser Buy            $0.005/share
+  Merge                40 YES + 40 NO -> 40 pUSD
+  Adapter              NegRiskCtfCollateralAdapter
+  Recycle              SUCCESS - 40 shares -> $40.00 pUSD
+  Recovered            $40.00 pUSD
+  Loser Cost           $0.2000
++------------------------------------------------------------------------+
+
+  [OK] TRADE #4 COMPLETE - MAKER (ZERO FEES)
+      Net PnL: +$0.1600 | Cumulative: $0.4800
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+  TRADE #5 - CYCLE 1
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Will Shakhtar Donetsk win the 2026-27 UEFA Champions League Champ
+  Condition            0xefa17dee3af09f69f9ddf245b969aa4efbe7c71cdf06ee49...
+  Category             sports
+  End Date             2027-05-30T23:59:00Z
+  Neg Risk             True
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         NO @ $0.9985
+  Losing Side          YES @ $0.0015
+  Spread               0.9970
+  Certainty            1 (99.85%)
+  Detection            Price hint 0.9985 >= 0.99 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.05
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [X] EXPIRED
+  Status               EXPIRED
++------------------------------------------------------------------------+
+
+  [X] TRADE #5 EXPIRED - No fill
+------------------------------------------------------------------------
+
+========================================================================
+  CYCLE 1 SUMMARY
+========================================================================
+  Sweeps: 5 | Time: 0.14s | PnL: $0.4800 | Daily: $0.4800
+  Trades: 5 | Win: 3/5 = 60.0%
+  Maker: 0 (zero fees) | Taker: 0 | Rejected: 0
+  Resting: 3 | Expired: 2 | Partial: 3 | Ghost: 0
+    order: 35 remaining
+    book: 160 remaining
+    gamma: 160 remaining
+    api_key: 64 remaining
+    relayer: 16 remaining
+  Gas: 10.0 POL | Low: False
+  [RECONCILE] 0 pos, 0 phantoms
+  [EXPOSURE] Pos: $0 | Resting: $178.2 | Total: $178.2 | Max: $2000.0
+
+========================================================================
+  CYCLE 2
+========================================================================
+
+[DISCOVERY] Fetching live markets from Gamma API...
+[DISCOVERY] Found 100 candidate markets
+
+[MARKET DATA] Top 5 candidates:
+  1. Genoa: Thiago Seyboth Wild vs Francesco Ferrari
+     Vol: $1,575,013 | YES=0.583 | NO=0.417 | Score: 918232.3416 | Cat: other
+  2. Israel closes its airspace by September 30?
+     Vol: $793,457 | YES=0.959 | NO=0.041 | Score: 760925.1442 | Cat: other
+  3. Counter-Strike: G2 vs Astralis (BO3) - FISSURE PLAYGROUND Gr
+     Vol: $695,908 | YES=0.455 | NO=0.545 | Score: 316638.1511 | Cat: other
+  4. Will there be no change in Fed interest rates after the Sept
+     Vol: $646,962 | YES=0.455 | NO=0.545 | Score: 294367.6233 | Cat: finance
+  5. Will BV Borussia 09 Dortmund win on 2026-09-08?
+     Vol: $445,898 | YES=0.535 | NO=0.465 | Score: 238555.5554 | Cat: sports
+
+[DETECTION] Running resolution detection...
+[DETECTION] 41 sweepable markets
+
+[PRICE ACTION] Sweepable markets:
+  1. Will the Fed decrease interest rates by 25 bps after the Sep
+     Win: NO @ 0.9955 | Lose @ 0.0045 | Spread: 0.9910
+     Certainty: 1 | Confidence: 99.55% | Reason: Price hint 0.9955 >= 0.99 (secondary only)
+     Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+  2. Counter-Strike: GamerLegion vs FURIA (BO3) - FISSURE PLAYGRO
+     Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+     Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+     Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  3. Counter-Strike: G2 vs Astralis - Map 1 Winner
+     Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+     Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+     Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  4. Will Glenn Youngkin win the 2028 US Presidential Election?
+     Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+     Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+     Category: politics | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+  5. Will Shakhtar Donetsk win the 2026-27 UEFA Champions League 
+     Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+     Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+     Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  6. Map Handicap: G2 (-1.5) vs Astralis (+1.5)
+     Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+     Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+     Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  7. Will RB Leipzig win the 2026-27 UEFA Champions League Champi
+     Win: NO @ 0.9935 | Lose @ 0.0065 | Spread: 0.9870
+     Certainty: 1 | Confidence: 99.35% | Reason: Price hint 0.9935 >= 0.99 (secondary only)
+     Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  8. Will the Fed increase interest rates by 50+ bps after the Se
+     Win: NO @ 0.9955 | Lose @ 0.0045 | Spread: 0.9910
+     Certainty: 1 | Confidence: 99.55% | Reason: Price hint 0.9955 >= 0.99 (secondary only)
+     Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+  9. Will Eric Trump win the 2028 Republican presidential nominat
+     Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+     Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+     Category: politics | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+  10. Will the Fed decrease interest rates by 50+ bps after the Se
+     Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+     Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+     Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+
+------------------------------------------------------------------------
+  TRADE #6 - CYCLE 2
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Map Handicap: G2 (-1.5) vs Astralis (+1.5)
+  Condition            0xea8c4f47685af3351d6d9207e1cf6b0b3dc7ac8c68acb875...
+  Category             other
+  End Date             2026-09-08T19:45:00Z
+  Neg Risk             False
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         NO @ $0.9995
+  Losing Side          YES @ $0.0005
+  Spread               0.9990
+  Certainty            1 (99.95%)
+  Detection            Price hint 0.9995 >= 0.999 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.05
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [OK] MAKER FILL (zero fees)
+  Filled Shares        100
+  Fill Price           $0.99
+  TX Hash              paper_tx_1788880859
+  On-Chain             True
+  Status               FILLED
++------------------------------------------------------------------------+
+
++-  PNL BREAKDOWN -------------------------------------------------------+
+  Order Type           GTC MAKER
+  Gross Edge           +$1.0000  (100 x ($1.00 - $0.99))
+  Fee                  $0.0000  (ZERO - MAKER)
+  Loser Cost           -$0.5000  (100 x $0.005)
+  Gas Cost             -$0.1000  (100 x $0.001)
+
+  Net PnL              +$0.4000
+  Cumulative           $0.8800
+  Daily                $0.8800 / Max: $50.0
+  Win Rate             4/6 = 66.7%
++------------------------------------------------------------------------+
+
++-  SETTLEMENT (CAPITAL RECYCLE) ----------------------------------------+
+  Loser Buy            $0.005/share
+  Merge                100 YES + 100 NO -> 100 pUSD
+  Adapter              CtfCollateralAdapter
+  Recycle              SUCCESS - 100 shares -> $100.00 pUSD
+  Recovered            $100.00 pUSD
+  Loser Cost           $0.5000
++------------------------------------------------------------------------+
+
+  [OK] TRADE #6 COMPLETE - MAKER (ZERO FEES)
+      Net PnL: +$0.4000 | Cumulative: $0.8800
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+  TRADE #7 - CYCLE 2
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Will RB Leipzig win the 2026-27 UEFA Champions League Championshi
+  Condition            0x980a9758f2d181905130fbdd8de12c08b8ea89870c285a74...
+  Category             sports
+  End Date             2027-05-30T23:59:00Z
+  Neg Risk             True
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         NO @ $0.9935
+  Losing Side          YES @ $0.0065
+  Spread               0.9870
+  Certainty            1 (99.35%)
+  Detection            Price hint 0.9935 >= 0.99 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.05
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [OK] MAKER FILL (zero fees)
+  Filled Shares        100
+  Fill Price           $0.99
+  TX Hash              paper_tx_1788880859
+  On-Chain             True
+  Status               FILLED
++------------------------------------------------------------------------+
+
++-  PNL BREAKDOWN -------------------------------------------------------+
+  Order Type           GTC MAKER
+  Gross Edge           +$1.0000  (100 x ($1.00 - $0.99))
+  Fee                  $0.0000  (ZERO - MAKER)
+  Loser Cost           -$0.5000  (100 x $0.005)
+  Gas Cost             -$0.1000  (100 x $0.001)
+
+  Net PnL              +$0.4000
+  Cumulative           $1.2800
+  Daily                $1.2800 / Max: $50.0
+  Win Rate             5/7 = 71.4%
++------------------------------------------------------------------------+
+
++-  SETTLEMENT (CAPITAL RECYCLE) ----------------------------------------+
+  Loser Buy            $0.005/share
+  Merge                100 YES + 100 NO -> 100 pUSD
+  Adapter              NegRiskCtfCollateralAdapter
+  Recycle              SUCCESS - 100 shares -> $100.00 pUSD
+  Recovered            $100.00 pUSD
+  Loser Cost           $0.5000
++------------------------------------------------------------------------+
+
+  [OK] TRADE #7 COMPLETE - MAKER (ZERO FEES)
+      Net PnL: +$0.4000 | Cumulative: $1.2800
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+  TRADE #8 - CYCLE 2
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Will the Fed increase interest rates by 50+ bps after the Septemb
+  Condition            0x2e4b58fc18dbffd74d5275d89fb076943f21992763c45dca...
+  Category             finance
+  End Date             2026-09-16T00:00:00Z
+  Neg Risk             True
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         NO @ $0.9955
+  Losing Side          YES @ $0.0045
+  Spread               0.9910
+  Certainty            1 (99.55%)
+  Detection            Price hint 0.9955 >= 0.99 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.04
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [!] GHOST FILL (off-chain match, on-chain revert)
+  Status               LIVE (ghost)
++------------------------------------------------------------------------+
+
+  [!] TRADE #8 GHOST FILL - No settlement
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+  TRADE #9 - CYCLE 2
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Will Eric Trump win the 2028 Republican presidential nomination?
+  Condition            0xca68152902c3581ab42feb04921b8b1cd3c4e80d06f255ae...
+  Category             politics
+  End Date             2028-11-07T00:00:00Z
+  Neg Risk             True
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         NO @ $0.9985
+  Losing Side          YES @ $0.0015
+  Spread               0.9970
+  Certainty            1 (99.85%)
+  Detection            Price hint 0.9985 >= 0.99 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.04
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [OK] MAKER FILL (zero fees)
+  Filled Shares        100
+  Fill Price           $0.99
+  TX Hash              paper_tx_1788880859
+  On-Chain             True
+  Status               FILLED
++------------------------------------------------------------------------+
+
++-  PNL BREAKDOWN -------------------------------------------------------+
+  Order Type           GTC MAKER
+  Gross Edge           +$1.0000  (100 x ($1.00 - $0.99))
+  Fee                  $0.0000  (ZERO - MAKER)
+  Loser Cost           -$0.5000  (100 x $0.005)
+  Gas Cost             -$0.1000  (100 x $0.001)
+
+  Net PnL              +$0.4000
+  Cumulative           $1.6800
+  Daily                $1.6800 / Max: $50.0
+  Win Rate             6/9 = 66.7%
++------------------------------------------------------------------------+
+
++-  SETTLEMENT (CAPITAL RECYCLE) ----------------------------------------+
+  Loser Buy            $0.005/share
+  Merge                100 YES + 100 NO -> 100 pUSD
+  Adapter              NegRiskCtfCollateralAdapter
+  Recycle              SUCCESS - 100 shares -> $100.00 pUSD
+  Recovered            $100.00 pUSD
+  Loser Cost           $0.5000
++------------------------------------------------------------------------+
+
+  [OK] TRADE #9 COMPLETE - MAKER (ZERO FEES)
+      Net PnL: +$0.4000 | Cumulative: $1.6800
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+  TRADE #10 - CYCLE 2
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Will the Fed decrease interest rates by 50+ bps after the Septemb
+  Condition            0x5e464d85eb49f22d876f3ed6168a7db5e2288e9ae1eb91ef...
+  Category             finance
+  End Date             2026-09-16T00:00:00Z
+  Neg Risk             True
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         NO @ $0.9985
+  Losing Side          YES @ $0.0015
+  Spread               0.9970
+  Certainty            1 (99.85%)
+  Detection            Price hint 0.9985 >= 0.99 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.04
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [OK] MAKER FILL (zero fees)
+  Filled Shares        100
+  Fill Price           $0.99
+  TX Hash              paper_tx_1788880859
+  On-Chain             True
+  Status               FILLED
++------------------------------------------------------------------------+
+
++-  PNL BREAKDOWN -------------------------------------------------------+
+  Order Type           GTC MAKER
+  Gross Edge           +$1.0000  (100 x ($1.00 - $0.99))
+  Fee                  $0.0000  (ZERO - MAKER)
+  Loser Cost           -$0.5000  (100 x $0.005)
+  Gas Cost             -$0.1000  (100 x $0.001)
+
+  Net PnL              +$0.4000
+  Cumulative           $2.0800
+  Daily                $2.0800 / Max: $50.0
+  Win Rate             7/10 = 70.0%
++------------------------------------------------------------------------+
+
++-  SETTLEMENT (CAPITAL RECYCLE) ----------------------------------------+
+  Loser Buy            $0.005/share
+  Merge                100 YES + 100 NO -> 100 pUSD
+  Adapter              NegRiskCtfCollateralAdapter
+  Recycle              SUCCESS - 100 shares -> $100.00 pUSD
+  Recovered            $100.00 pUSD
+  Loser Cost           $0.5000
++------------------------------------------------------------------------+
+
+  [OK] TRADE #10 COMPLETE - MAKER (ZERO FEES)
+      Net PnL: +$0.4000 | Cumulative: $2.0800
+------------------------------------------------------------------------
+
+========================================================================
+  CYCLE 2 SUMMARY
+========================================================================
+  Sweeps: 5 | Time: 0.09s | PnL: $2.0800 | Daily: $2.0800
+  Trades: 10 | Win: 7/10 = 70.0%
+  Maker: 4 (zero fees) | Taker: 0 | Rejected: 0
+  Resting: 4 | Expired: 2 | Partial: 3 | Ghost: 1
+    order: 30 remaining
+    book: 160 remaining
+    gamma: 160 remaining
+    api_key: 64 remaining
+    relayer: 16 remaining
+  Gas: 10.0 POL | Low: False
+  [RECONCILE] 0 pos, 0 phantoms
+  [EXPOSURE] Pos: $0 | Resting: $178.2 | Total: $178.2 | Max: $2000.0
+
+========================================================================
+  CYCLE 3
+========================================================================
+
+[DISCOVERY] Fetching live markets from Gamma API...
+[DISCOVERY] Found 100 candidate markets
+
+[MARKET DATA] Top 5 candidates:
+  1. Genoa: Thiago Seyboth Wild vs Francesco Ferrari
+     Vol: $1,575,013 | YES=0.583 | NO=0.417 | Score: 918232.3416 | Cat: other
+  2. Israel closes its airspace by September 30?
+     Vol: $793,457 | YES=0.959 | NO=0.041 | Score: 760925.1442 | Cat: other
+  3. Counter-Strike: G2 vs Astralis (BO3) - FISSURE PLAYGROUND Gr
+     Vol: $695,908 | YES=0.455 | NO=0.545 | Score: 316638.1511 | Cat: other
+  4. Will there be no change in Fed interest rates after the Sept
+     Vol: $646,962 | YES=0.455 | NO=0.545 | Score: 294367.6233 | Cat: finance
+  5. Will BV Borussia 09 Dortmund win on 2026-09-08?
+     Vol: $445,898 | YES=0.535 | NO=0.465 | Score: 238555.5554 | Cat: sports
+
+[DETECTION] Running resolution detection...
+[DETECTION] 41 sweepable markets
+
+[PRICE ACTION] Sweepable markets:
+  1. Will the Fed decrease interest rates by 25 bps after the Sep
+     Win: NO @ 0.9955 | Lose @ 0.0045 | Spread: 0.9910
+     Certainty: 1 | Confidence: 99.55% | Reason: Price hint 0.9955 >= 0.99 (secondary only)
+     Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+  2. Counter-Strike: GamerLegion vs FURIA (BO3) - FISSURE PLAYGRO
+     Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+     Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+     Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  3. Counter-Strike: G2 vs Astralis - Map 1 Winner
+     Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+     Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+     Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  4. Will Glenn Youngkin win the 2028 US Presidential Election?
+     Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+     Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+     Category: politics | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+  5. Will Shakhtar Donetsk win the 2026-27 UEFA Champions League 
+     Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+     Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+     Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  6. Map Handicap: G2 (-1.5) vs Astralis (+1.5)
+     Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+     Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+     Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  7. Will RB Leipzig win the 2026-27 UEFA Champions League Champi
+     Win: NO @ 0.9935 | Lose @ 0.0065 | Spread: 0.9870
+     Certainty: 1 | Confidence: 99.35% | Reason: Price hint 0.9935 >= 0.99 (secondary only)
+     Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+  8. Will the Fed increase interest rates by 50+ bps after the Se
+     Win: NO @ 0.9955 | Lose @ 0.0045 | Spread: 0.9910
+     Certainty: 1 | Confidence: 99.55% | Reason: Price hint 0.9955 >= 0.99 (secondary only)
+     Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+  9. Will Eric Trump win the 2028 Republican presidential nominat
+     Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+     Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+     Category: politics | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+  10. Will the Fed decrease interest rates by 50+ bps after the Se
+     Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+     Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+     Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+
+------------------------------------------------------------------------
+  TRADE #11 - CYCLE 3
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Dota 2: Team Synapse vs  Pipsqueak+4 - Game 2 Winner
+  Condition            0x60899c1090c591bb19a69ea83ecbb5af8beed1f3485b3b86...
+  Category             other
+  End Date             2026-09-08T18:40:00Z
+  Neg Risk             False
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         YES @ $0.9995
+  Losing Side          NO @ $0.0005
+  Spread               0.9990
+  Certainty            1 (99.95%)
+  Detection            Price hint 0.9995 >= 0.999 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.05
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [OK] MAKER FILL (zero fees)
+  Filled Shares        100
+  Fill Price           $0.99
+  TX Hash              paper_tx_1788880859
+  On-Chain             True
+  Status               FILLED
++------------------------------------------------------------------------+
+
++-  PNL BREAKDOWN -------------------------------------------------------+
+  Order Type           GTC MAKER
+  Gross Edge           +$1.0000  (100 x ($1.00 - $0.99))
+  Fee                  $0.0000  (ZERO - MAKER)
+  Loser Cost           -$0.5000  (100 x $0.005)
+  Gas Cost             -$0.1000  (100 x $0.001)
+
+  Net PnL              +$0.4000
+  Cumulative           $2.4800
+  Daily                $2.4800 / Max: $50.0
+  Win Rate             8/11 = 72.7%
++------------------------------------------------------------------------+
+
++-  SETTLEMENT (CAPITAL RECYCLE) ----------------------------------------+
+  Loser Buy            $0.005/share
+  Merge                100 YES + 100 NO -> 100 pUSD
+  Adapter              CtfCollateralAdapter
+  Recycle              SUCCESS - 100 shares -> $100.00 pUSD
+  Recovered            $100.00 pUSD
+  Loser Cost           $0.5000
++------------------------------------------------------------------------+
+
+  [OK] TRADE #11 COMPLETE - MAKER (ZERO FEES)
+      Net PnL: +$0.4000 | Cumulative: $2.4800
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+  TRADE #12 - CYCLE 3
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Will United Russia (ER) win the most seats in the next Russian pa
+  Condition            0x94ffc785f73c9d70c0c9550b2412842d025d20d02f9e9e20...
+  Category             politics
+  End Date             2026-09-30T00:00:00Z
+  Neg Risk             True
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         YES @ $0.99
+  Losing Side          NO @ $0.01
+  Spread               0.9800
+  Certainty            1 (99.00%)
+  Detection            Price hint 0.99 >= 0.99 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.04
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [OK] MAKER FILL (zero fees)
+  Filled Shares        100
+  Fill Price           $0.99
+  TX Hash              paper_tx_1788880859
+  On-Chain             True
+  Status               FILLED
++------------------------------------------------------------------------+
+
++-  PNL BREAKDOWN -------------------------------------------------------+
+  Order Type           GTC MAKER
+  Gross Edge           +$1.0000  (100 x ($1.00 - $0.99))
+  Fee                  $0.0000  (ZERO - MAKER)
+  Loser Cost           -$0.5000  (100 x $0.005)
+  Gas Cost             -$0.1000  (100 x $0.001)
+
+  Net PnL              +$0.4000
+  Cumulative           $2.8800
+  Daily                $2.8800 / Max: $50.0
+  Win Rate             9/12 = 75.0%
++------------------------------------------------------------------------+
+
++-  SETTLEMENT (CAPITAL RECYCLE) ----------------------------------------+
+  Loser Buy            $0.005/share
+  Merge                100 YES + 100 NO -> 100 pUSD
+  Adapter              NegRiskCtfCollateralAdapter
+  Recycle              SUCCESS - 100 shares -> $100.00 pUSD
+  Recovered            $100.00 pUSD
+  Loser Cost           $0.5000
++------------------------------------------------------------------------+
+
+  [OK] TRADE #12 COMPLETE - MAKER (ZERO FEES)
+      Net PnL: +$0.4000 | Cumulative: $2.8800
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+  TRADE #13 - CYCLE 3
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Will Villarreal win the 2026-27 UEFA Champions League Championshi
+  Condition            0xb0ea65952119275ec1d7a0cbd21192a028c8eb2b7d65cee0...
+  Category             sports
+  End Date             2027-05-30T23:59:00Z
+  Neg Risk             True
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         NO @ $0.995
+  Losing Side          YES @ $0.005
+  Spread               0.9900
+  Certainty            1 (99.50%)
+  Detection            Price hint 0.995 >= 0.99 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.05
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [OK] MAKER FILL (zero fees)
+  Filled Shares        100
+  Fill Price           $0.99
+  TX Hash              paper_tx_1788880859
+  On-Chain             True
+  Status               FILLED
++------------------------------------------------------------------------+
+
++-  PNL BREAKDOWN -------------------------------------------------------+
+  Order Type           GTC MAKER
+  Gross Edge           +$1.0000  (100 x ($1.00 - $0.99))
+  Fee                  $0.0000  (ZERO - MAKER)
+  Loser Cost           -$0.5000  (100 x $0.005)
+  Gas Cost             -$0.1000  (100 x $0.001)
+
+  Net PnL              +$0.4000
+  Cumulative           $3.2800
+  Daily                $3.2800 / Max: $50.0
+  Win Rate             10/13 = 76.9%
++------------------------------------------------------------------------+
+
++-  SETTLEMENT (CAPITAL RECYCLE) ----------------------------------------+
+  Loser Buy            $0.005/share
+  Merge                100 YES + 100 NO -> 100 pUSD
+  Adapter              NegRiskCtfCollateralAdapter
+  Recycle              SUCCESS - 100 shares -> $100.00 pUSD
+  Recovered            $100.00 pUSD
+  Loser Cost           $0.5000
++------------------------------------------------------------------------+
+
+  [OK] TRADE #13 COMPLETE - MAKER (ZERO FEES)
+      Net PnL: +$0.4000 | Cumulative: $3.2800
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+  TRADE #14 - CYCLE 3
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Will Real Betis win the 2026-27 UEFA Champions League Championshi
+  Condition            0xafce45df642c568376876f157d91f3225ec0adfa10ef6306...
+  Category             sports
+  End Date             2027-05-30T23:59:00Z
+  Neg Risk             True
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         NO @ $0.9955
+  Losing Side          YES @ $0.0045
+  Spread               0.9910
+  Certainty            1 (99.55%)
+  Detection            Price hint 0.9955 >= 0.99 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.05
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [!] GHOST FILL (off-chain match, on-chain revert)
+  Status               LIVE (ghost)
++------------------------------------------------------------------------+
+
+  [!] TRADE #14 GHOST FILL - No settlement
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+  TRADE #15 - CYCLE 3
+------------------------------------------------------------------------
+
++-  MARKET --------------------------------------------------------------+
+  Question             Will the price of Bitcoin be above $82,000 on September 8?
+  Condition            0xae4f8bc0053290596fd64fc27c841de6e010ea674f6844b3...
+  Category             crypto
+  End Date             2026-09-08T16:00:00Z
+  Neg Risk             False
++------------------------------------------------------------------------+
+
++-  PRICE ACTION --------------------------------------------------------+
+  Winning Side         NO @ $0.9995
+  Losing Side          YES @ $0.0005
+  Spread               0.9990
+  Certainty            1 (99.95%)
+  Detection            Price hint 0.9995 >= 0.999 (secondary only)
+
+  Best Ask             N/A
+  Best Bid             N/A
+  Asks                 0
+  Bids                 0
+  Book Depth           0 orders
+  Taker Fee Rate       0.07
+  Maker Fee            $0 (ZERO)
++------------------------------------------------------------------------+
+
++-  ORDER EXECUTION -----------------------------------------------------+
+  Method               GTC POST-ONLY MAKER (zero fees)
+  Entry Plan           maker bid at buy_price
+  Order Type           GTC (post-only)
+  Side                 BUY
+  Size                 100 shares
+  Price                $0.99
+  Tick Size            0.01
++------------------------------------------------------------------------+
+
++-  FILL SIMULATION -----------------------------------------------------+
+  Result               [OK] MAKER FILL (zero fees)
+  Filled Shares        100
+  Fill Price           $0.99
+  TX Hash              paper_tx_1788880859
+  On-Chain             True
+  Status               FILLED
++------------------------------------------------------------------------+
+
++-  PNL BREAKDOWN -------------------------------------------------------+
+  Order Type           GTC MAKER
+  Gross Edge           +$1.0000  (100 x ($1.00 - $0.99))
+  Fee                  $0.0000  (ZERO - MAKER)
+  Loser Cost           -$0.5000  (100 x $0.005)
+  Gas Cost             -$0.1000  (100 x $0.001)
+
+  Net PnL              +$0.4000
+  Cumulative           $3.6800
+  Daily                $3.6800 / Max: $50.0
+  Win Rate             11/15 = 73.3%
++------------------------------------------------------------------------+
+
++-  SETTLEMENT (CAPITAL RECYCLE) ----------------------------------------+
+  Loser Buy            $0.005/share
+  Merge                100 YES + 100 NO -> 100 pUSD
+  Adapter              CtfCollateralAdapter
+  Recycle              SUCCESS - 100 shares -> $100.00 pUSD
+  Recovered            $100.00 pUSD
+  Loser Cost           $0.5000
++------------------------------------------------------------------------+
+
+  [OK] TRADE #15 COMPLETE - MAKER (ZERO FEES)
+      Net PnL: +$0.4000 | Cumulative: $3.6800
+------------------------------------------------------------------------
+
+========================================================================
+  CYCLE 3 SUMMARY
+========================================================================
+  Sweeps: 5 | Time: 0.13s | PnL: $3.6800 | Daily: $3.6800
+  Trades: 15 | Win: 11/15 = 73.3%
+  Maker: 8 (zero fees) | Taker: 0 | Rejected: 0
+  Resting: 6 | Expired: 2 | Partial: 3 | Ghost: 2
+    order: 25 remaining
+    book: 160 remaining
+    gamma: 160 remaining
+    api_key: 64 remaining
+    relayer: 16 remaining
+  Gas: 10.0 POL | Low: False
+  [RECONCILE] 0 pos, 0 phantoms
+  [EXPOSURE] Pos: $0 | Resting: $178.2 | Total: $178.2 | Max: $2000.0
+
+========================================================================
+  FINAL SUMMARY
+========================================================================
+  Cycles: 3 | Trades: 15 | Wins: 11
+  Win rate: 73.3%
+  NOTE: Win rate is simulated via random probabilities, not historically replayed.
+  Maker fills: 8 (zero fees) | Taker fills: 0
+  Rejected: 0 | Resting: 6 | Expired: 2 | Partial: 3 | Ghost: 2
+  Cumulative PnL: $3.6800 | Daily PnL: $3.6800
+  True PnL (scoreboard): $3.6800
+  Total recycled: $920.00 pUSD | Recycles: 11
+  Kill switch: False | 429s: 0/3
+    order: 25 remaining
+    book: 160 remaining
+    gamma: 160 remaining
+    api_key: 64 remaining
+    relayer: 16 remaining
+  Gas: 10.0 POL | Worked markets: 15
+  Main Log: /buildkite/builds/fo3s0a7oab75c-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_main_20260908_152059.log
+  Trade Log: /buildkite/builds/fo3s0a7oab75c-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_trades_20260908_152059.log
+  Trade JSON: /buildkite/builds/fo3s0a7oab75c-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_trades_20260908_152059.json
+  Summary JSON: /buildkite/builds/fo3s0a7oab75c-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_summary_20260908_152059.json
+  Metrics JSON: /buildkite/builds/fo3s0a7oab75c-1/vetrivelkick/sweeper-bot-fixes/repo/logs/metrics_20260908_152059.json
+========================================================================
+============================================================
+  DOUBLE-ENTRY LEDGER SUMMARY
+============================================================
+  Total Entries:    99
+  Unique Trades:   11
+  Total Debits:     $1836.3200
+  Total Credits:    $1836.3200
+  Balanced:         True (diff: $0.000000)
+
+  USDC Balance:     $3.6800
+  Position Cost:    $0.0000
+  Fees Paid:        $0.0000
+  Gas Paid:         $0.9200
+  Gross Income:     $4.6000
+  Net PnL:         $3.6800  (Income - Gas - Fees)
+  Total Recycled:   $920.0000  (11 recycles)
+============================================================
+============================================================
+  METRICS SUMMARY
+============================================================
+  trades_total              15
+  trades_won                11
+  trades_rejected           0
+  maker_fills               8
+  taker_fills               0
+  ghost_fills               2
+  expired_orders            2
+  partial_fills             3
+  kill_switch_trips         0
+  exposure_breaches         0
+  rate_limit_429s           0
+  rate_limit_425s           0
+  recycle_count             11
+  rejections_post_only      0
+  rejections_cancel_only    0
+  rpc_errors                0
+  ws_reconnects             0
+  fill_matched_offchain     0
+  fill_trade_pending        0
+  fill_confirmed            0
+  block_confirmations       0
+  per_market_exposure_breaches 0
+  health_checks             3
+
+  pnl_cumulative            3.68
+  pnl_daily                 3.68
+  gas_balance_pol           10.0
+  resting_orders            6
+  reserved_collateral       178.2
+  total_exposure            178.2
+  total_recycled            920.0
+  consecutive_losses        0
+  ghost_fill_rate           13.333333333333334
+  win_rate                  73.33333333333333
+  uptime_seconds            0.37499070167541504
+  per_market_exposure       0.0
+  health_status             0
+  ws_connected              0.0
+  ws_reconnect_count        0.0
+  block_confirmation_depth  0.0
+
+  Alerts: 0
+============================================================
+========================================================================
+  PAPER TRADING COMPLETE
+========================================================================
+  Exported 15 trade records to JSON
+  Exported 15 trade records to CSV
+  Avg PnL/Trade: $0.2453 | Max Drawdown: $0.0000
+  Max Win Streak: 11 | Max Loss Streak: 0

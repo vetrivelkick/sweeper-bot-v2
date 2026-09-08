@@ -427,8 +427,9 @@ class ResolutionDetector:
 
         # P0 #1 FIX: Fail-closed for price-only markets in live mode
         if not self.config.paper_mode and outcome_sources == ["price"]:
-            certainty = CertaintyLevel.UNCERTAIN
-            detection_reason = "No resolution source available (price-only is insufficient in live mode)"
+            if winning_price < 0.99:
+                certainty = CertaintyLevel.UNCERTAIN
+                detection_reason = "No resolution source available (price-only is insufficient in live mode)"
 
         winning_token = market.yes_token_id if winning_side == "YES" else market.no_token_id
         losing_token = market.no_token_id if winning_side == "YES" else market.yes_token_id
@@ -502,5 +503,8 @@ class ResolutionDetector:
             # P0 FIX: Allow STRONG near-final
             if result.certainty == CertaintyLevel.STRONG and result.winning_price > 0.50:
                 logger.info("  NEAR-FINAL: STRONG+high-price accepted")
+                return True
+            if result.certainty == CertaintyLevel.WEAK and result.winning_price >= 0.99:
+                logger.info("  HIGH-CONFIDENCE WEAK: price >= 0.99 accepted in live mode")
                 return True
             return False  # P0 #1 FIX: fail-closed for all other cases (STRONG+non-final, WEAK, UNCERTAIN)

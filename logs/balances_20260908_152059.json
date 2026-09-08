@@ -1,0 +1,18 @@
+{
+  "balances": {
+    "USDC": 3.6800000000000352,
+    "POSITION": 0.0,
+    "FEE": 0.0,
+    "GAS": 0.9199999999999999,
+    "INCOME": -4.599999999999987
+  },
+  "pnl": 3.68,
+  "total_recycled": 920.0,
+  "recycle_count": 11,
+  "total_entries": 99,
+  "total_debits": 1836.32,
+  "total_credits": 1836.32,
+  "balanced": true,
+  "balance_diff": 0.0,
+  "unique_trades": 11
+}

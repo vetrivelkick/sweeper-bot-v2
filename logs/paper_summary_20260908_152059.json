@@ -1,0 +1,20 @@
+{
+  "cycles": 3,
+  "total_trades": 15,
+  "winning_trades": 11,
+  "win_rate": "73.3%",
+  "maker_fills": 8,
+  "taker_fills": 0,
+  "rejected_orders": 0,
+  "resting_orders": 6,
+  "expired_orders": 2,
+  "partial_fills": 3,
+  "ghost_fills": 2,
+  "cumulative_pnl": 3.68,
+  "daily_pnl": 3.68,
+  "true_pnl": 3.68,
+  "total_recycled_pusd": 920.0,
+  "recycle_count": 11,
+  "kill_switch": false,
+  "errors": []
+}
