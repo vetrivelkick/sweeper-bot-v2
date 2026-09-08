@@ -505,6 +505,6 @@ class ResolutionDetector:
                 logger.info("  NEAR-FINAL: STRONG+high-price accepted")
                 return True
             if result.certainty == CertaintyLevel.WEAK and result.winning_price >= 0.99:
-                logger.info("  HIGH-CONFIDENCE WEAK: price >= 0.99 accepted in live mode")
+                logger.debug("  HIGH-CONFIDENCE WEAK: price >= 0.99 accepted in live mode")
                 return True
             return False  # P0 #1 FIX: fail-closed for all other cases (STRONG+non-final, WEAK, UNCERTAIN)

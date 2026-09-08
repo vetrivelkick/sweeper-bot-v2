@@ -144,8 +144,6 @@ class MarketDiscovery:
                         if isinstance(tk, str):
                             tk = json.loads(tk)
                         if not tk:
-                            if len(markets) == 0:
-                                print("DEBUG ALL KEYS:", list(m.keys()))
                             cids = m.get("clobTokenIds", [])
                             if isinstance(cids, str):
                                 cids = json.loads(cids)

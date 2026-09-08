@@ -1,0 +1,586 @@
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   SWEEPER BOT V2 - ADVANCED PAPER TRADING ENGINE
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Mode:            PAPER
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Buy Price:       $0.99
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Order Method:    GTC POST-ONLY MAKER (zero fees)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Taker Fallback:  DISABLED
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Fill Prob:       35%
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Partial Prob:    25%
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Ghost Prob:      5%
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Expire Prob:     35%
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Gas Cost:        $0.001/share
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Loser Max:       $0.005/share
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Maker Edge:     $0.004000/share
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Taker Edge:     $0.003604/share
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Resting Timeout: 120s
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Max Loss/Day:   $50.0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Max Exposure:   $2000.0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Cycles:         3
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Max Sweeps/Cycle: 5
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Main Log:        /buildkite/builds/0ualtjqi4k0pe-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_main_20260908_154137.log
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Trade Log:      /buildkite/builds/0ualtjqi4k0pe-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_trades_20260908_154137.log
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: [PREFLIGHT] Running pre-flight checks...
+2026-09-08 15:41:37 [sweeper.paper] INFO:   OK: Config validation passed
+2026-09-08 15:41:37 [sweeper.paper] INFO:   OK: Paper mode - geoblock check skipped
+2026-09-08 15:41:37 [sweeper.paper] INFO:   OK: Paper mode enabled - wallet checks skipped
+2026-09-08 15:41:37 [sweeper.paper] INFO:   OK: Alert system (logging to file)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   OK: State file directory writable
+2026-09-08 15:41:37 [sweeper.paper] INFO:   OK: Buy price 0.99 in valid range
+2026-09-08 15:41:37 [sweeper.paper] INFO:   OK: Maker edge $0.004000/share (zero fees)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   OK: Taker edge $0.003604/share (if fallback used)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   OK: GTC post-only maker mode (PREFER_MAKER=True)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   OK: Taker fallback disabled
+2026-09-08 15:41:37 [sweeper.paper] INFO:   WARN: SDK version check skipped: No package metadata was found for py-clob-client-v2
+2026-09-08 15:41:37 [sweeper.paper] INFO:   OK: Paper mode - SDK import check skipped
+2026-09-08 15:41:37 [sweeper.paper] INFO:   OK: Paper mode - SDK method check skipped
+2026-09-08 15:41:37 [sweeper.paper] INFO:   OK: OK: Economics config valid
+2026-09-08 15:41:37 [sweeper.paper] INFO: [PREFLIGHT] PASSED
+2026-09-08 15:41:37 [sweeper.paper] INFO: [GAS] 10.0 POL | Floor: 0.5
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: [RATE LIMITS] Initial budget:
+2026-09-08 15:41:37 [sweeper.paper] INFO:   order: 40
+2026-09-08 15:41:37 [sweeper.paper] INFO:   book: 160
+2026-09-08 15:41:37 [sweeper.paper] INFO:   gamma: 160
+2026-09-08 15:41:37 [sweeper.paper] INFO:   api_key: 64
+2026-09-08 15:41:37 [sweeper.paper] INFO:   relayer: 16
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   CYCLE 1
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: [DISCOVERY] Fetching live markets from Gamma API...
+2026-09-08 15:41:37 [sweeper.paper] INFO: [DISCOVERY] Found 100 candidate markets
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: [MARKET DATA] Top 5 candidates:
+2026-09-08 15:41:37 [sweeper.paper] INFO:   1. Genoa: Thiago Seyboth Wild vs Francesco Ferrari
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $1,578,692 | YES=0.5675 | NO=0.4325 | Score: 895907.7513 | Cat: other
+2026-09-08 15:41:37 [sweeper.paper] INFO:   2. Israel closes its airspace by September 30?
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $793,253 | YES=0.9595 | NO=0.0405 | Score: 761126.0626 | Cat: other
+2026-09-08 15:41:37 [sweeper.paper] INFO:   3. Counter-Strike: G2 vs Astralis (BO3) - FISSURE PLAYGROUND Gr
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $852,255 | YES=0.62 | NO=0.38 | Score: 528398.0027 | Cat: other
+2026-09-08 15:41:37 [sweeper.paper] INFO:   4. Will there be no change in Fed interest rates after the Sept
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $611,263 | YES=0.455 | NO=0.545 | Score: 278124.8182 | Cat: finance
+2026-09-08 15:41:37 [sweeper.paper] INFO:   5. US Open WTA: Aryna Sabalenka vs Linda Noskova
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $358,796 | YES=0.725 | NO=0.275 | Score: 260127.3446 | Cat: other
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: [DETECTION] Running resolution detection...
+2026-09-08 15:41:37 [sweeper.paper] INFO: [DETECTION] 43 sweepable markets
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: [PRICE ACTION] Sweepable markets:
+2026-09-08 15:41:37 [sweeper.paper] INFO:   1. Counter-Strike: GamerLegion vs FURIA (BO3) - FISSURE PLAYGRO
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   2. Will the Fed decrease interest rates by 25 bps after the Sep
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9955 | Lose @ 0.0045 | Spread: 0.9910
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.55% | Reason: Price hint 0.9955 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   3. Counter-Strike: G2 vs Astralis - Map 1 Winner
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   4. Will Glenn Youngkin win the 2028 US Presidential Election?
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: politics | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   5. Will Shakhtar Donetsk win the 2026-27 UEFA Champions League 
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   6. Will RB Leipzig win the 2026-27 UEFA Champions League Champi
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9935 | Lose @ 0.0065 | Spread: 0.9870
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.35% | Reason: Price hint 0.9935 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   7. Map Handicap: G2 (-1.5) vs Astralis (+1.5)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9965 | Lose @ 0.0035 | Spread: 0.9930
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.65% | Reason: Price hint 0.9965 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   8. Will Villarreal win the 2026-27 UEFA Champions League Champi
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9945 | Lose @ 0.0055 | Spread: 0.9890
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.45% | Reason: Price hint 0.9945 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   9. Dota 2: Team Synapse vs  Pipsqueak+4 - Game 2 Winner
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: YES @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   10. Genoa: Juan Pablo Varillas vs Federico Arnaboldi
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: YES @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #1 - CYCLE 1
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] GTC post-only RESTING: BUY 100.0 @ 0.99 for Counter-Strike: GamerLegion vs FURIA (BO - queued
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 1: BUY_WINNING 100 @ $0.99 = $99.0000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 1: BUY_LOSER 100 @ $0.005 = $0.5000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 1: GAS_PAID $0.1000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 1: MERGE 100 pairs -> $100.0000 pUSD (profit $0.5000)
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Bought 100.0 complementary tokens @ $0.005 = $0.5000
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Merge: 100.0 shares -> 100.0 pUSD (loser cost $0.5000)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [OK] TRADE #1 COMPLETE - MAKER (ZERO FEES)
+2026-09-08 15:41:37 [sweeper.paper] INFO:       Net PnL: +$0.4000 | Cumulative: $0.4000
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #2 - CYCLE 1
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] Partial maker fill: 40/100.0
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 2: BUY_WINNING 40 @ $0.99 = $39.6000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 2: BUY_LOSER 40 @ $0.005 = $0.2000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 2: GAS_PAID $0.0400
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 2: MERGE 40 pairs -> $40.0000 pUSD (profit $0.2000)
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Bought 40.0 complementary tokens @ $0.005 = $0.2000
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Merge: 40.0 shares -> 40.0 pUSD (loser cost $0.2000)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [OK] TRADE #2 COMPLETE - MAKER (ZERO FEES)
+2026-09-08 15:41:37 [sweeper.paper] INFO:       Net PnL: +$0.1600 | Cumulative: $0.5600
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #3 - CYCLE 1
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] GTC maker FILL: 100.0 @ 0.99 OK for Counter-Strike: G2 vs Astralis - Map 1 W
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 3: BUY_WINNING 100 @ $0.99 = $99.0000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 3: BUY_LOSER 100 @ $0.005 = $0.5000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 3: GAS_PAID $0.1000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 3: MERGE 100 pairs -> $100.0000 pUSD (profit $0.5000)
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Bought 100.0 complementary tokens @ $0.005 = $0.5000
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Merge: 100.0 shares -> 100.0 pUSD (loser cost $0.5000)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [OK] TRADE #3 COMPLETE - MAKER (ZERO FEES)
+2026-09-08 15:41:37 [sweeper.paper] INFO:       Net PnL: +$0.4000 | Cumulative: $0.9600
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #4 - CYCLE 1
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] Partial maker fill: 40/100.0
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 4: BUY_WINNING 40 @ $0.99 = $39.6000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 4: BUY_LOSER 40 @ $0.005 = $0.2000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 4: GAS_PAID $0.0400
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 4: MERGE 40 pairs -> $40.0000 pUSD (profit $0.2000)
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Bought 40.0 complementary tokens @ $0.005 = $0.2000
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Merge: 40.0 shares -> 40.0 pUSD (loser cost $0.2000)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [OK] TRADE #4 COMPLETE - MAKER (ZERO FEES)
+2026-09-08 15:41:37 [sweeper.paper] INFO:       Net PnL: +$0.1600 | Cumulative: $1.1200
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #5 - CYCLE 1
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] GTC maker FILL: 100.0 @ 0.99 OK for Will Shakhtar Donetsk win the 2026-27 UE
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 5: BUY_WINNING 100 @ $0.99 = $99.0000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 5: BUY_LOSER 100 @ $0.005 = $0.5000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 5: GAS_PAID $0.1000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 5: MERGE 100 pairs -> $100.0000 pUSD (profit $0.5000)
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Bought 100.0 complementary tokens @ $0.005 = $0.5000
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Merge: 100.0 shares -> 100.0 pUSD (loser cost $0.5000)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [OK] TRADE #5 COMPLETE - MAKER (ZERO FEES)
+2026-09-08 15:41:37 [sweeper.paper] INFO:       Net PnL: +$0.4000 | Cumulative: $1.5200
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   CYCLE 1 SUMMARY
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Sweeps: 5 | Time: 0.10s | PnL: $1.5200 | Daily: $1.5200
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Trades: 5 | Win: 5/5 = 100.0%
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Maker: 3 (zero fees) | Taker: 0 | Rejected: 0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Resting: 1 | Expired: 0 | Partial: 2 | Ghost: 0
+2026-09-08 15:41:37 [sweeper.paper] INFO:     order: 35 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     book: 160 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     gamma: 160 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     api_key: 64 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     relayer: 16 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Gas: 10.0 POL | Low: False
+2026-09-08 15:41:37 [sweeper.reconcile] INFO: Position reconciliation: 0 positions, 0 real, 0 phantoms
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [RECONCILE] 0 pos, 0 phantoms
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [EXPOSURE] Pos: $0 | Resting: $118.8 | Total: $118.8 | Max: $2000.0
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   CYCLE 2
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: [DISCOVERY] Fetching live markets from Gamma API...
+2026-09-08 15:41:37 [sweeper.paper] INFO: [DISCOVERY] Found 100 candidate markets
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: [MARKET DATA] Top 5 candidates:
+2026-09-08 15:41:37 [sweeper.paper] INFO:   1. Genoa: Thiago Seyboth Wild vs Francesco Ferrari
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $1,578,692 | YES=0.5675 | NO=0.4325 | Score: 895907.7513 | Cat: other
+2026-09-08 15:41:37 [sweeper.paper] INFO:   2. Israel closes its airspace by September 30?
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $793,253 | YES=0.9595 | NO=0.0405 | Score: 761126.0626 | Cat: other
+2026-09-08 15:41:37 [sweeper.paper] INFO:   3. Counter-Strike: G2 vs Astralis (BO3) - FISSURE PLAYGROUND Gr
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $852,255 | YES=0.62 | NO=0.38 | Score: 528398.0027 | Cat: other
+2026-09-08 15:41:37 [sweeper.paper] INFO:   4. Will there be no change in Fed interest rates after the Sept
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $611,263 | YES=0.455 | NO=0.545 | Score: 278124.8182 | Cat: finance
+2026-09-08 15:41:37 [sweeper.paper] INFO:   5. US Open WTA: Aryna Sabalenka vs Linda Noskova
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $358,796 | YES=0.725 | NO=0.275 | Score: 260127.3446 | Cat: other
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: [DETECTION] Running resolution detection...
+2026-09-08 15:41:37 [sweeper.paper] INFO: [DETECTION] 43 sweepable markets
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: [PRICE ACTION] Sweepable markets:
+2026-09-08 15:41:37 [sweeper.paper] INFO:   1. Counter-Strike: GamerLegion vs FURIA (BO3) - FISSURE PLAYGRO
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   2. Will the Fed decrease interest rates by 25 bps after the Sep
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9955 | Lose @ 0.0045 | Spread: 0.9910
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.55% | Reason: Price hint 0.9955 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   3. Counter-Strike: G2 vs Astralis - Map 1 Winner
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   4. Will Glenn Youngkin win the 2028 US Presidential Election?
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: politics | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   5. Will Shakhtar Donetsk win the 2026-27 UEFA Champions League 
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   6. Will RB Leipzig win the 2026-27 UEFA Champions League Champi
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9935 | Lose @ 0.0065 | Spread: 0.9870
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.35% | Reason: Price hint 0.9935 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   7. Map Handicap: G2 (-1.5) vs Astralis (+1.5)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9965 | Lose @ 0.0035 | Spread: 0.9930
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.65% | Reason: Price hint 0.9965 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   8. Will Villarreal win the 2026-27 UEFA Champions League Champi
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9945 | Lose @ 0.0055 | Spread: 0.9890
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.45% | Reason: Price hint 0.9945 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   9. Dota 2: Team Synapse vs  Pipsqueak+4 - Game 2 Winner
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: YES @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   10. Genoa: Juan Pablo Varillas vs Federico Arnaboldi
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: YES @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #6 - CYCLE 2
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] GTC post-only RESTING: BUY 100.0 @ 0.99 for Will RB Leipzig win the 2026-27 UEFA Cha - queued
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 6: BUY_WINNING 100 @ $0.99 = $99.0000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 6: BUY_LOSER 100 @ $0.005 = $0.5000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 6: GAS_PAID $0.1000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 6: MERGE 100 pairs -> $100.0000 pUSD (profit $0.5000)
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Bought 100.0 complementary tokens @ $0.005 = $0.5000
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Merge: 100.0 shares -> 100.0 pUSD (loser cost $0.5000)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [OK] TRADE #6 COMPLETE - MAKER (ZERO FEES)
+2026-09-08 15:41:37 [sweeper.paper] INFO:       Net PnL: +$0.4000 | Cumulative: $1.9200
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #7 - CYCLE 2
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] Partial maker fill: 40/100.0
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 7: BUY_WINNING 40 @ $0.99 = $39.6000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 7: BUY_LOSER 40 @ $0.005 = $0.2000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 7: GAS_PAID $0.0400
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 7: MERGE 40 pairs -> $40.0000 pUSD (profit $0.2000)
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Bought 40.0 complementary tokens @ $0.005 = $0.2000
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Merge: 40.0 shares -> 40.0 pUSD (loser cost $0.2000)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [OK] TRADE #7 COMPLETE - MAKER (ZERO FEES)
+2026-09-08 15:41:37 [sweeper.paper] INFO:       Net PnL: +$0.1600 | Cumulative: $2.0800
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #8 - CYCLE 2
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] Partial maker fill: 40/100.0
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 8: BUY_WINNING 40 @ $0.99 = $39.6000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 8: BUY_LOSER 40 @ $0.005 = $0.2000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 8: GAS_PAID $0.0400
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 8: MERGE 40 pairs -> $40.0000 pUSD (profit $0.2000)
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Bought 40.0 complementary tokens @ $0.005 = $0.2000
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Merge: 40.0 shares -> 40.0 pUSD (loser cost $0.2000)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [OK] TRADE #8 COMPLETE - MAKER (ZERO FEES)
+2026-09-08 15:41:37 [sweeper.paper] INFO:       Net PnL: +$0.1600 | Cumulative: $2.2400
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #9 - CYCLE 2
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] GTC post-only RESTING: BUY 100.0 @ 0.99 for Dota 2: Team Synapse vs  Pipsqueak+4 - G - queued
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 9: BUY_WINNING 100 @ $0.99 = $99.0000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 9: BUY_LOSER 100 @ $0.005 = $0.5000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 9: GAS_PAID $0.1000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 9: MERGE 100 pairs -> $100.0000 pUSD (profit $0.5000)
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Bought 100.0 complementary tokens @ $0.005 = $0.5000
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Merge: 100.0 shares -> 100.0 pUSD (loser cost $0.5000)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [OK] TRADE #9 COMPLETE - MAKER (ZERO FEES)
+2026-09-08 15:41:37 [sweeper.paper] INFO:       Net PnL: +$0.4000 | Cumulative: $2.6400
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #10 - CYCLE 2
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] GTC post-only RESTING: BUY 100.0 @ 0.99 for Genoa: Juan Pablo Varillas vs Federico A - queued
+2026-09-08 15:41:37 [sweeper.safety] INFO: Market released: 0xf292a5f4c0b33c201e
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [X] TRADE #10 EXPIRED - No fill
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   CYCLE 2 SUMMARY
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Sweeps: 5 | Time: 0.07s | PnL: $2.6400 | Daily: $2.6400
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Trades: 10 | Win: 9/10 = 90.0%
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Maker: 5 (zero fees) | Taker: 0 | Rejected: 0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Resting: 4 | Expired: 1 | Partial: 4 | Ghost: 0
+2026-09-08 15:41:37 [sweeper.paper] INFO:     order: 30 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     book: 160 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     gamma: 160 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     api_key: 64 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     relayer: 16 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Gas: 10.0 POL | Low: False
+2026-09-08 15:41:37 [sweeper.reconcile] INFO: Position reconciliation: 0 positions, 0 real, 0 phantoms
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [RECONCILE] 0 pos, 0 phantoms
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [EXPOSURE] Pos: $0 | Resting: $237.6 | Total: $237.6 | Max: $2000.0
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   CYCLE 3
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: [DISCOVERY] Fetching live markets from Gamma API...
+2026-09-08 15:41:37 [sweeper.paper] INFO: [DISCOVERY] Found 100 candidate markets
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: [MARKET DATA] Top 5 candidates:
+2026-09-08 15:41:37 [sweeper.paper] INFO:   1. Genoa: Thiago Seyboth Wild vs Francesco Ferrari
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $1,578,692 | YES=0.5675 | NO=0.4325 | Score: 895907.7513 | Cat: other
+2026-09-08 15:41:37 [sweeper.paper] INFO:   2. Israel closes its airspace by September 30?
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $793,253 | YES=0.9595 | NO=0.0405 | Score: 761126.0626 | Cat: other
+2026-09-08 15:41:37 [sweeper.paper] INFO:   3. Counter-Strike: G2 vs Astralis (BO3) - FISSURE PLAYGROUND Gr
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $852,255 | YES=0.62 | NO=0.38 | Score: 528398.0027 | Cat: other
+2026-09-08 15:41:37 [sweeper.paper] INFO:   4. Will there be no change in Fed interest rates after the Sept
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $611,263 | YES=0.455 | NO=0.545 | Score: 278124.8182 | Cat: finance
+2026-09-08 15:41:37 [sweeper.paper] INFO:   5. US Open WTA: Aryna Sabalenka vs Linda Noskova
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Vol: $358,796 | YES=0.725 | NO=0.275 | Score: 260127.3446 | Cat: other
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: [DETECTION] Running resolution detection...
+2026-09-08 15:41:37 [sweeper.paper] INFO: [DETECTION] 43 sweepable markets
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: [PRICE ACTION] Sweepable markets:
+2026-09-08 15:41:37 [sweeper.paper] INFO:   1. Counter-Strike: GamerLegion vs FURIA (BO3) - FISSURE PLAYGRO
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   2. Will the Fed decrease interest rates by 25 bps after the Sep
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9955 | Lose @ 0.0045 | Spread: 0.9910
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.55% | Reason: Price hint 0.9955 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   3. Counter-Strike: G2 vs Astralis - Map 1 Winner
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   4. Will Glenn Youngkin win the 2028 US Presidential Election?
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: politics | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   5. Will Shakhtar Donetsk win the 2026-27 UEFA Champions League 
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9985 | Lose @ 0.0015 | Spread: 0.9970
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.85% | Reason: Price hint 0.9985 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   6. Will RB Leipzig win the 2026-27 UEFA Champions League Champi
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9935 | Lose @ 0.0065 | Spread: 0.9870
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.35% | Reason: Price hint 0.9935 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   7. Map Handicap: G2 (-1.5) vs Astralis (+1.5)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9965 | Lose @ 0.0035 | Spread: 0.9930
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.65% | Reason: Price hint 0.9965 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   8. Will Villarreal win the 2026-27 UEFA Champions League Champi
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: NO @ 0.9945 | Lose @ 0.0055 | Spread: 0.9890
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.45% | Reason: Price hint 0.9945 >= 0.99 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: sports | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   9. Dota 2: Team Synapse vs  Pipsqueak+4 - Game 2 Winner
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: YES @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: other | Taker Fee Rate: 0.05 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   10. Genoa: Juan Pablo Varillas vs Federico Arnaboldi
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Win: YES @ 0.9995 | Lose @ 0.0005 | Spread: 0.9990
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Certainty: 1 | Confidence: 99.95% | Reason: Price hint 0.9995 >= 0.999 (secondary only)
+2026-09-08 15:41:37 [sweeper.paper] INFO:      Category: finance | Taker Fee Rate: 0.04 | Maker Fee: $0 (ZERO)
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #11 - CYCLE 3
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] Partial maker fill: 40/100.0
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 11: BUY_WINNING 40 @ $0.99 = $39.6000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 11: BUY_LOSER 40 @ $0.005 = $0.2000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 11: GAS_PAID $0.0400
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 11: MERGE 40 pairs -> $40.0000 pUSD (profit $0.2000)
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Bought 40.0 complementary tokens @ $0.005 = $0.2000
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Merge: 40.0 shares -> 40.0 pUSD (loser cost $0.2000)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [OK] TRADE #11 COMPLETE - MAKER (ZERO FEES)
+2026-09-08 15:41:37 [sweeper.paper] INFO:       Net PnL: +$0.1600 | Cumulative: $2.8000
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #12 - CYCLE 3
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] GTC maker FILL: 100.0 @ 0.99 OK for Will the Fed increase interest rates by 
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 12: BUY_WINNING 100 @ $0.99 = $99.0000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 12: BUY_LOSER 100 @ $0.005 = $0.5000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 12: GAS_PAID $0.1000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 12: MERGE 100 pairs -> $100.0000 pUSD (profit $0.5000)
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Bought 100.0 complementary tokens @ $0.005 = $0.5000
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Merge: 100.0 shares -> 100.0 pUSD (loser cost $0.5000)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [OK] TRADE #12 COMPLETE - MAKER (ZERO FEES)
+2026-09-08 15:41:37 [sweeper.paper] INFO:       Net PnL: +$0.4000 | Cumulative: $3.2000
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #13 - CYCLE 3
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] GTC maker FILL: 100.0 @ 0.99 OK for Will the Fed decrease interest rates by 
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 13: BUY_WINNING 100 @ $0.99 = $99.0000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 13: BUY_LOSER 100 @ $0.005 = $0.5000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 13: GAS_PAID $0.1000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 13: MERGE 100 pairs -> $100.0000 pUSD (profit $0.5000)
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Bought 100.0 complementary tokens @ $0.005 = $0.5000
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Merge: 100.0 shares -> 100.0 pUSD (loser cost $0.5000)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [OK] TRADE #13 COMPLETE - MAKER (ZERO FEES)
+2026-09-08 15:41:37 [sweeper.paper] INFO:       Net PnL: +$0.4000 | Cumulative: $3.6000
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #14 - CYCLE 3
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] Partial maker fill: 40/100.0
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 14: BUY_WINNING 40 @ $0.99 = $39.6000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 14: BUY_LOSER 40 @ $0.005 = $0.2000
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 14: GAS_PAID $0.0400
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Trade 14: MERGE 40 pairs -> $40.0000 pUSD (profit $0.2000)
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Bought 40.0 complementary tokens @ $0.005 = $0.2000
+2026-09-08 15:41:37 [sweeper.recycle] INFO: [PAPER] Merge: 40.0 shares -> 40.0 pUSD (loser cost $0.2000)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [OK] TRADE #14 COMPLETE - MAKER (ZERO FEES)
+2026-09-08 15:41:37 [sweeper.paper] INFO:       Net PnL: +$0.1600 | Cumulative: $3.7600
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO:   TRADE #15 - CYCLE 3
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.orders] INFO: [PAPER] GTC post-only RESTING: BUY 100.0 @ 0.99 for Will Real Betis win the 2026-27 UEFA Cha - queued
+2026-09-08 15:41:37 [sweeper.safety] INFO: Market released: 0xafce45df642c568376
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [X] TRADE #15 EXPIRED - No fill
+2026-09-08 15:41:37 [sweeper.paper] INFO: ------------------------------------------------------------------------
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   CYCLE 3 SUMMARY
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Sweeps: 5 | Time: 0.06s | PnL: $3.7600 | Daily: $3.7600
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Trades: 15 | Win: 13/15 = 86.7%
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Maker: 7 (zero fees) | Taker: 0 | Rejected: 0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Resting: 5 | Expired: 2 | Partial: 6 | Ghost: 0
+2026-09-08 15:41:37 [sweeper.paper] INFO:     order: 25 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     book: 160 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     gamma: 160 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     api_key: 64 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     relayer: 16 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Gas: 10.0 POL | Low: False
+2026-09-08 15:41:37 [sweeper.reconcile] INFO: Position reconciliation: 0 positions, 0 real, 0 phantoms
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [RECONCILE] 0 pos, 0 phantoms
+2026-09-08 15:41:37 [sweeper.paper] INFO:   [EXPOSURE] Pos: $0 | Resting: $356.4 | Total: $356.4 | Max: $2000.0
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   FINAL SUMMARY
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Cycles: 3 | Trades: 15 | Wins: 13
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Win rate: 86.7%
+2026-09-08 15:41:37 [sweeper.paper] INFO:   NOTE: Win rate is simulated via random probabilities, not historically replayed.
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Maker fills: 7 (zero fees) | Taker fills: 0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Rejected: 0 | Resting: 5 | Expired: 2 | Partial: 6 | Ghost: 0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Cumulative PnL: $3.7600 | Daily PnL: $3.7600
+2026-09-08 15:41:37 [sweeper.paper] INFO:   True PnL (scoreboard): $3.7600
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Total recycled: $940.00 pUSD | Recycles: 13
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Kill switch: False | 429s: 0/3
+2026-09-08 15:41:37 [sweeper.paper] INFO:     order: 25 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     book: 160 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     gamma: 160 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     api_key: 64 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:     relayer: 16 remaining
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Gas: 10.0 POL | Worked markets: 15
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Main Log: /buildkite/builds/0ualtjqi4k0pe-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_main_20260908_154137.log
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Trade Log: /buildkite/builds/0ualtjqi4k0pe-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_trades_20260908_154137.log
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Trade JSON: /buildkite/builds/0ualtjqi4k0pe-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_trades_20260908_154137.json
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Summary JSON: /buildkite/builds/0ualtjqi4k0pe-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_summary_20260908_154137.json
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Metrics JSON: /buildkite/builds/0ualtjqi4k0pe-1/vetrivelkick/sweeper-bot-fixes/repo/logs/metrics_20260908_154137.json
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.ledger] INFO: [LEDGER] Dumped 117 entries to logs/ledger_20260908_154137.json
+2026-09-08 15:41:37 [sweeper.paper] INFO: ============================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   DOUBLE-ENTRY LEDGER SUMMARY
+2026-09-08 15:41:37 [sweeper.paper] INFO: ============================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Total Entries:    117
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Unique Trades:   13
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Total Debits:     $1876.2400
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Total Credits:    $1876.2400
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Balanced:         True (diff: $0.000000)
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO:   USDC Balance:     $3.7600
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Position Cost:    $0.0000
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Fees Paid:        $0.0000
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Gas Paid:         $0.9400
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Gross Income:     $4.7000
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Net PnL:         $3.7600  (Income - Gas - Fees)
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Total Recycled:   $940.0000  (13 recycles)
+2026-09-08 15:41:37 [sweeper.paper] INFO: ============================================================
+2026-09-08 15:41:37 [sweeper.metrics] INFO: [METRICS] Exported to /buildkite/builds/0ualtjqi4k0pe-1/vetrivelkick/sweeper-bot-fixes/repo/logs/metrics_20260908_154137.json
+2026-09-08 15:41:37 [sweeper.paper] INFO: ============================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   METRICS SUMMARY
+2026-09-08 15:41:37 [sweeper.paper] INFO: ============================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   trades_total              15
+2026-09-08 15:41:37 [sweeper.paper] INFO:   trades_won                13
+2026-09-08 15:41:37 [sweeper.paper] INFO:   trades_rejected           0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   maker_fills               7
+2026-09-08 15:41:37 [sweeper.paper] INFO:   taker_fills               0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   ghost_fills               0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   expired_orders            2
+2026-09-08 15:41:37 [sweeper.paper] INFO:   partial_fills             6
+2026-09-08 15:41:37 [sweeper.paper] INFO:   kill_switch_trips         0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   exposure_breaches         0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   rate_limit_429s           0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   rate_limit_425s           0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   recycle_count             13
+2026-09-08 15:41:37 [sweeper.paper] INFO:   rejections_post_only      0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   rejections_cancel_only    0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   rpc_errors                0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   ws_reconnects             0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   fill_matched_offchain     0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   fill_trade_pending        0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   fill_confirmed            0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   block_confirmations       0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   per_market_exposure_breaches 0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   health_checks             3
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO:   pnl_cumulative            3.76
+2026-09-08 15:41:37 [sweeper.paper] INFO:   pnl_daily                 3.76
+2026-09-08 15:41:37 [sweeper.paper] INFO:   gas_balance_pol           10.0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   resting_orders            5
+2026-09-08 15:41:37 [sweeper.paper] INFO:   reserved_collateral       356.4
+2026-09-08 15:41:37 [sweeper.paper] INFO:   total_exposure            356.4
+2026-09-08 15:41:37 [sweeper.paper] INFO:   total_recycled            940.0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   consecutive_losses        0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   ghost_fill_rate           0.0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   win_rate                  86.67
+2026-09-08 15:41:37 [sweeper.paper] INFO:   uptime_seconds            0.24169516563415527
+2026-09-08 15:41:37 [sweeper.paper] INFO:   per_market_exposure       0.0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   health_status             0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   ws_connected              0.0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   ws_reconnect_count        0.0
+2026-09-08 15:41:37 [sweeper.paper] INFO:   block_confirmation_depth  0.0
+2026-09-08 15:41:37 [sweeper.paper] INFO: 
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Alerts: 0
+2026-09-08 15:41:37 [sweeper.paper] INFO: ============================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   PAPER TRADING COMPLETE
+2026-09-08 15:41:37 [sweeper.paper] INFO: ========================================================================
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Exported 15 trade records to JSON
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Exported 15 trade records to CSV
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Avg PnL/Trade: $0.2507 | Max Drawdown: $0.0000
+2026-09-08 15:41:37 [sweeper.paper] INFO:   Max Win Streak: 13 | Max Loss Streak: 0

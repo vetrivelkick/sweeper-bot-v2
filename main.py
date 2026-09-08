@@ -163,7 +163,7 @@ class SweeperBot:
         if not self.config.paper_mode:
             usdc_bal = self.get_usdc_balance()
             if usdc_bal >= 0:
-                logger.info(f"[WALLET] Cycle start USDC balance: ")
+                logger.info(f"[WALLET] Cycle start USDC balance: {usdc_bal:.2f} USDC")
             else:
                 logger.info('[WALLET] USDC balance unavailable - continuing')
         placed = 0
@@ -179,10 +179,10 @@ class SweeperBot:
                 usdc_bal = self.get_usdc_balance()
                 order_cost = 100.0 * self.config.buy_price
                 if usdc_bal >= 0 and usdc_bal < order_cost:
-                    logger.warning(f"[WALLET] Insufficient USDC:  < needed  - skipping trade")
+                    logger.warning(f"[WALLET] Insufficient USDC: {usdc_bal:.2f} USDC < needed {order_cost:.2f} USDC - skipping trade")
                     break
                 if usdc_bal >= 0:
-                    logger.info(f"[WALLET] Pre-trade USDC:  | Order cost: ")
+                    logger.info(f"[WALLET] Pre-trade USDC: {usdc_bal:.2f} USDC | Order cost: {order_cost:.2f} USDC")
             best_ask = None
             try:
                 book = self.discovery.get_market_book(det.winning_token_id)
