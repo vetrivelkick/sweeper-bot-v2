@@ -1,0 +1,18 @@
+{
+  "balances": {
+    "USDC": 0.0,
+    "POSITION": 0.0,
+    "FEE": 0.0,
+    "GAS": 0.0,
+    "INCOME": 0.0
+  },
+  "pnl": -0.0,
+  "total_recycled": 0.0,
+  "recycle_count": 0,
+  "total_entries": 0,
+  "total_debits": 0,
+  "total_credits": 0,
+  "balanced": true,
+  "balance_diff": 0,
+  "unique_trades": 0
+}

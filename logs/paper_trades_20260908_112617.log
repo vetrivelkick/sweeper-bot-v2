@@ -1,0 +1,232 @@
+========================================================================
+  SWEEPER BOT V2 - ADVANCED PAPER TRADING ENGINE
+========================================================================
+  Mode:            PAPER
+  Buy Price:       $0.99
+  Order Method:    GTC POST-ONLY MAKER (zero fees)
+  Taker Fallback:  DISABLED
+  Fill Prob:       35%
+  Partial Prob:    25%
+  Ghost Prob:      5%
+  Expire Prob:     35%
+  Gas Cost:        $0.001/share
+  Loser Max:       $0.005/share
+  Maker Edge:     $0.004000/share
+  Taker Edge:     $0.003604/share
+  Resting Timeout: 120s
+  Max Loss/Day:   $50.0
+  Max Exposure:   $2000.0
+  Cycles:         3
+  Max Sweeps/Cycle: 5
+  Main Log:        /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_main_20260908_112617.log
+  Trade Log:      /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_trades_20260908_112617.log
+========================================================================
+
+[PREFLIGHT] Running pre-flight checks...
+  OK: Config validation passed
+  OK: Paper mode - geoblock check skipped
+  OK: Paper mode enabled - wallet checks skipped
+  OK: Alert system (logging to file)
+  OK: State file directory writable
+  OK: Buy price 0.99 in valid range
+  OK: Maker edge $0.004000/share (zero fees)
+  OK: Taker edge $0.003604/share (if fallback used)
+  OK: GTC post-only maker mode (PREFER_MAKER=True)
+  OK: Taker fallback disabled
+  WARN: SDK version check skipped: No package metadata was found for py-clob-client-v2
+  OK: Paper mode - SDK import check skipped
+  OK: Paper mode - SDK method check skipped
+  OK: OK: Economics config valid
+[PREFLIGHT] PASSED
+[GAS] 10.0 POL | Floor: 0.5
+
+[RATE LIMITS] Initial budget:
+  order: 40
+  book: 160
+  gamma: 160
+  api_key: 64
+  relayer: 16
+
+========================================================================
+  CYCLE 1
+========================================================================
+
+[DISCOVERY] Fetching live markets from Gamma API...
+[DISCOVERY] Found 0 candidate markets
+
+[MARKET DATA] Top 5 candidates:
+
+[DETECTION] Running resolution detection...
+[DETECTION] 0 sweepable markets
+
+[PRICE ACTION] Sweepable markets:
+
+========================================================================
+  CYCLE 1 SUMMARY
+========================================================================
+  Sweeps: 0 | Time: 0.09s | PnL: $0.0000 | Daily: $0.0000
+  Trades: 0 | Win: 0/0
+  Maker: 0 (zero fees) | Taker: 0 | Rejected: 0
+  Resting: 0 | Expired: 0 | Partial: 0 | Ghost: 0
+    order: 40 remaining
+    book: 160 remaining
+    gamma: 160 remaining
+    api_key: 64 remaining
+    relayer: 16 remaining
+  Gas: 10.0 POL | Low: False
+  [RECONCILE] 0 pos, 0 phantoms
+  [EXPOSURE] Pos: $0 | Resting: $0.0 | Total: $0.0 | Max: $2000.0
+
+========================================================================
+  CYCLE 2
+========================================================================
+
+[DISCOVERY] Fetching live markets from Gamma API...
+[DISCOVERY] Found 0 candidate markets
+
+[MARKET DATA] Top 5 candidates:
+
+[DETECTION] Running resolution detection...
+[DETECTION] 0 sweepable markets
+
+[PRICE ACTION] Sweepable markets:
+
+========================================================================
+  CYCLE 2 SUMMARY
+========================================================================
+  Sweeps: 0 | Time: 0.11s | PnL: $0.0000 | Daily: $0.0000
+  Trades: 0 | Win: 0/0
+  Maker: 0 (zero fees) | Taker: 0 | Rejected: 0
+  Resting: 0 | Expired: 0 | Partial: 0 | Ghost: 0
+    order: 40 remaining
+    book: 160 remaining
+    gamma: 160 remaining
+    api_key: 64 remaining
+    relayer: 16 remaining
+  Gas: 10.0 POL | Low: False
+  [RECONCILE] 0 pos, 0 phantoms
+  [EXPOSURE] Pos: $0 | Resting: $0.0 | Total: $0.0 | Max: $2000.0
+
+========================================================================
+  CYCLE 3
+========================================================================
+
+[DISCOVERY] Fetching live markets from Gamma API...
+[DISCOVERY] Found 0 candidate markets
+
+[MARKET DATA] Top 5 candidates:
+
+[DETECTION] Running resolution detection...
+[DETECTION] 0 sweepable markets
+
+[PRICE ACTION] Sweepable markets:
+
+========================================================================
+  CYCLE 3 SUMMARY
+========================================================================
+  Sweeps: 0 | Time: 0.11s | PnL: $0.0000 | Daily: $0.0000
+  Trades: 0 | Win: 0/0
+  Maker: 0 (zero fees) | Taker: 0 | Rejected: 0
+  Resting: 0 | Expired: 0 | Partial: 0 | Ghost: 0
+    order: 40 remaining
+    book: 160 remaining
+    gamma: 160 remaining
+    api_key: 64 remaining
+    relayer: 16 remaining
+  Gas: 10.0 POL | Low: False
+  [RECONCILE] 0 pos, 0 phantoms
+  [EXPOSURE] Pos: $0 | Resting: $0.0 | Total: $0.0 | Max: $2000.0
+
+========================================================================
+  FINAL SUMMARY
+========================================================================
+  Cycles: 3 | Trades: 0 | Wins: 0
+  Win rate: 0.0%
+  NOTE: Win rate is simulated via random probabilities, not historically replayed.
+  Maker fills: 0 (zero fees) | Taker fills: 0
+  Rejected: 0 | Resting: 0 | Expired: 0 | Partial: 0 | Ghost: 0
+  Cumulative PnL: $0.0000 | Daily PnL: $0.0000
+  True PnL (scoreboard): $0.0000
+  Total recycled: $0.00 pUSD | Recycles: 0
+  Kill switch: False | 429s: 0/3
+    order: 40 remaining
+    book: 160 remaining
+    gamma: 160 remaining
+    api_key: 64 remaining
+    relayer: 16 remaining
+  Gas: 10.0 POL | Worked markets: 0
+  Main Log: /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_main_20260908_112617.log
+  Trade Log: /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_trades_20260908_112617.log
+  Trade JSON: /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_trades_20260908_112617.json
+  Summary JSON: /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_summary_20260908_112617.json
+  Metrics JSON: /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/metrics_20260908_112617.json
+========================================================================
+============================================================
+  DOUBLE-ENTRY LEDGER SUMMARY
+============================================================
+  Total Entries:    0
+  Unique Trades:   0
+  Total Debits:     $0.0000
+  Total Credits:    $0.0000
+  Balanced:         True (diff: $0.000000)
+
+  USDC Balance:     $0.0000
+  Position Cost:    $0.0000
+  Fees Paid:        $0.0000
+  Gas Paid:         $0.0000
+  Gross Income:     $-0.0000
+  Net PnL:         $-0.0000  (Income - Gas - Fees)
+  Total Recycled:   $0.0000  (0 recycles)
+============================================================
+============================================================
+  METRICS SUMMARY
+============================================================
+  trades_total              0
+  trades_won                0
+  trades_rejected           0
+  maker_fills               0
+  taker_fills               0
+  ghost_fills               0
+  expired_orders            0
+  partial_fills             0
+  kill_switch_trips         0
+  exposure_breaches         0
+  rate_limit_429s           0
+  rate_limit_425s           0
+  recycle_count             0
+  rejections_post_only      0
+  rejections_cancel_only    0
+  rpc_errors                0
+  ws_reconnects             0
+  fill_matched_offchain     0
+  fill_trade_pending        0
+  fill_confirmed            0
+  block_confirmations       0
+  per_market_exposure_breaches 0
+  health_checks             3
+
+  pnl_cumulative            0.0
+  pnl_daily                 0.0
+  gas_balance_pol           10.0
+  resting_orders            0
+  reserved_collateral       0.0
+  total_exposure            0.0
+  total_recycled            0.0
+  consecutive_losses        0
+  ghost_fill_rate           0.0
+  win_rate                  0.0
+  uptime_seconds            0.3298335075378418
+  per_market_exposure       0.0
+  health_status             0
+  ws_connected              0.0
+  ws_reconnect_count        0.0
+  block_confirmation_depth  0.0
+
+  Alerts: 0
+============================================================
+========================================================================
+  PAPER TRADING COMPLETE
+========================================================================
+  Exported 0 trade records to JSON
+  Avg PnL/Trade: $0.0000 | Max Drawdown: $0.0000
+  Max Win Streak: 0 | Max Loss Streak: 0

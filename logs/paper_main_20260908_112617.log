@@ -1,0 +1,237 @@
+2026-09-08 11:26:17 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:17 [sweeper.paper] INFO:   SWEEPER BOT V2 - ADVANCED PAPER TRADING ENGINE
+2026-09-08 11:26:17 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Mode:            PAPER
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Buy Price:       $0.99
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Order Method:    GTC POST-ONLY MAKER (zero fees)
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Taker Fallback:  DISABLED
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Fill Prob:       35%
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Partial Prob:    25%
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Ghost Prob:      5%
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Expire Prob:     35%
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Gas Cost:        $0.001/share
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Loser Max:       $0.005/share
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Maker Edge:     $0.004000/share
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Taker Edge:     $0.003604/share
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Resting Timeout: 120s
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Max Loss/Day:   $50.0
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Max Exposure:   $2000.0
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Cycles:         3
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Max Sweeps/Cycle: 5
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Main Log:        /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_main_20260908_112617.log
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Trade Log:      /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_trades_20260908_112617.log
+2026-09-08 11:26:17 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: [PREFLIGHT] Running pre-flight checks...
+2026-09-08 11:26:17 [sweeper.paper] INFO:   OK: Config validation passed
+2026-09-08 11:26:17 [sweeper.paper] INFO:   OK: Paper mode - geoblock check skipped
+2026-09-08 11:26:17 [sweeper.paper] INFO:   OK: Paper mode enabled - wallet checks skipped
+2026-09-08 11:26:17 [sweeper.paper] INFO:   OK: Alert system (logging to file)
+2026-09-08 11:26:17 [sweeper.paper] INFO:   OK: State file directory writable
+2026-09-08 11:26:17 [sweeper.paper] INFO:   OK: Buy price 0.99 in valid range
+2026-09-08 11:26:17 [sweeper.paper] INFO:   OK: Maker edge $0.004000/share (zero fees)
+2026-09-08 11:26:17 [sweeper.paper] INFO:   OK: Taker edge $0.003604/share (if fallback used)
+2026-09-08 11:26:17 [sweeper.paper] INFO:   OK: GTC post-only maker mode (PREFER_MAKER=True)
+2026-09-08 11:26:17 [sweeper.paper] INFO:   OK: Taker fallback disabled
+2026-09-08 11:26:17 [sweeper.paper] INFO:   WARN: SDK version check skipped: No package metadata was found for py-clob-client-v2
+2026-09-08 11:26:17 [sweeper.paper] INFO:   OK: Paper mode - SDK import check skipped
+2026-09-08 11:26:17 [sweeper.paper] INFO:   OK: Paper mode - SDK method check skipped
+2026-09-08 11:26:17 [sweeper.paper] INFO:   OK: OK: Economics config valid
+2026-09-08 11:26:17 [sweeper.paper] INFO: [PREFLIGHT] PASSED
+2026-09-08 11:26:17 [sweeper.paper] INFO: [GAS] 10.0 POL | Floor: 0.5
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: [RATE LIMITS] Initial budget:
+2026-09-08 11:26:17 [sweeper.paper] INFO:   order: 40
+2026-09-08 11:26:17 [sweeper.paper] INFO:   book: 160
+2026-09-08 11:26:17 [sweeper.paper] INFO:   gamma: 160
+2026-09-08 11:26:17 [sweeper.paper] INFO:   api_key: 64
+2026-09-08 11:26:17 [sweeper.paper] INFO:   relayer: 16
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:17 [sweeper.paper] INFO:   CYCLE 1
+2026-09-08 11:26:17 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: [DISCOVERY] Fetching live markets from Gamma API...
+2026-09-08 11:26:17 [sweeper.paper] INFO: [DISCOVERY] Found 0 candidate markets
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: [MARKET DATA] Top 5 candidates:
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: [DETECTION] Running resolution detection...
+2026-09-08 11:26:17 [sweeper.paper] INFO: [DETECTION] 0 sweepable markets
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: [PRICE ACTION] Sweepable markets:
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:17 [sweeper.paper] INFO:   CYCLE 1 SUMMARY
+2026-09-08 11:26:17 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Sweeps: 0 | Time: 0.09s | PnL: $0.0000 | Daily: $0.0000
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Trades: 0 | Win: 0/0
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Maker: 0 (zero fees) | Taker: 0 | Rejected: 0
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Resting: 0 | Expired: 0 | Partial: 0 | Ghost: 0
+2026-09-08 11:26:17 [sweeper.paper] INFO:     order: 40 remaining
+2026-09-08 11:26:17 [sweeper.paper] INFO:     book: 160 remaining
+2026-09-08 11:26:17 [sweeper.paper] INFO:     gamma: 160 remaining
+2026-09-08 11:26:17 [sweeper.paper] INFO:     api_key: 64 remaining
+2026-09-08 11:26:17 [sweeper.paper] INFO:     relayer: 16 remaining
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Gas: 10.0 POL | Low: False
+2026-09-08 11:26:17 [sweeper.reconcile] INFO: Position reconciliation: 0 positions, 0 real, 0 phantoms
+2026-09-08 11:26:17 [sweeper.paper] INFO:   [RECONCILE] 0 pos, 0 phantoms
+2026-09-08 11:26:17 [sweeper.paper] INFO:   [EXPOSURE] Pos: $0 | Resting: $0.0 | Total: $0.0 | Max: $2000.0
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:17 [sweeper.paper] INFO:   CYCLE 2
+2026-09-08 11:26:17 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: [DISCOVERY] Fetching live markets from Gamma API...
+2026-09-08 11:26:17 [sweeper.paper] INFO: [DISCOVERY] Found 0 candidate markets
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: [MARKET DATA] Top 5 candidates:
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: [DETECTION] Running resolution detection...
+2026-09-08 11:26:17 [sweeper.paper] INFO: [DETECTION] 0 sweepable markets
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: [PRICE ACTION] Sweepable markets:
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:17 [sweeper.paper] INFO:   CYCLE 2 SUMMARY
+2026-09-08 11:26:17 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Sweeps: 0 | Time: 0.11s | PnL: $0.0000 | Daily: $0.0000
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Trades: 0 | Win: 0/0
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Maker: 0 (zero fees) | Taker: 0 | Rejected: 0
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Resting: 0 | Expired: 0 | Partial: 0 | Ghost: 0
+2026-09-08 11:26:17 [sweeper.paper] INFO:     order: 40 remaining
+2026-09-08 11:26:17 [sweeper.paper] INFO:     book: 160 remaining
+2026-09-08 11:26:17 [sweeper.paper] INFO:     gamma: 160 remaining
+2026-09-08 11:26:17 [sweeper.paper] INFO:     api_key: 64 remaining
+2026-09-08 11:26:17 [sweeper.paper] INFO:     relayer: 16 remaining
+2026-09-08 11:26:17 [sweeper.paper] INFO:   Gas: 10.0 POL | Low: False
+2026-09-08 11:26:17 [sweeper.reconcile] INFO: Position reconciliation: 0 positions, 0 real, 0 phantoms
+2026-09-08 11:26:17 [sweeper.paper] INFO:   [RECONCILE] 0 pos, 0 phantoms
+2026-09-08 11:26:17 [sweeper.paper] INFO:   [EXPOSURE] Pos: $0 | Resting: $0.0 | Total: $0.0 | Max: $2000.0
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:17 [sweeper.paper] INFO:   CYCLE 3
+2026-09-08 11:26:17 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:17 [sweeper.paper] INFO: 
+2026-09-08 11:26:17 [sweeper.paper] INFO: [DISCOVERY] Fetching live markets from Gamma API...
+2026-09-08 11:26:18 [sweeper.paper] INFO: [DISCOVERY] Found 0 candidate markets
+2026-09-08 11:26:18 [sweeper.paper] INFO: 
+2026-09-08 11:26:18 [sweeper.paper] INFO: [MARKET DATA] Top 5 candidates:
+2026-09-08 11:26:18 [sweeper.paper] INFO: 
+2026-09-08 11:26:18 [sweeper.paper] INFO: [DETECTION] Running resolution detection...
+2026-09-08 11:26:18 [sweeper.paper] INFO: [DETECTION] 0 sweepable markets
+2026-09-08 11:26:18 [sweeper.paper] INFO: 
+2026-09-08 11:26:18 [sweeper.paper] INFO: [PRICE ACTION] Sweepable markets:
+2026-09-08 11:26:18 [sweeper.paper] INFO: 
+2026-09-08 11:26:18 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:18 [sweeper.paper] INFO:   CYCLE 3 SUMMARY
+2026-09-08 11:26:18 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Sweeps: 0 | Time: 0.11s | PnL: $0.0000 | Daily: $0.0000
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Trades: 0 | Win: 0/0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Maker: 0 (zero fees) | Taker: 0 | Rejected: 0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Resting: 0 | Expired: 0 | Partial: 0 | Ghost: 0
+2026-09-08 11:26:18 [sweeper.paper] INFO:     order: 40 remaining
+2026-09-08 11:26:18 [sweeper.paper] INFO:     book: 160 remaining
+2026-09-08 11:26:18 [sweeper.paper] INFO:     gamma: 160 remaining
+2026-09-08 11:26:18 [sweeper.paper] INFO:     api_key: 64 remaining
+2026-09-08 11:26:18 [sweeper.paper] INFO:     relayer: 16 remaining
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Gas: 10.0 POL | Low: False
+2026-09-08 11:26:18 [sweeper.reconcile] INFO: Position reconciliation: 0 positions, 0 real, 0 phantoms
+2026-09-08 11:26:18 [sweeper.paper] INFO:   [RECONCILE] 0 pos, 0 phantoms
+2026-09-08 11:26:18 [sweeper.paper] INFO:   [EXPOSURE] Pos: $0 | Resting: $0.0 | Total: $0.0 | Max: $2000.0
+2026-09-08 11:26:18 [sweeper.paper] INFO: 
+2026-09-08 11:26:18 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:18 [sweeper.paper] INFO:   FINAL SUMMARY
+2026-09-08 11:26:18 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Cycles: 3 | Trades: 0 | Wins: 0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Win rate: 0.0%
+2026-09-08 11:26:18 [sweeper.paper] INFO:   NOTE: Win rate is simulated via random probabilities, not historically replayed.
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Maker fills: 0 (zero fees) | Taker fills: 0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Rejected: 0 | Resting: 0 | Expired: 0 | Partial: 0 | Ghost: 0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Cumulative PnL: $0.0000 | Daily PnL: $0.0000
+2026-09-08 11:26:18 [sweeper.paper] INFO:   True PnL (scoreboard): $0.0000
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Total recycled: $0.00 pUSD | Recycles: 0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Kill switch: False | 429s: 0/3
+2026-09-08 11:26:18 [sweeper.paper] INFO:     order: 40 remaining
+2026-09-08 11:26:18 [sweeper.paper] INFO:     book: 160 remaining
+2026-09-08 11:26:18 [sweeper.paper] INFO:     gamma: 160 remaining
+2026-09-08 11:26:18 [sweeper.paper] INFO:     api_key: 64 remaining
+2026-09-08 11:26:18 [sweeper.paper] INFO:     relayer: 16 remaining
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Gas: 10.0 POL | Worked markets: 0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Main Log: /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_main_20260908_112617.log
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Trade Log: /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_trades_20260908_112617.log
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Trade JSON: /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_trades_20260908_112617.json
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Summary JSON: /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/paper_summary_20260908_112617.json
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Metrics JSON: /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/metrics_20260908_112617.json
+2026-09-08 11:26:18 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:18 [sweeper.ledger] INFO: [LEDGER] Dumped 0 entries to logs/ledger_20260908_112617.json
+2026-09-08 11:26:18 [sweeper.paper] INFO: ============================================================
+2026-09-08 11:26:18 [sweeper.paper] INFO:   DOUBLE-ENTRY LEDGER SUMMARY
+2026-09-08 11:26:18 [sweeper.paper] INFO: ============================================================
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Total Entries:    0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Unique Trades:   0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Total Debits:     $0.0000
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Total Credits:    $0.0000
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Balanced:         True (diff: $0.000000)
+2026-09-08 11:26:18 [sweeper.paper] INFO: 
+2026-09-08 11:26:18 [sweeper.paper] INFO:   USDC Balance:     $0.0000
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Position Cost:    $0.0000
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Fees Paid:        $0.0000
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Gas Paid:         $0.0000
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Gross Income:     $-0.0000
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Net PnL:         $-0.0000  (Income - Gas - Fees)
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Total Recycled:   $0.0000  (0 recycles)
+2026-09-08 11:26:18 [sweeper.paper] INFO: ============================================================
+2026-09-08 11:26:18 [sweeper.metrics] INFO: [METRICS] Exported to /buildkite/builds/l339ui7kh6gag-1/vetrivelkick/sweeper-bot-fixes/repo/logs/metrics_20260908_112617.json
+2026-09-08 11:26:18 [sweeper.paper] INFO: ============================================================
+2026-09-08 11:26:18 [sweeper.paper] INFO:   METRICS SUMMARY
+2026-09-08 11:26:18 [sweeper.paper] INFO: ============================================================
+2026-09-08 11:26:18 [sweeper.paper] INFO:   trades_total              0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   trades_won                0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   trades_rejected           0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   maker_fills               0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   taker_fills               0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   ghost_fills               0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   expired_orders            0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   partial_fills             0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   kill_switch_trips         0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   exposure_breaches         0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   rate_limit_429s           0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   rate_limit_425s           0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   recycle_count             0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   rejections_post_only      0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   rejections_cancel_only    0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   rpc_errors                0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   ws_reconnects             0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   fill_matched_offchain     0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   fill_trade_pending        0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   fill_confirmed            0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   block_confirmations       0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   per_market_exposure_breaches 0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   health_checks             3
+2026-09-08 11:26:18 [sweeper.paper] INFO: 
+2026-09-08 11:26:18 [sweeper.paper] INFO:   pnl_cumulative            0.0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   pnl_daily                 0.0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   gas_balance_pol           10.0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   resting_orders            0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   reserved_collateral       0.0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   total_exposure            0.0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   total_recycled            0.0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   consecutive_losses        0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   ghost_fill_rate           0.0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   win_rate                  0.0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   uptime_seconds            0.3298335075378418
+2026-09-08 11:26:18 [sweeper.paper] INFO:   per_market_exposure       0.0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   health_status             0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   ws_connected              0.0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   ws_reconnect_count        0.0
+2026-09-08 11:26:18 [sweeper.paper] INFO:   block_confirmation_depth  0.0
+2026-09-08 11:26:18 [sweeper.paper] INFO: 
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Alerts: 0
+2026-09-08 11:26:18 [sweeper.paper] INFO: ============================================================
+2026-09-08 11:26:18 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:18 [sweeper.paper] INFO:   PAPER TRADING COMPLETE
+2026-09-08 11:26:18 [sweeper.paper] INFO: ========================================================================
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Exported 0 trade records to JSON
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Avg PnL/Trade: $0.0000 | Max Drawdown: $0.0000
+2026-09-08 11:26:18 [sweeper.paper] INFO:   Max Win Streak: 0 | Max Loss Streak: 0

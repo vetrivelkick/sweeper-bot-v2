@@ -115,12 +115,63 @@ class MarketDiscovery:
         return None
 
     def discover_candidates(self, max_markets=200):
-        """SECTION 6 AUDIT: Discover active markets with pagination support."""
         self._seen_condition_ids.clear()
         markets = []
         offset = 0
         limit = min(max_markets, 200)
-        batch_size = limit
         total_fetched = 0
-        while total_fetched < max_markets:
-            batch_size
+        for _ in range(50):
+            if total_fetched >= max_markets:
+                break
+            bs = min(limit, max_markets - total_fetched)
+            url = "https://gamma-api.polymarket.com/markets?limit=" + str(bs) + "&offset=" + str(offset) + "&active=true&closed=false&order=volume24hr&ascending=false"
+            try:
+                import requests as req
+                r = req.get(url, timeout=10)
+                print("DEBUG API: status=" + str(r.status_code))
+                if r.status_code != 200:
+                    break
+                data = r.json()
+                print("DEBUG API: got " + str(len(data)) + " markets")
+                if not data:
+                    break
+                for m in data:
+                    try:
+                        cid = m.get("conditionId") or m.get("condition_id", "")
+                        if not cid or cid in self._seen_condition_ids:
+                            continue
+                        self._seen_condition_ids.add(cid)
+                        tk = m.get("tokens", [])
+                        pr = m.get("outcomePrices", [])
+                        yp = float(pr[0]) if pr else 0.0
+                        try:
+                            cat = detect_category(m.get("question", ""), m.get("tags") if isinstance(m.get("tags"), list) else None)
+                        except:
+                            cat = "other"
+                        markets.append(CandidateMarket(
+                            condition_id=cid, question=m.get("question", ""),
+                            slug=m.get("slug", ""),
+                            yes_token_id=tk[0].get("token_id", "") if tk else "",
+                            no_token_id=tk[1].get("token_id", "") if len(tk) > 1 else "",
+                            yes_price=yp, no_price=float(pr[1]) if len(pr) > 1 else 1.0 - yp,
+                            end_date=m.get("endDate"), volume_24hr=float(m.get("volume24hr") or 0),
+                            liquidity=float(m.get("liquidity") or 0),
+                            neg_risk=bool(m.get("negRisk") or False),
+                            accepting_orders=bool(m.get("acceptingOrders") or False),
+                            sweep_score=yp * float(m.get("volume24hr") or 0),
+                            category=cat,
+                            tick_size=float(m.get("minimum_tick_size") or 0.01),
+                            min_order_size=float(m.get("minimum_order_size") or 5),
+                            raw=m,
+                        ))
+                    except Exception as ex:
+                        if len(markets) == 0:
+                            print("DEBUG PARSE ERROR: " + str(ex))
+                        continue
+                offset += len(data)
+                total_fetched += len(data)
+            except Exception as ex:
+                print("DEBUG API ERROR: " + str(ex))
+                break
+        print("DEBUG: discovered " + str(len(markets)) + " markets")
+        return markets
