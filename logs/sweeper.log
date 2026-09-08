@@ -1,0 +1,86 @@
+2026-09-08 16:11:57 INFO     [main] ============================================================
+2026-09-08 16:11:57 INFO     [main] STARTUP RECONCILIATION
+2026-09-08 16:11:57 INFO     [main] ============================================================
+2026-09-08 16:11:57 INFO     [main]   OK: Config validation passed
+2026-09-08 16:11:57 INFO     [main]   OK: Paper mode - geoblock check skipped
+2026-09-08 16:11:57 INFO     [main]   OK: Paper mode enabled - wallet checks skipped
+2026-09-08 16:11:57 INFO     [main]   OK: Alert system (logging to file)
+2026-09-08 16:11:57 INFO     [main]   OK: State file directory writable
+2026-09-08 16:11:57 INFO     [main]   OK: Buy price 0.99 in valid range
+2026-09-08 16:11:57 INFO     [main]   OK: Maker edge $0.004000/share (zero fees)
+2026-09-08 16:11:57 INFO     [main]   OK: Taker edge $0.003604/share (if fallback used)
+2026-09-08 16:11:57 INFO     [main]   OK: GTC post-only maker mode (PREFER_MAKER=True)
+2026-09-08 16:11:57 INFO     [main]   OK: Taker fallback disabled
+2026-09-08 16:11:57 INFO     [main]   WARN: SDK version check skipped: No package metadata was found for py-clob-client-v2
+2026-09-08 16:11:57 INFO     [main]   OK: Paper mode - SDK import check skipped
+2026-09-08 16:11:57 INFO     [main]   OK: Paper mode - SDK method check skipped
+2026-09-08 16:11:57 INFO     [main]   OK: OK: Economics config valid
+2026-09-08 16:11:57 INFO     [recovery] State verification: No state file found (first run)
+2026-09-08 16:11:57 WARNING  [recovery] State load skipped: No state file (first run)
+2026-09-08 16:11:57 INFO     [recovery] Startup recovery: Paper mode -- remote recovery skipped
+2026-09-08 16:11:57 INFO     [main] Gas: 10.0 POL | Low: False | Critical: False
+2026-09-08 16:11:57 INFO     [main] Startup reconciliation COMPLETE
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8] --- CYCLE 1 [cycle_b8b7d4a8] ---
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8] Discovered 100 markets
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8] 42 sweepable markets
+2026-09-08 16:11:57 INFO     [orders] [cycle_b8b7d4a8] [PAPER] GTC post-only RESTING: BUY 100.0 @ 0.99 for Will the Fed decrease interest rates by  - queued
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_3da4fcef] GTC post-only: sweep_0xac02cbb049e46d_1788883917_4941 @ 0.99 for Will the Fed decrease interest rates by 
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_3da4fcef] [PAPER] Maker fill: 100.0 @ 0.99
+2026-09-08 16:11:57 INFO     [recycle] [cycle_b8b7d4a8|trade_3da4fcef] [PAPER] Bought 100.0 complementary tokens @ $0.005 = $0.5000
+2026-09-08 16:11:57 INFO     [recycle] [cycle_b8b7d4a8|trade_3da4fcef] [PAPER] Merge: 100.0 shares -> 100.0 pUSD (loser cost $0.5000)
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_3da4fcef] Trade complete: MAKER | PnL: $0.4000 | Daily: $0.4000
+2026-09-08 16:11:57 INFO     [orders] [cycle_b8b7d4a8|trade_3da4fcef] [PAPER] GHOST fill for Will Glenn Youngkin win the 2028 US Pres
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_845c712b] GTC post-only: sweep_0xc4435df23facee_1788883917_7781 @ 0.99 for Will Glenn Youngkin win the 2028 US Pres
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_845c712b] [PAPER] Maker fill: 100.0 @ 0.99
+2026-09-08 16:11:57 INFO     [recycle] [cycle_b8b7d4a8|trade_845c712b] [PAPER] Bought 100.0 complementary tokens @ $0.005 = $0.5000
+2026-09-08 16:11:57 INFO     [recycle] [cycle_b8b7d4a8|trade_845c712b] [PAPER] Merge: 100.0 shares -> 100.0 pUSD (loser cost $0.5000)
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_845c712b] Trade complete: MAKER | PnL: $0.4000 | Daily: $0.8000
+2026-09-08 16:11:57 INFO     [orders] [cycle_b8b7d4a8|trade_845c712b] [PAPER] GTC post-only RESTING: BUY 100.0 @ 0.99 for Will Shakhtar Donetsk win the 2026-27 UE - queued
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_99ddb6ad] GTC post-only: sweep_0xefa17dee3af09f_1788883917_3616 @ 0.99 for Will Shakhtar Donetsk win the 2026-27 UE
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_99ddb6ad] [PAPER] Order expired
+2026-09-08 16:11:57 INFO     [safety] [cycle_b8b7d4a8|trade_99ddb6ad] Market released: 0xefa17dee3af09f69f9
+2026-09-08 16:11:57 INFO     [orders] [cycle_b8b7d4a8|trade_99ddb6ad] [PAPER] Partial maker fill: 40/100.0
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_7e70b4e3] GTC post-only: sweep_0x980a9758f2d181_1788883917_2911 @ 0.99 for Will RB Leipzig win the 2026-27 UEFA Cha
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_7e70b4e3] [PAPER] Order expired
+2026-09-08 16:11:57 INFO     [safety] [cycle_b8b7d4a8|trade_7e70b4e3] Market released: 0x980a9758f2d1819051
+2026-09-08 16:11:57 INFO     [orders] [cycle_b8b7d4a8|trade_7e70b4e3] [PAPER] GTC maker FILL: 100.0 @ 0.99 GHOST for Bitcoin Up or Down on September 8?
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_e064ddcf] GTC post-only: sweep_0xfc212403d7ecbb_1788883917_1671 @ 0.99 for Bitcoin Up or Down on September 8?
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_e064ddcf] [PAPER] Order expired
+2026-09-08 16:11:57 INFO     [safety] [cycle_b8b7d4a8|trade_e064ddcf] Market released: 0xfc212403d7ecbb857d
+2026-09-08 16:11:57 INFO     [orders] [cycle_b8b7d4a8|trade_e064ddcf] [PAPER] GTC maker FILL: 100.0 @ 0.99 OK for Map Handicap: G2 (-1.5) vs Astralis (+1.
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_74803c89] GTC post-only: sweep_0xea8c4f47685af3_1788883917_3462 @ 0.99 for Map Handicap: G2 (-1.5) vs Astralis (+1.
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_74803c89] [PAPER] Partial fill: 40/100.0
+2026-09-08 16:11:57 INFO     [recycle] [cycle_b8b7d4a8|trade_74803c89] [PAPER] Bought 40.0 complementary tokens @ $0.005 = $0.2000
+2026-09-08 16:11:57 INFO     [recycle] [cycle_b8b7d4a8|trade_74803c89] [PAPER] Merge: 40.0 shares -> 40.0 pUSD (loser cost $0.2000)
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_74803c89] Trade complete: MAKER | PnL: $0.1600 | Daily: $0.9600
+2026-09-08 16:11:57 INFO     [orders] [cycle_b8b7d4a8|trade_74803c89] [PAPER] GTC maker FILL: 100.0 @ 0.99 OK for Will Villarreal win the 2026-27 UEFA Cha
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_d9edd03a] GTC post-only: sweep_0xb0ea6595211927_1788883917_7644 @ 0.99 for Will Villarreal win the 2026-27 UEFA Cha
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_d9edd03a] [PAPER] Partial fill: 40/100.0
+2026-09-08 16:11:57 INFO     [recycle] [cycle_b8b7d4a8|trade_d9edd03a] [PAPER] Bought 40.0 complementary tokens @ $0.005 = $0.2000
+2026-09-08 16:11:57 INFO     [recycle] [cycle_b8b7d4a8|trade_d9edd03a] [PAPER] Merge: 40.0 shares -> 40.0 pUSD (loser cost $0.2000)
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_d9edd03a] Trade complete: MAKER | PnL: $0.1600 | Daily: $1.1200
+2026-09-08 16:11:57 INFO     [orders] [cycle_b8b7d4a8|trade_d9edd03a] [PAPER] Partial maker fill: 40/100.0
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_34dca32c] GTC post-only: sweep_0x2e4b58fc18dbff_1788883917_1789 @ 0.99 for Will the Fed increase interest rates by 
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_34dca32c] [PAPER] Order expired
+2026-09-08 16:11:57 INFO     [safety] [cycle_b8b7d4a8|trade_34dca32c] Market released: 0x2e4b58fc18dbffd74d
+2026-09-08 16:11:57 INFO     [orders] [cycle_b8b7d4a8|trade_34dca32c] [PAPER] GTC maker FILL: 100.0 @ 0.99 OK for Will Eric Trump win the 2028 Republican 
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_b43312a7] GTC post-only: sweep_0xca68152902c358_1788883917_3175 @ 0.99 for Will Eric Trump win the 2028 Republican 
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_b43312a7] [PAPER] Maker fill: 100.0 @ 0.99
+2026-09-08 16:11:57 INFO     [recycle] [cycle_b8b7d4a8|trade_b43312a7] [PAPER] Bought 100.0 complementary tokens @ $0.005 = $0.5000
+2026-09-08 16:11:57 INFO     [recycle] [cycle_b8b7d4a8|trade_b43312a7] [PAPER] Merge: 100.0 shares -> 100.0 pUSD (loser cost $0.5000)
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_b43312a7] Trade complete: MAKER | PnL: $0.4000 | Daily: $1.5200
+2026-09-08 16:11:57 INFO     [orders] [cycle_b8b7d4a8|trade_b43312a7] [PAPER] Partial maker fill: 40/100.0
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_4ef0a02b] GTC post-only: sweep_0x94ffc785f73c9d_1788883917_1749 @ 0.99 for Will United Russia (ER) win the most sea
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_4ef0a02b] [PAPER] Order expired
+2026-09-08 16:11:57 INFO     [safety] [cycle_b8b7d4a8|trade_4ef0a02b] Market released: 0x94ffc785f73c9d70c0
+2026-09-08 16:11:57 INFO     [reconcile] [cycle_b8b7d4a8|trade_4ef0a02b] Position reconciliation: 5 positions, 5 real, 0 phantoms
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_4ef0a02b] Position reconcile: 5 pos, 0 phantoms
+2026-09-08 16:11:57 INFO     [reconcile] [cycle_b8b7d4a8|trade_4ef0a02b] Order reconciliation: 3 filled, 5 expired, 0 resting
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_4ef0a02b] Order reconcile: 3 filled, 0 resting
+2026-09-08 16:11:57 INFO     [main] [cycle_b8b7d4a8|trade_4ef0a02b] Cycle 1: 10 orders placed
+2026-09-08 16:11:59 INFO     [main] ============================================================
+2026-09-08 16:11:59 INFO     [main] SHUTDOWN INITIATED
+2026-09-08 16:11:59 INFO     [main] ============================================================
+2026-09-08 16:11:59 INFO     [orders] Shutdown: cancelled 0 resting orders
+2026-09-08 16:11:59 INFO     [main] Cancelled 0 resting orders
+2026-09-08 16:11:59 INFO     [main] Shutdown complete

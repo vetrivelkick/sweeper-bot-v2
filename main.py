@@ -115,6 +115,19 @@ class SweeperBot:
         if self.config.paper_mode:
             return -1.0
         try:
+            client = self.order_builder._get_client()
+            if client:
+                from py_clob_client_v2 import BalanceAllowanceParams, AssetType
+                resp = client.get_balance_allowance(params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL))
+                if resp:
+                    bal_raw = resp.get('balance', resp.get('Balance', '0')) if isinstance(resp, dict) else str(resp)
+                    try:
+                        return float(bal_raw) / 1e6
+                    except (ValueError, TypeError):
+                        pass
+        except Exception as e:
+            logger.warning(f'CLOB balance check failed, trying on-chain: {e}')
+        try:
             addr = getattr(self.config, 'wallet_address', '')
             if not addr:
                 return -1.0
@@ -163,10 +176,11 @@ class SweeperBot:
         if not self.config.paper_mode:
             usdc_bal = self.get_usdc_balance()
             if usdc_bal >= 0:
-                logger.info(f"[WALLET] Cycle start USDC balance: {usdc_bal:.2f} USDC")
+                logger.info(f"[WALLET] Cycle start pUSD balance: {usdc_bal:.2f} pUSD")
             else:
                 logger.info('[WALLET] USDC balance unavailable - continuing')
         placed = 0
+        trade_size = 100.0
         for det in sweepable:
             if placed >= 10:
                 break
@@ -179,10 +193,17 @@ class SweeperBot:
                 usdc_bal = self.get_usdc_balance()
                 order_cost = 100.0 * self.config.buy_price
                 if usdc_bal >= 0 and usdc_bal < order_cost:
-                    logger.warning(f"[WALLET] Insufficient USDC: {usdc_bal:.2f} USDC < needed {order_cost:.2f} USDC - skipping trade")
-                    break
+                    max_shares = int(usdc_bal / self.config.buy_price)
+                    if max_shares >= 5:
+                        logger.info(f'[WALLET] Reduced size: {max_shares} shares (balance: {usdc_bal:.2f} pUSD)')
+                        trade_size = float(max_shares)
+                    else:
+                        logger.warning(f'[WALLET] Insufficient pUSD: {usdc_bal:.2f} < needed {order_cost:.2f} for min 5 shares - skipping')
+                        break
+                else:
+                    trade_size = 100.0
                 if usdc_bal >= 0:
-                    logger.info(f"[WALLET] Pre-trade USDC: {usdc_bal:.2f} USDC | Order cost: {order_cost:.2f} USDC")
+                    logger.info(f'[WALLET] Pre-trade pUSD: {usdc_bal:.2f} | Cost: {trade_size * self.config.buy_price:.2f} | Size: {trade_size}')
             best_ask = None
             try:
                 book = self.discovery.get_market_book(det.winning_token_id)
@@ -192,7 +213,7 @@ class SweeperBot:
             except Exception:
                 pass
             tick_size = getattr(det, 'tick_size', 0.001 if det.winning_price >= 0.999 else 0.01)
-            success, order = self.order_builder.build_and_place(detection_result=det, size=100.0, best_ask=best_ask, tick_size=tick_size, neg_risk=getattr(det, 'neg_risk', False))
+            success, order = self.order_builder.build_and_place(detection_result=det, size=trade_size, best_ask=best_ask, tick_size=tick_size, neg_risk=getattr(det, 'neg_risk', False))
             if success and order:
                 set_trade_id()
                 self.rate_limiter.record_request("order")

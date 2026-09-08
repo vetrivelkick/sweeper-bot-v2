@@ -875,6 +875,22 @@ class SafetyRails:
                 return True
             if self.config.paper_mode:
                 return True
+            try:
+                from py_clob_client_v2 import ClobClient, ApiCreds, BalanceAllowanceParams, AssetType
+                _creds = ApiCreds(api_key=self.config.clob_api_key, api_secret=self.config.clob_api_secret, api_passphrase=self.config.clob_api_passphrase)
+                _cl = ClobClient(host='https://clob.polymarket.com', key=self.config.private_key, chain_id=137, creds=_creds, signature_type=self.config.signature_type, funder=self.config.funder if self.config.funder else None)
+                resp = _cl.get_balance_allowance(params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL))
+                if resp:
+                    bal_raw = resp.get('balance', resp.get('Balance', '0')) if isinstance(resp, dict) else str(resp)
+                    bal = float(bal_raw) / 1e6
+                    min_bal = float(getattr(self.config, 'min_usdc_balance', 10))
+                    if bal < min_bal:
+                        logger.error(f'pUSD low: {bal} (min: {min_bal})')
+                        return False
+                    logger.info(f'pUSD OK: {bal}')
+                    return True
+            except Exception as e:
+                logger.warning(f'CLOB balance check failed, trying on-chain: {e}')
             addr = getattr(self.config, 'wallet_address', '')
             if not addr:
                 return True
