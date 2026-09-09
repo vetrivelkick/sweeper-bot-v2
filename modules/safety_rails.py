@@ -32,6 +32,7 @@ logger = logging.getLogger("sweeper.safety")
 BLOCKED_REGIONS = ["CU", "IR", "KP", "SY", "CR"]
 
 from config.settings import BotState as ConfigBotState
+from modules.wallet_balance import check_wallet_balance  # FIX: multi-sig-type wallet balance
 
 @dataclass
 class SafetyBotState:
@@ -870,49 +871,7 @@ class SafetyRails:
 
     def check_usdc_balance(self) -> bool:
         """Check USDC balance for trading."""
-        try:
-            if not hasattr(self, 'config') or not self.config:
-                return True
-            if self.config.paper_mode:
-                return True
-            try:
-                from py_clob_client_v2 import ClobClient, ApiCreds, BalanceAllowanceParams, AssetType
-                _creds = ApiCreds(api_key=self.config.clob_api_key, api_secret=self.config.clob_api_secret, api_passphrase=self.config.clob_api_passphrase)
-                _cl = ClobClient(host='https://clob.polymarket.com', key=self.config.private_key, chain_id=137, creds=_creds, signature_type=self.config.signature_type, funder=self.config.funder if self.config.funder else None)
-                resp = _cl.get_balance_allowance(params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL))
-                if resp:
-                    bal_raw = resp.get('balance', resp.get('Balance', '0')) if isinstance(resp, dict) else str(resp)
-                    bal = float(bal_raw) / 1e6
-                    min_bal = float(getattr(self.config, 'min_usdc_balance', 10))
-                    if bal < min_bal:
-                        logger.error(f'pUSD low: {bal} (min: {min_bal})')
-                        return False
-                    logger.info(f'pUSD OK: {bal}')
-                    return True
-            except Exception as e:
-                logger.warning(f'CLOB balance check failed, trying on-chain: {e}')
-            addr = getattr(self.config, 'wallet_address', '')
-            if not addr:
-                return True
-            rpc = getattr(self.config, 'polygon_rpc', '') or getattr(self.config, 'rpc_url', '')
-            if not rpc:
-                return True
-            import requests
-            contract = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa8414C"
-            data = "0x70a08231000000000000000000000000" + addr[2:].lower()
-            r = requests.post(rpc, json={"method": "eth_call", "params": [{"to": contract, "data": data}, "latest"], "id": 1, "jsonrpc": "2.0"})
-            result = r.json().get("result", "0x0")
-            if not result or result == "0x": result = "0x0"
-            bal = int(result, 16) / 1e6
-            min_bal = float(getattr(self.config, 'min_usdc_balance', 10))
-            if bal < min_bal:
-                logger.error(f"USDC low: {bal} (min: {min_bal})")
-                return False
-            logger.info(f"USDC OK: {bal}")
-            return True
-        except Exception as e:
-            logger.warning(f"USDC check failed: {e}")
-            return True
+        return check_wallet_balance(self.config)
 
     def mark_worked(self, condition_id): self.state.worked_markets.add(condition_id)
     def unmark_worked(self, condition_id): self.state.worked_markets.discard(condition_id); logger.info(f"Market released: {condition_id[:20]}")
