@@ -229,6 +229,7 @@ class SweeperConfig:
     max_orders_per_cycle: int = field(default_factory=lambda: int(os.getenv("MAX_ORDERS_PER_CYCLE", str(MAX_ORDERS_PER_CYCLE))))  # FIX ISSUE #9: Configurable max orders per cycle
     # SECTION 1 AUDIT: Strategy specification fields
     max_entry_price: float = field(default_factory=lambda: float(os.getenv("MAX_ENTRY_PRICE", str(MAX_ENTRY_PRICE))))
+    taker_max_price: float = field(default_factory=lambda: float(os.getenv("TAKER_MAX_PRICE", "0.995")))
     max_resolution_dispute_risk: float = field(default_factory=lambda: float(os.getenv("MAX_RESOLUTION_DISPUTE_RISK", str(MAX_RESOLUTION_DISPUTE_RISK))))
     require_source_agreement: bool = field(default_factory=lambda: os.getenv("REQUIRE_SOURCE_AGREEMENT", "true").lower() == "true")
     merge_threshold_spread: float = field(default_factory=lambda: float(os.getenv("MERGE_THRESHOLD_SPREAD", str(MERGE_THRESHOLD_SPREAD))))

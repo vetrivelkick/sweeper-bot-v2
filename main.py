@@ -198,14 +198,14 @@ class SweeperBot:
                 if available_bal < order_cost:
                     max_shares = int(available_bal / self.config.buy_price)
                     if max_shares >= 5:
-                        logger.info(f'[WALLET] Reduced size: {max_shares} shares (available: {available_bal:.2f} pUSD)')
+                        logger.debug(f'[WALLET] Reduced size: {max_shares} shares (available: {available_bal:.2f} pUSD)')
                         trade_size = float(max_shares)
                     else:
                         logger.warning(f'[WALLET] Insufficient pUSD: {available_bal:.2f} < needed {order_cost:.2f} for min 5 shares - skipping')
                         break
                 else:
                     trade_size = 100.0
-                logger.info(f'[WALLET] Pre-trade pUSD: {available_bal:.2f} | Cost: {trade_size * self.config.buy_price:.2f} | Size: {trade_size}')
+                logger.debug(f'[WALLET] Pre-trade pUSD: {available_bal:.2f} | Cost: {trade_size * self.config.buy_price:.2f} | Size: {trade_size}')
             best_ask = None
             book_tick_size = None
             try:
