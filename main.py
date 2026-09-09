@@ -159,10 +159,21 @@ class SweeperBot:
         committed_collateral = 0.0
         placed = 0
         trade_size = 100.0
+        cycle_ordered = set()  # FIX ISSUE #4: Track condition_ids ordered this cycle
+        # FIX ISSUE #5: Get existing resting order condition_ids to prevent cross-cycle duplicates
+        existing_resting_cids = set()
+        for ro in self.order_builder.list_open_orders():
+            if hasattr(ro, 'condition_id'):
+                existing_resting_cids.add(ro.condition_id)
         for det in sweepable:
             if placed >= 10:
                 break
             if self.safety.is_worked(det.condition_id):
+                continue
+            if det.condition_id in cycle_ordered:  # FIX ISSUE #4: Skip if already ordered this cycle
+                continue
+            if det.condition_id in existing_resting_cids:  # FIX ISSUE #5: Skip if already has resting order
+                logger.debug(f"Skipping {det.question[:40]} - already has resting order")
                 continue
             if not self.rate_limiter.can_request("order"):
                 logger.warning("Order rate limit exhausted")
@@ -196,6 +207,7 @@ class SweeperBot:
                 self.rate_limiter.record_request("order")
                 self.safety.mark_worked(det.condition_id)
                 placed += 1
+                cycle_ordered.add(det.condition_id)  # FIX ISSUE #4: Track ordered this cycle
                 if not self.config.paper_mode:
                     committed_collateral += trade_size * self.config.buy_price
                 if isinstance(order, RestingOrder):
