@@ -81,6 +81,11 @@ class ReconciliationEngine:
 
     def reconcile(self) -> ReconciliationResult:
         positions = self.safety.state.open_positions
+        # Issue #11: Skip reconciliation when nothing to reconcile
+        if not getattr(self, "_last_position_count", None) or self._last_position_count == 0:
+            if not getattr(self, "_last_order_count", None) or self._last_order_count == 0:
+                logger.debug("Skipping reconciliation: 0 positions, 0 resting orders")
+                return
         total = len(positions)
         real = 0; phantom = 0; phantoms_removed = []
         # FIX ISSUE #11: Skip closed positions to reduce reconciliation overhead

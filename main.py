@@ -71,6 +71,7 @@ class SweeperBot:
         self.safety = SafetyRails(self.config)
         self.discovery = MarketDiscovery(self.config)
         self._failed_market_counts = {}  # Track consecutive failures per market
+        self._consecutive_empty_cycles = 0  # Track cycles with 0 orders  # Track consecutive failures per market
         self._market_cooldown = {}  # Cycle number when market can be retried
         self.detector = ResolutionDetector(self.config)
         self.rate_limiter = RateLimitManager(self.config)
