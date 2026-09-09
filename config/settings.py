@@ -65,7 +65,7 @@ PROCESSING_FLOOR_MS = 20
 MAX_ORDERS_PER_CYCLE = 10  # FIX ISSUE #9: Configurable max orders per cycle
 
 PREFER_MAKER = True
-ALLOW_TAKER_FALLBACK = False
+ALLOW_TAKER_FALLBACK = True
 RESTING_ORDER_TIMEOUT = 120.0
 ORDER_RECONCILE_INTERVAL = 2.0
 CANCEL_ORDERS_ON_SHUTDOWN = True
@@ -350,3 +350,6 @@ def estimate_slippage(order_size, book_liquidity=1000):
         return float('inf')
     impact = order_size / book_liquidity
     return min(impact * 0.01, 0.05)
+
+# Maximum price for taker (market) orders - allows buying slightly above buy_price
+TAKER_MAX_PRICE = 0.995

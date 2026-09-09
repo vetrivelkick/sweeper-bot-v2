@@ -75,12 +75,13 @@ class SweepOrder:
     def to_dict(self):
         d = asdict(self); d["status"] = self.status.value if isinstance(self.status, OrderStatus) else str(self.status); return d
 
-def plan_entry(best_ask, tick_size, min_entry, max_entry, prefer_maker=True, allow_taker=False):
+def plan_entry(best_ask, tick_size, min_entry, max_entry, prefer_maker=True, allow_taker=False, taker_max=None):
     """P1: Use Decimal for exact tick alignment to avoid float precision drift."""
     tick = Decimal(str(tick_size)) if not isinstance(tick_size, Decimal) else tick_size
     ask_d = Decimal(str(best_ask))
     min_d = Decimal(str(min_entry))
     max_d = Decimal(str(max_entry))
+    taker_max_d = Decimal(str(taker_max)) if taker_max is not None else max_d
     if prefer_maker:
         maker_ceiling = ask_d - tick
         desired = max(maker_ceiling, min_d)
@@ -93,7 +94,7 @@ def plan_entry(best_ask, tick_size, min_entry, max_entry, prefer_maker=True, all
             return (p, True, f"resting maker bid @ {p} (ask={best_ask}, tick={tick})")
         if not allow_taker:
             return None
-    if min_d <= ask_d <= max_d:
+    if min_d <= ask_d <= taker_max_d:
         return (float(ask_d), False, f"taker fallback @ best ask {best_ask}")
     return None
 
@@ -170,8 +171,8 @@ class OrderBuilder:
         order_type = "GTC" if is_maker else "FAK"
         post_only = is_maker
         if is_maker and best_ask is not None:
-            plan = plan_entry(best_ask, tick_size, self.config.min_entry_price, self.config.buy_price, self.config.prefer_maker, self.config.allow_taker_fallback)
-            if plan is None: logger.warning(f"No valid entry for {detection_result.question[:40]}"); return False, None
+            plan = plan_entry(best_ask, tick_size, self.config.min_entry_price, self.config.buy_price, self.config.prefer_maker, self.config.allow_taker_fallback, getattr(self.config, 'taker_max_price', 0.995))
+            if plan is None: logger.warning(f"No valid entry for {detection_result.question[:40]} | tick={tick_size} best_ask={best_ask} min_entry={self.config.min_entry_price} buy_price={self.config.buy_price} allow_taker={self.config.allow_taker_fallback}"); return False, None
             price, is_maker, detail = plan; order_type = "GTC" if is_maker else "FAK"; post_only = is_maker
             logger.info(f"Entry plan: {detail}")
         else:
