@@ -194,7 +194,7 @@ class SweeperConfig:
     gas_floor: float = field(default_factory=lambda: float(os.getenv("GAS_FLOOR", str(GAS_FLOOR))))
     paper_mode: bool = field(default_factory=lambda: os.getenv("PAPER_MODE", "true").lower() != "false")
     prefer_maker: bool = field(default_factory=lambda: os.getenv("PREFER_MAKER", "true").lower() == "true")
-    allow_taker_fallback: bool = field(default_factory=lambda: os.getenv("ALLOW_TAKER_FALLBACK", "false").lower() == "true")
+    allow_taker_fallback: bool = field(default_factory=lambda: os.getenv("ALLOW_TAKER_FALLBACK", "true").lower() == "true")
     resting_order_timeout: float = field(default_factory=lambda: float(os.getenv("RESTING_ORDER_TIMEOUT", str(RESTING_ORDER_TIMEOUT))))
     order_reconcile_interval: float = field(default_factory=lambda: float(os.getenv("ORDER_RECONCILE_INTERVAL", str(ORDER_RECONCILE_INTERVAL))))
     cancel_orders_on_shutdown: bool = field(default_factory=lambda: os.getenv("CANCEL_ORDERS_ON_SHUTDOWN", "true").lower() == "true")

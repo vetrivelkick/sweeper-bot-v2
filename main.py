@@ -73,6 +73,8 @@ class SweeperBot:
         self._failed_market_counts = {}  # Track consecutive failures per market
         self._consecutive_empty_cycles = 0  # Track cycles with 0 orders  # Track consecutive failures per market
         self._market_cooldown = {}  # Cycle number when market can be retried
+        self._skip_balance_refresh = False
+        self._cached_usdc_balance = None
         self.detector = ResolutionDetector(self.config)
         self.rate_limiter = RateLimitManager(self.config)
         self.order_builder = OrderBuilder(self.config, self.safety, self.rate_limiter)
@@ -119,7 +121,11 @@ class SweeperBot:
         """Get actual USDC balance for pre-trade logging."""
         if self.config.paper_mode:
             return -1.0
-        return get_wallet_balance(self.config, self.order_builder)
+        if self._skip_balance_refresh and self._cached_usdc_balance is not None:
+            return self._cached_usdc_balance
+        bal = get_wallet_balance(self.config, self.order_builder)
+        self._cached_usdc_balance = bal
+        return bal
 
     def run_cycle(self):
         self._cycle_count += 1
@@ -243,6 +249,14 @@ class SweeperBot:
                 logger.debug(f"Order rejected for {det.question[:40]}")
         self._reconcile()
         self.safety.dump_state()
+        if placed == 0:
+            self._consecutive_empty_cycles += 1
+            self._skip_balance_refresh = True
+            if self._consecutive_empty_cycles >= 5:
+                logger.warning(f"No orders for {self._consecutive_empty_cycles} consecutive cycles")
+        else:
+            self._consecutive_empty_cycles = 0
+            self._skip_balance_refresh = False
         logger.info(f"Cycle {self._cycle_count}: {placed} orders placed")
         clear_context()
         return True

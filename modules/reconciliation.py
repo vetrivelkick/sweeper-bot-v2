@@ -47,6 +47,8 @@ class ReconciliationEngine:
         self._history = []  # Last N reconciliation results
         self._max_history = 50
         self._stale_position_threshold = 3600  # 1 hour
+        self._last_position_count = 0
+        self._last_order_count = 0
 
     def _create_position_from_fill(self, condition_id, tx_hash, shares, price, side):
         """P0 #8: Create a position entry from a confirmed fill."""
@@ -82,10 +84,11 @@ class ReconciliationEngine:
     def reconcile(self) -> ReconciliationResult:
         positions = self.safety.state.open_positions
         # Issue #11: Skip reconciliation when nothing to reconcile
-        if not getattr(self, "_last_position_count", None) or self._last_position_count == 0:
-            if not getattr(self, "_last_order_count", None) or self._last_order_count == 0:
+        if len(positions) == 0:
+            resting_count = len(self.order_builder.list_open_orders()) if self.order_builder else 0
+            if resting_count == 0:
                 logger.debug("Skipping reconciliation: 0 positions, 0 resting orders")
-                return
+                return ReconciliationResult(0, 0, 0, [], time.time())
         total = len(positions)
         real = 0; phantom = 0; phantoms_removed = []
         # FIX ISSUE #11: Skip closed positions to reduce reconciliation overhead
@@ -102,6 +105,7 @@ class ReconciliationEngine:
                 self.safety.record_ghost_fill(condition_id)
                 logger.warning(f"Ghost fill removed: {condition_id}")
             else: real += 1
+        self._last_position_count = total
         self._last_run = time.time()
         self._total_runs += 1
         self._total_phantoms_found += phantom
@@ -118,6 +122,7 @@ class ReconciliationEngine:
         # FIX ISSUE #11: Skip reconciliation if no resting orders
         resting = self.order_builder.list_open_orders()
         if not resting:
+            self._last_order_count = 0
             self._last_order_run = time.time()
             return result
         order_result = self.order_builder.reconcile_orders(ask_source)
@@ -126,6 +131,7 @@ class ReconciliationEngine:
         result.cancelled = order_result.get("cancelled", [])
         result.still_resting = order_result.get("total_resting", 0)
         result.reserved_collateral = order_result.get("reserved_collateral", 0.0)
+        self._last_order_count = result.still_resting
         self._last_order_run = time.time()
         self._total_orders_filled += len(result.filled)
         self._total_orders_expired += len(result.expired)
