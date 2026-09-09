@@ -1,4 +1,5 @@
-"""Sweeper Bot V2 - Main Orchestrator with GTC Post-Only
+"""
+Sweeper Bot V2 - Main Orchestrator with GTC Post-Only
 
 FIX #2: Standardized fill probability logic (35% fill, 25% partial, 5% ghost, 35% expired)
 FIX #3: Gas cost standardized to GAS_PER_SHARE (0.001/share)
@@ -33,6 +34,7 @@ from modules.startup_recovery import StartupRecovery
 from modules.logging_config import setup_logging, set_correlation_id, set_trade_id, set_cycle_id, clear_context  # AUDIT FIX #12
 from modules.metrics import MetricsCollector  # SECTION 21 AUDIT
 from modules.observability import ObservabilityServer, setup_log_rotation  # SECTION 21 AUDIT
+from modules.wallet_balance import get_wallet_balance  # FIX: multi-sig-type wallet balance
 
 logger = logging.getLogger("sweeper.main")
 
@@ -114,38 +116,7 @@ class SweeperBot:
         """Get actual USDC balance for pre-trade logging."""
         if self.config.paper_mode:
             return -1.0
-        try:
-            client = self.order_builder._get_client()
-            if client:
-                from py_clob_client_v2 import BalanceAllowanceParams, AssetType
-                resp = client.get_balance_allowance(params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL))
-                if resp:
-                    bal_raw = resp.get('balance', resp.get('Balance', '0')) if isinstance(resp, dict) else str(resp)
-                    try:
-                        return float(bal_raw) / 1e6
-                    except (ValueError, TypeError):
-                        pass
-        except Exception as e:
-            logger.warning(f'CLOB balance check failed, trying on-chain: {e}')
-        try:
-            addr = getattr(self.config, 'wallet_address', '')
-            if not addr:
-                return -1.0
-            rpc = getattr(self.config, 'polygon_rpc', '') or getattr(self.config, 'rpc_url', '')
-            if not rpc:
-                return -1.0
-            import requests
-            contract = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa8414C"
-            data = "0x70a08231000000000000000000000000" + addr[2:].lower()
-            r = requests.post(rpc, json={"method": "eth_call", "params": [{"to": contract, "data": data}, "latest"], "id": 1, "jsonrpc": "2.0"})
-            result = r.json().get("result", "0x0")
-            if not result or result == "0x":
-                result = "0x0"
-            bal = int(result, 16) / 1e6
-            return bal
-        except Exception as e:
-            logger.warning(f"USDC balance check failed: {e}")
-            return -1.0
+        return get_wallet_balance(self.config, self.order_builder)
 
     def run_cycle(self):
         self._cycle_count += 1
@@ -486,7 +457,7 @@ if __name__ == "__main__":
     config.clob_api_passphrase = os.environ.get("CLOB_API_PASSPHRASE", "")
     config.wallet_address = os.environ.get("WALLET_ADDRESS", "")
     config.signature_type = int(os.environ.get("SIGNATURE_TYPE", "0"))
-    config.funder = os.environ.get("FUNDER_ADDRESS", "")
+    config.funder = os.environ.get("FUNDER_ADDRESS", "") or os.environ.get("FUNDER", "")
     setup_logging(level=os.getenv("LOG_LEVEL", "INFO"), json_format=os.getenv("LOG_JSON", "false").lower() == "true")
     bot = SweeperBot(config)
     if args.cycles > 0:
