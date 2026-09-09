@@ -200,6 +200,19 @@ class SweeperBot:
                     best_ask = min(float(a.get("price", 0)) for a in asks)
             except Exception:
                 pass
+            # FIX ISSUE #8: When best_ask is None (empty orderbook), use winning_price as fallback
+            if best_ask is None:
+                wp = getattr(det, 'winning_price', None)
+                if wp is not None and wp > 0:
+                    best_ask = float(wp)
+                    logger.debug(f"No orderbook for {det.question[:40]} - using winning_price {wp} as best_ask fallback")
+                else:
+                    # FIX ISSUE #8: Skip markets with no price reference at all
+                    logger.debug(f"Skipping {det.question[:40]} - no orderbook and no winning_price")
+                    continue
+            # FIX ISSUE #12: Log price edge for visibility into order pricing
+            price_edge = best_ask - self.config.buy_price
+            logger.info(f"Order pricing: best_ask={best_ask:.4f} buy_price={self.config.buy_price} edge={price_edge:.4f}")
             tick_size = getattr(det, 'tick_size', 0.001 if det.winning_price >= 0.999 else 0.01)
             success, order = self.order_builder.build_and_place(detection_result=det, size=trade_size, best_ask=best_ask, tick_size=tick_size, neg_risk=getattr(det, 'neg_risk', False))
             if success and order:
