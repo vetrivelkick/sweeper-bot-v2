@@ -162,6 +162,11 @@ class StartupRecovery:
                 with open(self._state_file, 'r') as f:
                     raw_data = json.load(f)
                 raw_data = self.migrate_state(raw_data)
+                # FIX ISSUE #14: Persist migrated state to disk so migration doesn't repeat on every startup
+                if self._recovery_status.get('state_migrated'):
+                    with open(self._state_file, 'w') as f_out:
+                        json.dump(raw_data, f_out, indent=2)
+                    logger.info("State migration persisted to disk (v2)")
                 integrity_issues = self.verify_state_integrity(raw_data)
                 if integrity_issues:
                     logger.warning(f"State integrity issues: {integrity_issues}")
