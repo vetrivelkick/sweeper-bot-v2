@@ -62,6 +62,7 @@ GAS_FLOOR = 0.5
 RECONCILIATION_INTERVAL = 30
 FILL_CONFIRM_TIMEOUT = 8
 PROCESSING_FLOOR_MS = 20
+MAX_ORDERS_PER_CYCLE = 10  # FIX ISSUE #9: Configurable max orders per cycle
 
 PREFER_MAKER = True
 ALLOW_TAKER_FALLBACK = False
@@ -225,6 +226,7 @@ class SweeperConfig:
     funder: str = field(default_factory=lambda: os.getenv("FUNDER", ""))  # Funder address for proxy/Safe/deposit wallets
     fee_rate: float = DEFAULT_FEE_RATE
     min_entry_price: float = field(default_factory=lambda: float(os.getenv("MIN_ENTRY_PRICE", str(MIN_ENTRY_PRICE))))  # P1: Parameterized entry floor
+    max_orders_per_cycle: int = field(default_factory=lambda: int(os.getenv("MAX_ORDERS_PER_CYCLE", str(MAX_ORDERS_PER_CYCLE))))  # FIX ISSUE #9: Configurable max orders per cycle
     # SECTION 1 AUDIT: Strategy specification fields
     max_entry_price: float = field(default_factory=lambda: float(os.getenv("MAX_ENTRY_PRICE", str(MAX_ENTRY_PRICE))))
     max_resolution_dispute_risk: float = field(default_factory=lambda: float(os.getenv("MAX_RESOLUTION_DISPUTE_RISK", str(MAX_RESOLUTION_DISPUTE_RISK))))

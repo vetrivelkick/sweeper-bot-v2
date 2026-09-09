@@ -166,7 +166,7 @@ class SweeperBot:
             if hasattr(ro, 'condition_id'):
                 existing_resting_cids.add(ro.condition_id)
         for det in sweepable:
-            if placed >= 10:
+            if placed >= self.config.max_orders_per_cycle:  # FIX ISSUE #9: Configurable max orders per cycle
                 break
             if self.safety.is_worked(det.condition_id):
                 continue
