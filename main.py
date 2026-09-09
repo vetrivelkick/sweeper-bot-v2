@@ -70,6 +70,8 @@ class SweeperBot:
         self.config = config or SweeperConfig(paper_mode=True)
         self.safety = SafetyRails(self.config)
         self.discovery = MarketDiscovery(self.config)
+        self._failed_market_counts = {}  # Track consecutive failures per market
+        self._market_cooldown = {}  # Cycle number when market can be retried
         self.detector = ResolutionDetector(self.config)
         self.rate_limiter = RateLimitManager(self.config)
         self.order_builder = OrderBuilder(self.config, self.safety, self.rate_limiter)
@@ -166,6 +168,11 @@ class SweeperBot:
             if hasattr(ro, 'condition_id'):
                 existing_resting_cids.add(ro.condition_id)
         for det in sweepable:
+            # Issue #5: Skip markets on cooldown
+            market_id = getattr(det, 'condition_id', det.question[:30])
+            cooldown_until = self._market_cooldown.get(market_id, 0)
+            if cycle_num < cooldown_until:
+                continue
             if placed >= self.config.max_orders_per_cycle:  # FIX ISSUE #9: Configurable max orders per cycle
                 break
             if self.safety.is_worked(det.condition_id):
