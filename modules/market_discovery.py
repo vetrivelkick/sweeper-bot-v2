@@ -181,7 +181,7 @@ class MarketDiscovery:
                             accepting_orders=bool(m.get("acceptingOrders") or False),
                             sweep_score=yp * float(m.get("volume24hr") or 0),
                             category=cat,
-                            tick_size=float(m.get("minimum_tick_size") or 0.01),
+                            tick_size=float(m.get("minimum_tick_size") or (0.001 if yp >= 0.96 else 0.01)),
                             min_order_size=float(m.get("minimum_order_size") or 5),
                             raw=m,
                         ))
@@ -199,3 +199,16 @@ class MarketDiscovery:
         if markets:
             logger.debug(f"top: {markets[0].question[:50]} | yes={markets[0].yes_price:.4f}")
         return markets
+
+
+    def get_market_book(self, token_id):
+        url = "https://clob.polymarket.com/book?token_id=" + str(token_id)
+        self._rate_limit()
+        try:
+            resp = self.session.get(url, timeout=10)
+            if resp.status_code == 200:
+                return resp.json()
+            logger.debug("Book fetch failed for " + str(token_id[:16]) + ": " + str(resp.status_code))
+        except Exception as e:
+            logger.debug("Book fetch error for " + str(token_id[:16]) + ": " + str(e))
+        return {}

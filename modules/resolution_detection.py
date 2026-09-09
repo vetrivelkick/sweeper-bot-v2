@@ -449,7 +449,7 @@ class ResolutionDetector:
             end_date=market.end_date,
             signals=all_signals,
             category=getattr(market, 'category', 'other'),
-            tick_size=getattr(market, 'tick_size', 0.01),
+            tick_size=getattr(market, 'tick_size', 0.001 if winning_price >= 0.96 else 0.01),
             resolution_source=", ".join(outcome_sources) if outcome_sources else "price",
             outcome_sources=outcome_sources,
             finality_status=FinalityStatus.PENDING.value,

@@ -229,7 +229,9 @@ class SweeperBot:
             # FIX ISSUE #12: Log price edge for visibility into order pricing
             price_edge = best_ask - self.config.buy_price
             logger.info(f"Order pricing: best_ask={best_ask:.4f} buy_price={self.config.buy_price} edge={price_edge:.4f}")
-            tick_size = float(book_tick_size) if book_tick_size else getattr(det, 'tick_size', 0.001 if det.winning_price >= 0.95 else 0.01)
+            tick_size = float(book_tick_size) if book_tick_size else getattr(det, 'tick_size', 0.001 if det.winning_price >= 0.96 else 0.01)
+            if tick_size == 0.01 and getattr(det, 'winning_price', 0) >= 0.96:
+                tick_size = 0.001
             success, order = self.order_builder.build_and_place(detection_result=det, size=trade_size, best_ask=best_ask, tick_size=tick_size, neg_risk=getattr(det, 'neg_risk', False))
             if success and order:
                 set_trade_id()
