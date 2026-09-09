@@ -788,7 +788,7 @@ class SafetyRails:
             checks.append(f"FAIL: Profit margin {edge:.6f} < {MIN_PROFIT_MARGIN}")
         if shares < MIN_ORDER_SIZE_ECONOMIC:
             checks.append(f"FAIL: Order size {shares} < {MIN_ORDER_SIZE_ECONOMIC}")
-        min_size = min_viable_size(GAS_PER_SHARE * 100, buy_price, is_maker)
+        min_size = min_viable_size(GAS_PER_SHARE * 10, buy_price, is_maker)
         if shares < min_size:
             checks.append(f"FAIL: Order size {shares} < min viable {min_size:.1f}")
         order_cost = buy_price * shares
@@ -850,7 +850,7 @@ class SafetyRails:
         fee_rate = get_fee_rate(category)
         edge = net_edge_per_share(bp, LOSER_MAX_PRICE, GAS_PER_SHARE, is_maker)
         be = BREAK_EVEN_PRICE if bp == BUY_PRICE else bp + GAS_PER_SHARE + LOSER_MAX_PRICE
-        min_size = min_viable_size(GAS_PER_SHARE * 100, bp, is_maker)
+        min_size = min_viable_size(GAS_PER_SHARE * 10, bp, is_maker)
         return {
             'buy_price': bp, 'loser_max_price': LOSER_MAX_PRICE,
             'gas_per_share': GAS_PER_SHARE, 'fee_rate': fee_rate,

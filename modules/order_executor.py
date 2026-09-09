@@ -207,7 +207,7 @@ class OrderBuilder:
         if size < MIN_ORDER_SIZE_ECONOMIC:
             logger.warning(f"Order size {size} < MIN_ORDER_SIZE_ECONOMIC {MIN_ORDER_SIZE_ECONOMIC}")
             return False, None
-        _mv = _mvs(GAS_PER_SHARE * 100, price, is_maker)
+        _mv = _mvs(GAS_PER_SHARE * 10, price, is_maker)
         if size < _mv:
             logger.warning(f"Order size {size} < min viable {_mv:.1f}")
             return False, None
