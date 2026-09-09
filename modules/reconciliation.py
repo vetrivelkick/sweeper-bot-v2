@@ -83,8 +83,13 @@ class ReconciliationEngine:
         positions = self.safety.state.open_positions
         total = len(positions)
         real = 0; phantom = 0; phantoms_removed = []
+        # FIX ISSUE #11: Skip closed positions to reduce reconciliation overhead
+        checked = 0
         for condition_id in list(positions.keys()):
             position = positions[condition_id]
+            if isinstance(position, dict) and position.get('status') == 'closed':
+                continue  # FIX ISSUE #11: Skip already-closed positions
+            checked += 1
             result = self.confirmer.reconcile_position(position)
             if result == 'real': real += 1
             elif result == 'phantom':
@@ -99,12 +104,17 @@ class ReconciliationEngine:
         self._history.append({'type': 'position', 'total': total, 'real': real, 'phantom': phantom, 'timestamp': self._last_run})
         if len(self._history) > self._max_history:
             self._history = self._history[-self._max_history:]
-        logger.info(f"Position reconciliation: {total} positions, {real} real, {phantom} phantoms")
+        logger.info(f"Position reconciliation: {checked}/{total} positions checked, {real} real, {phantom} phantoms")
         return result
 
     def reconcile_orders(self, ask_source=None) -> OrderReconciliationResult:
         result = OrderReconciliationResult()
         if not self.order_builder: return result
+        # FIX ISSUE #11: Skip reconciliation if no resting orders
+        resting = self.order_builder.list_open_orders()
+        if not resting:
+            self._last_order_run = time.time()
+            return result
         order_result = self.order_builder.reconcile_orders(ask_source)
         result.filled = order_result.get("filled", [])
         result.expired = order_result.get("expired", [])
