@@ -148,8 +148,15 @@ class SweeperBot:
             usdc_bal = self.get_usdc_balance()
             if usdc_bal >= 0:
                 logger.info(f"[WALLET] Cycle start pUSD balance: {usdc_bal:.2f} pUSD")
+                if usdc_bal < 1.0:
+                    logger.warning('[WALLET] Insufficient pUSD - skipping cycle')
+                    return True
             else:
                 logger.info('[WALLET] USDC balance unavailable - continuing')
+                usdc_bal = -1.0
+        else:
+            usdc_bal = -1.0
+        committed_collateral = 0.0
         placed = 0
         trade_size = 100.0
         for det in sweepable:
@@ -160,21 +167,20 @@ class SweeperBot:
             if not self.rate_limiter.can_request("order"):
                 logger.warning("Order rate limit exhausted")
                 break
-            if not self.config.paper_mode:
-                usdc_bal = self.get_usdc_balance()
+            if not self.config.paper_mode and usdc_bal >= 0:
+                available_bal = usdc_bal - committed_collateral
                 order_cost = 100.0 * self.config.buy_price
-                if usdc_bal >= 0 and usdc_bal < order_cost:
-                    max_shares = int(usdc_bal / self.config.buy_price)
+                if available_bal < order_cost:
+                    max_shares = int(available_bal / self.config.buy_price)
                     if max_shares >= 5:
-                        logger.info(f'[WALLET] Reduced size: {max_shares} shares (balance: {usdc_bal:.2f} pUSD)')
+                        logger.info(f'[WALLET] Reduced size: {max_shares} shares (available: {available_bal:.2f} pUSD)')
                         trade_size = float(max_shares)
                     else:
-                        logger.warning(f'[WALLET] Insufficient pUSD: {usdc_bal:.2f} < needed {order_cost:.2f} for min 5 shares - skipping')
+                        logger.warning(f'[WALLET] Insufficient pUSD: {available_bal:.2f} < needed {order_cost:.2f} for min 5 shares - skipping')
                         break
                 else:
                     trade_size = 100.0
-                if usdc_bal >= 0:
-                    logger.info(f'[WALLET] Pre-trade pUSD: {usdc_bal:.2f} | Cost: {trade_size * self.config.buy_price:.2f} | Size: {trade_size}')
+                logger.info(f'[WALLET] Pre-trade pUSD: {available_bal:.2f} | Cost: {trade_size * self.config.buy_price:.2f} | Size: {trade_size}')
             best_ask = None
             try:
                 book = self.discovery.get_market_book(det.winning_token_id)
@@ -190,6 +196,8 @@ class SweeperBot:
                 self.rate_limiter.record_request("order")
                 self.safety.mark_worked(det.condition_id)
                 placed += 1
+                if not self.config.paper_mode:
+                    committed_collateral += trade_size * self.config.buy_price
                 if isinstance(order, RestingOrder):
                     logger.info(f"GTC post-only: {order.order_id} @ {order.price} for {det.question[:40]}")
                     if self.config.paper_mode:

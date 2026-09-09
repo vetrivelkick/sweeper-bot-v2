@@ -38,6 +38,25 @@ def get_wallet_balance(config, order_builder=None):
         except Exception as e:
             logger.warning(f'CLOB balance check failed (sig_type={configured_sig}): {e}')
 
+    # FIX ISSUE #1: When order_builder is None (startup), still try configured sig_type first
+    if not order_builder:
+        try:
+            from py_clob_client_v2 import ClobClient, ApiCreds, BalanceAllowanceParams, AssetType
+            creds = ApiCreds(api_key=config.clob_api_key, api_secret=config.clob_api_secret, api_passphrase=config.clob_api_passphrase)
+            test_client = ClobClient(host="https://clob.polymarket.com", key=config.private_key, chain_id=137, creds=creds, signature_type=configured_sig, funder=config.funder if config.funder else None)
+            resp = test_client.get_balance_allowance(params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL))
+            if resp:
+                bal_raw = resp.get('balance', resp.get('Balance', '0')) if isinstance(resp, dict) else str(resp)
+                try:
+                    bal = float(bal_raw) / 1e6
+                    if bal > 0:
+                        return bal
+                    logger.info(f'[WALLET] CLOB API (sig_type={configured_sig}) returned 0, trying other types...')
+                except (ValueError, TypeError):
+                    pass
+        except Exception as e:
+            logger.warning(f'CLOB balance check failed (sig_type={configured_sig}): {e}')
+
     # Try other signature_types: 1=POLY_PROXY, 2=POLY_GNOSIS_SAFE, 3=POLY_1271
     for sig_type in [1, 2, 3]:
         if sig_type == configured_sig:
