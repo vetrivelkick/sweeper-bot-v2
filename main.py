@@ -172,7 +172,7 @@ class SweeperBot:
             # Issue #5: Skip markets on cooldown
             market_id = getattr(det, 'condition_id', det.question[:30])
             cooldown_until = self._market_cooldown.get(market_id, 0)
-            if cycle_num < cooldown_until:
+            if self._cycle_count < cooldown_until:
                 continue
             if placed >= self.config.max_orders_per_cycle:  # FIX ISSUE #9: Configurable max orders per cycle
                 break

@@ -24,7 +24,7 @@ FIX: load_state() resets kill switch in paper mode; verify_chain() tries all RPC
 import json, os, time, logging
 from datetime import datetime, timezone
 from typing import Optional
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, asdict, fields
 
 logger = logging.getLogger("sweeper.safety")
 
@@ -74,6 +74,9 @@ class SafetyBotState:
         d = d.copy()
         d['worked_markets'] = set(d.get('worked_markets', []))
         # FIX #16: Preserve rate_limit_429_count instead of popping it
+        # Filter out keys not in SafetyBotState fields (e.g., state_version, saved_at)
+        valid_fields = {f.name for f in fields(cls)}
+        d = {k: v for k, v in d.items() if k in valid_fields}
         return cls(**d)
 
 class SafetyRails:
