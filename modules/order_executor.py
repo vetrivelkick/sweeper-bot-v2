@@ -412,6 +412,9 @@ class OrderBuilder:
             order.status = OrderStatus.FAILED; order.error = RejectCode.NOT_ENOUGH_BALANCE.value; logger.error("Insufficient balance")
         elif "geoblock" in e or "blocked" in e or "region" in e:
             order.status = OrderStatus.FAILED; order.error = RejectCode.REGION_RESTRICTED.value; logger.error("Region restricted")
+        elif "orderbook" in e or "does not exist" in e or "doesnt exist" in e or "no orderbook" in e:
+            order.status = OrderStatus.FAILED; order.error = "orderbook_not_found"
+            logger.warning(f"Orderbook does not exist for {order.condition_id[:16]} - skipping market")
         else:
             order.status = OrderStatus.FAILED; order.error = err_msg; logger.error(f"Order rejected: {err_msg}")
         self.record_rejection()

@@ -140,6 +140,18 @@ class MarketDiscovery:
                         if not cid or cid in self._seen_condition_ids:
                             continue
                         self._seen_condition_ids.add(cid)
+                        # FIX ISSUE #2: Filter out stale markets with past end_date
+                        end_date_raw = m.get("endDate")
+                        if end_date_raw:
+                            try:
+                                from datetime import datetime, timezone
+                                end_dt = datetime.fromisoformat(end_date_raw.replace("Z", "+00:00"))
+                                now_utc = datetime.now(timezone.utc)
+                                if end_dt < now_utc:
+                                    logger.debug(f"Skipping stale market {m.get('question', '')[:40]}: end_date {end_date_raw} already passed")
+                                    continue
+                            except Exception:
+                                pass
                         tk = m.get("tokens", [])
                         if isinstance(tk, str):
                             tk = json.loads(tk)
