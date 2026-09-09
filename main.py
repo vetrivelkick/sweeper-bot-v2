@@ -193,11 +193,13 @@ class SweeperBot:
                     trade_size = 100.0
                 logger.info(f'[WALLET] Pre-trade pUSD: {available_bal:.2f} | Cost: {trade_size * self.config.buy_price:.2f} | Size: {trade_size}')
             best_ask = None
+            book_tick_size = None
             try:
                 book = self.discovery.get_market_book(det.winning_token_id)
                 asks = book.get("asks", [])
                 if asks:
                     best_ask = min(float(a.get("price", 0)) for a in asks)
+                book_tick_size = book.get("tick_size")
             except Exception:
                 pass
             # FIX ISSUE #8: When best_ask is None (empty orderbook), use winning_price as fallback
@@ -213,7 +215,7 @@ class SweeperBot:
             # FIX ISSUE #12: Log price edge for visibility into order pricing
             price_edge = best_ask - self.config.buy_price
             logger.info(f"Order pricing: best_ask={best_ask:.4f} buy_price={self.config.buy_price} edge={price_edge:.4f}")
-            tick_size = getattr(det, 'tick_size', 0.001 if det.winning_price >= 0.999 else 0.01)
+            tick_size = float(book_tick_size) if book_tick_size else getattr(det, 'tick_size', 0.001 if det.winning_price >= 0.95 else 0.01)
             success, order = self.order_builder.build_and_place(detection_result=det, size=trade_size, best_ask=best_ask, tick_size=tick_size, neg_risk=getattr(det, 'neg_risk', False))
             if success and order:
                 set_trade_id()
