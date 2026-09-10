@@ -480,6 +480,17 @@ class ResolutionDetector:
         # The bot needs winning_price >= min_entry_price to place a valid maker bid
         if result.winning_price < self.config.min_entry_price:
             return False
+        # FIX R6: Filter by maximum resolution time
+        max_res_min = getattr(self.config, "max_resolution_minutes", 0)
+        if max_res_min > 0 and result.end_date:
+            try:
+                from datetime import datetime, timezone
+                end_dt = datetime.fromisoformat(str(result.end_date).replace("Z", "+00:00"))
+                remaining_min = (end_dt - datetime.now(timezone.utc)).total_seconds() / 60.0
+                if remaining_min > max_res_min:
+                    return False
+            except Exception:
+                pass
         if self.config.paper_mode:
             if result.certainty in (CertaintyLevel.CERTAIN, CertaintyLevel.STRONG, CertaintyLevel.WEAK):
                 return True

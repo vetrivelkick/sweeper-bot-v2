@@ -227,6 +227,7 @@ class SweeperConfig:
     fee_rate: float = DEFAULT_FEE_RATE
     min_entry_price: float = field(default_factory=lambda: float(os.getenv("MIN_ENTRY_PRICE", str(MIN_ENTRY_PRICE))))  # P1: Parameterized entry floor
     max_orders_per_cycle: int = field(default_factory=lambda: int(os.getenv("MAX_ORDERS_PER_CYCLE", str(MAX_ORDERS_PER_CYCLE))))  # FIX ISSUE #9: Configurable max orders per cycle
+    max_resolution_minutes: int = field(default_factory=lambda: int(os.getenv("MAX_RESOLUTION_MINUTES", "5")))  # FIX R6: Max resolution time filter (minutes, 0=disabled)
     # SECTION 1 AUDIT: Strategy specification fields
     max_entry_price: float = field(default_factory=lambda: float(os.getenv("MAX_ENTRY_PRICE", str(MAX_ENTRY_PRICE))))
     taker_max_price: float = field(default_factory=lambda: float(os.getenv("TAKER_MAX_PRICE", "0.995")))

@@ -141,7 +141,8 @@ class SweeperBot:
             return False
         if not self.config.paper_mode:
             early_bal = self.get_usdc_balance()
-            if early_bal >= 0 and early_bal < 1.0:
+            min_order_cost = 5 * self.config.buy_price
+            if early_bal >= 0 and early_bal < min_order_cost:
                 logger.warning(f'[WALLET] Insufficient pUSD: {early_bal:.2f} - skipping discovery')
                 self._cycle_interval = 30
                 self._consecutive_empty_cycles += 1
@@ -149,7 +150,7 @@ class SweeperBot:
                 clear_context()
                 return True
         try:
-            candidates = self.discovery.discover_candidates(max_markets=100)
+            candidates = self.discovery.discover_candidates(max_markets=100, max_resolution_minutes=self.config.max_resolution_minutes)
             logger.info(f"Discovered {len(candidates)} markets")
         except Exception as e:
             logger.error(f"Discovery failed: {e}")
@@ -165,11 +166,11 @@ class SweeperBot:
                         try:
                             end_dt = datetime.fromisoformat(str(end_date).replace('Z', '+00:00')) if isinstance(end_date, str) else end_date
                             remaining_h = (end_dt - datetime.now(timezone.utc)).total_seconds() / 3600.0
-                            logger.info(f"  Sweepable: {det.question[:40]} | ends in {remaining_h:.1f}h | price={det.winning_price:.4f}")
+                            logger.info(f"  Sweepable: [{det.category}] {det.question[:60]} | ends in {remaining_h:.1f}h | price={det.winning_price:.4f}")
                         except Exception:
-                            logger.info(f"  Sweepable: {det.question[:40]} | end={end_date} | price={det.winning_price:.4f}")
+                            logger.info(f"  Sweepable: [{det.category}] {det.question[:60]} | end={end_date} | price={det.winning_price:.4f}")
                     else:
-                        logger.info(f"  Sweepable: {det.question[:40]} | price={det.winning_price:.4f}")
+                        logger.info(f"  Sweepable: [{det.category}] {det.question[:60]} | price={det.winning_price:.4f}")
             except Exception:
                 pass
         logger.info(f"{len(sweepable)} sweepable markets")
@@ -177,7 +178,7 @@ class SweeperBot:
             usdc_bal = self.get_usdc_balance()
             if usdc_bal >= 0:
                 logger.debug(f"[WALLET] Cycle start pUSD balance: {usdc_bal:.2f} pUSD")
-                if usdc_bal < 1.0:
+                if usdc_bal < (5 * self.config.buy_price):
                     logger.warning('[WALLET] Insufficient pUSD - skipping cycle')
                     self._cycle_interval = 30
                     return True

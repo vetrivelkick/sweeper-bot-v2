@@ -114,7 +114,7 @@ class MarketDiscovery:
                     return None
         return None
 
-    def discover_candidates(self, max_markets=200):
+    def discover_candidates(self, max_markets=200, max_resolution_minutes=0):
         import json
         self._seen_condition_ids.clear()
         markets = []
@@ -125,7 +125,14 @@ class MarketDiscovery:
             if total_fetched >= max_markets:
                 break
             bs = min(limit, max_markets - total_fetched)
-            url = "https://gamma-api.polymarket.com/markets?limit=" + str(bs) + "&offset=" + str(offset) + "&active=true&closed=false&order=volume24hr&ascending=false"
+            from datetime import datetime, timezone, timedelta
+            base_url = "https://gamma-api.polymarket.com/markets?limit=" + str(bs) + "&offset=" + str(offset) + "&active=true&closed=false"
+            if max_resolution_minutes > 0:
+                end_max = (datetime.now(timezone.utc) + timedelta(minutes=max_resolution_minutes)).strftime("%Y-%m-%dT%H:%M:%SZ")
+                base_url += "&end_date_max=" + end_max + "&order=endDate&ascending=true"
+            else:
+                base_url += "&order=volume24hr&ascending=false"
+            url = base_url
             try:
                 import requests as req
                 r = req.get(url, timeout=10)
