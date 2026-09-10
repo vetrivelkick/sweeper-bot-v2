@@ -127,6 +127,8 @@ class MarketDiscovery:
             bs = min(limit, max_markets - total_fetched)
             from datetime import datetime, timezone, timedelta
             base_url = "https://gamma-api.polymarket.com/markets?limit=" + str(bs) + "&offset=" + str(offset) + "&active=true&closed=false"
+            end_min = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            base_url += "&end_date_min=" + end_min
             if max_resolution_minutes > 0:
                 end_max = (datetime.now(timezone.utc) + timedelta(minutes=max_resolution_minutes)).strftime("%Y-%m-%dT%H:%M:%SZ")
                 base_url += "&end_date_max=" + end_max + "&order=endDate&ascending=true"

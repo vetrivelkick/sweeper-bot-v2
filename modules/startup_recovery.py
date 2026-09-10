@@ -177,7 +177,6 @@ class StartupRecovery:
                 logger.warning(f"State migration/integrity check failed: {e}")
 
         if state_ok:
-            self.safety.load_state()
             logger.info("Local state loaded successfully")
         else:
             logger.warning(f"State load skipped: {state_msg}")

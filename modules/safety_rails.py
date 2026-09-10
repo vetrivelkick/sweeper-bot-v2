@@ -63,6 +63,8 @@ class SafetyBotState:
     peak_pnl: float = 0.0
     max_drawdown: float = 0.0
     max_open_positions: int = 10
+    state_version: int = 2
+    saved_at: float = 0.0
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -74,7 +76,7 @@ class SafetyBotState:
         d = d.copy()
         d['worked_markets'] = set(d.get('worked_markets', []))
         # FIX #16: Preserve rate_limit_429_count instead of popping it
-        # Filter out keys not in SafetyBotState fields (e.g., state_version, saved_at)
+        # Filter out keys not in SafetyBotState fields
         valid_fields = {f.name for f in fields(cls)}
         d = {k: v for k, v in d.items() if k in valid_fields}
         return cls(**d)
@@ -473,6 +475,7 @@ class SafetyRails:
 
     def dump_state(self):
         """P1: Atomic state dump - write to temp file then rename to prevent corruption on crash."""
+        self.state.saved_at = time.time()
         tmp_file = self._state_file + '.tmp'
         try:
             with open(tmp_file, 'w') as f: json.dump(self.state.to_dict(), f, indent=2, default=str)
@@ -494,8 +497,11 @@ class SafetyRails:
                     logger.info("Kill switch reset (paper mode - previous live mode kill cleared)")
                 if not self.config.paper_mode:
                     if self.state.open_positions:
-                        logger.info(f"Clearing {len(self.state.open_positions)} paper-mode phantom positions")
-                        self.state.open_positions.clear()
+                        paper_count = sum(1 for p in self.state.open_positions.values() if isinstance(p, dict) and p.get("is_paper", False))
+                        if paper_count > 0:
+                            logger.info(f"Clearing {paper_count} paper-mode phantom positions")
+                            self.state.open_positions = {k: v for k, v in self.state.open_positions.items() if not (isinstance(v, dict) and v.get("is_paper", False))}
+                            self.dump_state()
                     logger.info(f"State loaded: {len(self.state.worked_markets)} worked, {len(self.state.open_positions)} positions")
                 return True
             except Exception as e: logger.error(f"State load failed: {e}")
