@@ -846,7 +846,7 @@ class SafetyRails:
         failures = [c for c in checks if c.startswith("FAIL")]
         if failures:
             return False, "; ".join(failures)
-        return True, "OK: Economics config valid"
+        return True, "Economics config valid"
 
     def get_economics_metrics(self, buy_price=None, shares=None, category="other", is_maker=False):
         """SECTION 8 AUDIT: Report economics metrics for monitoring."""
