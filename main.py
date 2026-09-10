@@ -89,6 +89,7 @@ class SweeperBot:
         self.metrics = MetricsCollector()  # SECTION 21 AUDIT
         self.obs_server = None  # SECTION 21 AUDIT
         self._cycle_interval = 5  # FIX R5: Dynamic cycle interval
+        self._last_sweepable_ids = set()  # FIX R6: Track sweepable changes
 
     def startup_reconcile(self):
         logger.info("=" * 60)
@@ -174,6 +175,12 @@ class SweeperBot:
             except Exception:
                 pass
         logger.info(f"{len(sweepable)} sweepable markets")
+        cat_counts = {}
+        for det in sweepable:
+            cat_counts[det.category] = cat_counts.get(det.category, 0) + 1
+        if cat_counts:
+            cat_str = ", ".join(f"{k}:{v}" for k, v in sorted(cat_counts.items()))
+            logger.info(f"  Categories: {cat_str}")
         if not self.config.paper_mode:
             usdc_bal = self.get_usdc_balance()
             if usdc_bal >= 0:
@@ -278,11 +285,18 @@ class SweeperBot:
             self._skip_balance_refresh = True
             if self._consecutive_empty_cycles >= 5:
                 logger.warning(f"No orders for {self._consecutive_empty_cycles} consecutive cycles")
+            if self._consecutive_empty_cycles >= 10:
+                logger.warning(f"Backing off to 60s interval after {self._consecutive_empty_cycles} empty cycles")
         else:
             self._consecutive_empty_cycles = 0
             self._skip_balance_refresh = False
         logger.info(f"Cycle {self._cycle_count}: {placed} orders placed")
-        self._cycle_interval = 5 if placed > 0 else 10
+        if placed > 0:
+            self._cycle_interval = 5
+        elif self._consecutive_empty_cycles >= 10:
+            self._cycle_interval = 60
+        else:
+            self._cycle_interval = 10
         clear_context()
         return True
 
