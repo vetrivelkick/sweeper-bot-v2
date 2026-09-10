@@ -470,15 +470,19 @@ class OrderBuilder:
                 except Exception as e: logger.debug(f"Order poll error: {e}")
         return order
 
-    def reconcile_orders(self, ask_source=None):
-        filled = []; expired = []; cancelled = []; still_resting = []
-        for order_id in list(self._resting):
+    def reconcile_orders(self, ask_source=None, max_check=None):
+        filled = []; expired = []; cancelled = []
+        order_ids = list(self._resting)
+        check_ids = order_ids[:max_check] if max_check and len(order_ids) > max_check else order_ids
+        if max_check and len(order_ids) > max_check:
+            logger.info(f"Order reconcile: checking {max_check}/{len(order_ids)} orders (rate limit)")
+        for order_id in check_ids:
             order = self.get_order(order_id, ask_source)
             if not order: continue
             if order.status == OrderStatus.FILLED: filled.append(order); self._resting.pop(order_id, None)
             elif order.status == OrderStatus.PARTIAL: self._cancel_order(order_id); cancelled.append(order)
             elif order.status == OrderStatus.EXPIRED: expired.append(order); self._resting.pop(order_id, None)
-            elif order.status in (OrderStatus.LIVE, OrderStatus.PARTIAL): still_resting.append(order)
+        still_resting = list(self._resting.values())
         return {"filled": filled, "expired": expired, "cancelled": cancelled, "still_resting": still_resting,
                 "total_resting": len(still_resting), "reserved_collateral": self.reserved_collateral()}
 

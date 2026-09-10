@@ -88,6 +88,7 @@ class SweeperBot:
         self._lock = None
         self.metrics = MetricsCollector()  # SECTION 21 AUDIT
         self.obs_server = None  # SECTION 21 AUDIT
+        self._cycle_interval = 5  # FIX R5: Dynamic cycle interval
 
     def startup_reconcile(self):
         logger.info("=" * 60)
@@ -138,6 +139,15 @@ class SweeperBot:
             logger.critical(f"Kill switch: cancelled {cancelled} remote orders")
             self.safety.dump_state()
             return False
+        if not self.config.paper_mode:
+            early_bal = self.get_usdc_balance()
+            if early_bal >= 0 and early_bal < 1.0:
+                logger.warning(f'[WALLET] Insufficient pUSD: {early_bal:.2f} - skipping discovery')
+                self._cycle_interval = 30
+                self._consecutive_empty_cycles += 1
+                self._skip_balance_refresh = True
+                clear_context()
+                return True
         try:
             candidates = self.discovery.discover_candidates(max_markets=100)
             logger.info(f"Discovered {len(candidates)} markets")
@@ -150,15 +160,26 @@ class SweeperBot:
                 det = self.detector.detect(m)
                 if det and self.detector.is_sweepable(det):
                     sweepable.append(det)
+                    end_date = getattr(det, 'end_date', None)
+                    if end_date:
+                        try:
+                            end_dt = datetime.fromisoformat(str(end_date).replace('Z', '+00:00')) if isinstance(end_date, str) else end_date
+                            remaining_h = (end_dt - datetime.now(timezone.utc)).total_seconds() / 3600.0
+                            logger.info(f"  Sweepable: {det.question[:40]} | ends in {remaining_h:.1f}h | price={det.winning_price:.4f}")
+                        except Exception:
+                            logger.info(f"  Sweepable: {det.question[:40]} | end={end_date} | price={det.winning_price:.4f}")
+                    else:
+                        logger.info(f"  Sweepable: {det.question[:40]} | price={det.winning_price:.4f}")
             except Exception:
                 pass
         logger.info(f"{len(sweepable)} sweepable markets")
         if not self.config.paper_mode:
             usdc_bal = self.get_usdc_balance()
             if usdc_bal >= 0:
-                logger.info(f"[WALLET] Cycle start pUSD balance: {usdc_bal:.2f} pUSD")
+                logger.debug(f"[WALLET] Cycle start pUSD balance: {usdc_bal:.2f} pUSD")
                 if usdc_bal < 1.0:
                     logger.warning('[WALLET] Insufficient pUSD - skipping cycle')
+                    self._cycle_interval = 30
                     return True
             else:
                 logger.info('[WALLET] USDC balance unavailable - continuing')
@@ -198,7 +219,7 @@ class SweeperBot:
                 if available_bal < order_cost:
                     max_shares = int(available_bal / self.config.buy_price)
                     if max_shares >= 5:
-                        logger.debug(f'[WALLET] Reduced size: {max_shares} shares (available: {available_bal:.2f} pUSD)')
+                        logger.info(f'[WALLET] Reduced size: {max_shares} shares (available: {available_bal:.2f} pUSD)')
                         trade_size = float(max_shares)
                     else:
                         logger.warning(f'[WALLET] Insufficient pUSD: {available_bal:.2f} < needed {order_cost:.2f} for min 5 shares - skipping')
@@ -242,11 +263,11 @@ class SweeperBot:
                 if not self.config.paper_mode:
                     committed_collateral += trade_size * self.config.buy_price
                 if isinstance(order, RestingOrder):
-                    logger.info(f"GTC post-only: {order.order_id} @ {order.price} for {det.question[:40]}")
+                    logger.info(f"GTC post-only: {order.order_id} @ {order.price} x {trade_size:.0f} shares for {det.question[:40]}")
                     if self.config.paper_mode:
                         self._paper_fill(order, det)
                 else:
-                    logger.info(f"FAK taker: {order.order_id} for {det.question[:40]}")
+                    logger.info(f"FAK taker: {order.order_id} x {trade_size:.0f} shares for {det.question[:40]}")
             else:
                 logger.debug(f"Order rejected for {det.question[:40]}")
         self._reconcile()
@@ -260,6 +281,7 @@ class SweeperBot:
             self._consecutive_empty_cycles = 0
             self._skip_balance_refresh = False
         logger.info(f"Cycle {self._cycle_count}: {placed} orders placed")
+        self._cycle_interval = 5 if placed > 0 else 10
         clear_context()
         return True
 
@@ -342,7 +364,7 @@ class SweeperBot:
                 logger.error(f"Reconcile error: {e}")
         if self.reconciler.should_run_orders():
             try:
-                result = self.reconciler.reconcile_orders()
+                result = self.reconciler.reconcile_orders(max_check=3)
                 if result.filled:
                     logger.info(f"Order reconcile: {len(result.filled)} filled, {result.still_resting} resting")
                     # FIX R5: Process fills to create positions and track PnL (live mode only)
@@ -399,7 +421,7 @@ class SweeperBot:
                 ok = self.run_cycle()
                 if not ok:
                     break
-                time.sleep(5)
+                time.sleep(self._cycle_interval)
             except Exception as e:
                 logger.error(f"Cycle error: {e}")
                 time.sleep(10)

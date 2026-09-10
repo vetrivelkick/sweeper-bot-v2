@@ -116,7 +116,7 @@ class ReconciliationEngine:
         logger.info(f"Position reconciliation: {checked}/{total} positions checked, {real} real, {phantom} phantoms")
         return result
 
-    def reconcile_orders(self, ask_source=None) -> OrderReconciliationResult:
+    def reconcile_orders(self, ask_source=None, max_check=None) -> OrderReconciliationResult:
         result = OrderReconciliationResult()
         if not self.order_builder: return result
         # FIX ISSUE #11: Skip reconciliation if no resting orders
@@ -125,7 +125,7 @@ class ReconciliationEngine:
             self._last_order_count = 0
             self._last_order_run = time.time()
             return result
-        order_result = self.order_builder.reconcile_orders(ask_source)
+        order_result = self.order_builder.reconcile_orders(ask_source, max_check=max_check)
         result.filled = order_result.get("filled", [])
         result.expired = order_result.get("expired", [])
         result.cancelled = order_result.get("cancelled", [])
