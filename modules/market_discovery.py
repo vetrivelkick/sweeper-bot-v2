@@ -134,9 +134,8 @@ class MarketDiscovery:
                 base_url += "&order=volume24hr&ascending=false"
             url = base_url
             try:
-                import requests as req
-                r = req.get(url, timeout=10)
-                if r.status_code != 200:
+                r = self._fetch_with_retry(url, timeout=10)
+                if r is None or r.status_code != 200:
                     break
                 data = r.json()
                 if not data:
@@ -155,7 +154,7 @@ class MarketDiscovery:
                                 end_dt = datetime.fromisoformat(end_date_raw.replace("Z", "+00:00"))
                                 now_utc = datetime.now(timezone.utc)
                                 if end_dt < now_utc:
-                                    logger.debug(f"Skipping stale market {m.get('question', '')[:40]}: end_date {end_date_raw} already passed")
+                                    logger.info(f"Skipping stale market {m.get('question', '')[:40]}: end_date {end_date_raw} already passed")
                                     continue
                             except Exception:
                                 pass

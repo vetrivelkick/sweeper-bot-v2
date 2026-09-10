@@ -128,7 +128,7 @@ def check_wallet_balance(config):
     bal = get_wallet_balance(config)
     if bal < 0:
         return True  # Can't check, allow trading
-    min_bal = float(getattr(config, 'min_usdc_balance', 10))
+    min_bal = 5 * float(getattr(config, 'buy_price', 0.99))
     if bal >= min_bal:
         logger.info(f'pUSD OK: {bal:.2f}')
         return True
