@@ -36,6 +36,7 @@ from modules.metrics import MetricsCollector  # SECTION 21 AUDIT
 from modules.observability import ObservabilityServer, setup_log_rotation  # SECTION 21 AUDIT
 from modules.wallet_balance import get_wallet_balance  # FIX: multi-sig-type wallet balance
 
+logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger("sweeper.main")
 
 # AUDIT FIX #1: Block live mode until all P0 audit items are closed
@@ -300,6 +301,7 @@ class SweeperBot:
         self.safety.dump_state()
         if placed == 0:
             self._consecutive_empty_cycles += 1
+            logger.info(f"Empty cycle: {self._consecutive_empty_cycles} consecutive (0 orders placed)")
             self._skip_balance_refresh = True
             if self._consecutive_empty_cycles >= 5:
                 logger.warning(f"No orders for {self._consecutive_empty_cycles} consecutive cycles")
@@ -454,7 +456,11 @@ class SweeperBot:
                 ok = self.run_cycle()
                 if not ok:
                     break
-                time.sleep(self._cycle_interval)
+                logger.debug(f"Sleeping {self._cycle_interval}s before next cycle")
+                for _ in range(self._cycle_interval):
+                    if self._shutdown_requested:
+                        break
+                    time.sleep(1)
             except Exception as e:
                 logger.error(f"Cycle error: {e}")
                 time.sleep(10)

@@ -373,7 +373,7 @@ class SafetyRails:
                     logger.critical(f"KILL SWITCH: {self.state.kill_reason}")
                     self.dump_state()
                     return False, chain_id, self.state.kill_reason
-                return True, chain_id, f"OK: Polygon (137) via {endpoint}"
+                return True, chain_id, f"Polygon (137) via {endpoint}"
             except Exception as e:
                 logger.warning(f"RPC endpoint {endpoint} failed: {e}")
                 w3 = None
