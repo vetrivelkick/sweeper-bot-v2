@@ -212,7 +212,7 @@ class MarketDiscovery:
         url = "https://clob.polymarket.com/book?token_id=" + str(token_id)
         self._rate_limit()
         try:
-            resp = self.session.get(url, timeout=10)
+            resp = self._session.get(url, timeout=10)
             if resp.status_code == 200:
                 return resp.json()
             logger.debug("Book fetch failed for " + str(token_id[:16]) + ": " + str(resp.status_code))

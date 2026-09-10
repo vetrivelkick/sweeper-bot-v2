@@ -108,6 +108,8 @@ class SweeperBot:
         recovery_result = recovery.recover()
         if recovery_result['orders_recovered'] > 0 or recovery_result['positions_recovered'] > 0:
             logger.info(f"Remote recovery: {recovery_result['orders_recovered']} orders, {recovery_result['positions_recovered']} positions")
+            self.safety.dump_state()
+            logger.info("Recovered positions persisted to state file")
         resting = self.order_builder.list_open_orders()
         if resting:
             logger.info(f"Total resting orders: {len(resting)} (including recovered)")
@@ -140,40 +142,57 @@ class SweeperBot:
             logger.critical(f"Kill switch: cancelled {cancelled} remote orders")
             self.safety.dump_state()
             return False
+        insufficient_balance = False
         if not self.config.paper_mode:
             early_bal = self.get_usdc_balance()
             min_order_cost = 5 * self.config.buy_price
             if early_bal >= 0 and early_bal < min_order_cost:
-                logger.warning(f'[WALLET] Insufficient pUSD: {early_bal:.2f} - skipping discovery')
-                self._cycle_interval = 30
-                self._consecutive_empty_cycles += 1
+                logger.warning(f'[WALLET] Insufficient pUSD: {early_bal:.2f} - need {min_order_cost:.2f} for orders')
+                insufficient_balance = True
                 self._skip_balance_refresh = True
-                clear_context()
-                return True
         try:
             candidates = self.discovery.discover_candidates(max_markets=100, max_resolution_minutes=self.config.max_resolution_minutes)
             logger.info(f"Discovered {len(candidates)} markets")
+            # Log categories for ALL discovered markets
+            all_cat_counts = {}
+            for m in candidates:
+                cat = getattr(m, 'category', 'other')
+                all_cat_counts[cat] = all_cat_counts.get(cat, 0) + 1
+            if all_cat_counts:
+                all_cat_str = ", ".join(f"{k}:{v}" for k, v in sorted(all_cat_counts.items()))
+                logger.info(f"  Discovered categories: {all_cat_str}")
         except Exception as e:
             logger.error(f"Discovery failed: {e}")
             return True
         sweepable = []
+        current_ids = set()
         for m in candidates:
             try:
                 det = self.detector.detect(m)
                 if det and self.detector.is_sweepable(det):
                     sweepable.append(det)
-                    end_date = getattr(det, 'end_date', None)
-                    if end_date:
-                        try:
-                            end_dt = datetime.fromisoformat(str(end_date).replace('Z', '+00:00')) if isinstance(end_date, str) else end_date
-                            remaining_h = (end_dt - datetime.now(timezone.utc)).total_seconds() / 3600.0
-                            logger.info(f"  Sweepable: [{det.category}] {det.question[:60]} | ends in {remaining_h:.1f}h | price={det.winning_price:.4f}")
-                        except Exception:
-                            logger.info(f"  Sweepable: [{det.category}] {det.question[:60]} | end={end_date} | price={det.winning_price:.4f}")
-                    else:
-                        logger.info(f"  Sweepable: [{det.category}] {det.question[:60]} | price={det.winning_price:.4f}")
+                    current_ids.add(det.condition_id)
             except Exception:
                 pass
+        if current_ids != self._last_sweepable_ids:
+            for det in sweepable:
+                end_date = getattr(det, 'end_date', None)
+                if end_date:
+                    try:
+                        end_dt = datetime.fromisoformat(str(end_date).replace('Z', '+00:00')) if isinstance(end_date, str) else end_date
+                        remaining_sec = (end_dt - datetime.now(timezone.utc)).total_seconds()
+                        if remaining_sec < 3600:
+                            time_str = f"{remaining_sec/60:.1f}m"
+                        elif remaining_sec < 86400:
+                            time_str = f"{remaining_sec/3600:.1f}h"
+                        else:
+                            time_str = f"{remaining_sec/86400:.1f}d"
+                        logger.info(f"  Sweepable: [{det.category}] {det.question[:120]} | ends in {time_str} | price={det.winning_price:.4f}")
+                    except Exception:
+                        logger.info(f"  Sweepable: [{det.category}] {det.question[:120]} | end={end_date} | price={det.winning_price:.4f}")
+                else:
+                    logger.info(f"  Sweepable: [{det.category}] {det.question[:120]} | price={det.winning_price:.4f}")
+        self._last_sweepable_ids = current_ids
         logger.info(f"{len(sweepable)} sweepable markets")
         cat_counts = {}
         for det in sweepable:
@@ -182,16 +201,13 @@ class SweeperBot:
             cat_str = ", ".join(f"{k}:{v}" for k, v in sorted(cat_counts.items()))
             logger.info(f"  Categories: {cat_str}")
         if not self.config.paper_mode:
-            usdc_bal = self.get_usdc_balance()
-            if usdc_bal >= 0:
-                logger.debug(f"[WALLET] Cycle start pUSD balance: {usdc_bal:.2f} pUSD")
-                if usdc_bal < (5 * self.config.buy_price):
-                    logger.warning('[WALLET] Insufficient pUSD - skipping cycle')
-                    self._cycle_interval = 30
-                    return True
+            if insufficient_balance:
+                usdc_bal = early_bal
             else:
-                logger.info('[WALLET] USDC balance unavailable - continuing')
-                usdc_bal = -1.0
+                usdc_bal = self.get_usdc_balance()
+                if usdc_bal < 0:
+                    logger.info('[WALLET] USDC balance unavailable - continuing')
+                    usdc_bal = -1.0
         else:
             usdc_bal = -1.0
         committed_collateral = self.order_builder.reserved_collateral() if not self.config.paper_mode else 0.0
@@ -204,6 +220,8 @@ class SweeperBot:
             if hasattr(ro, 'condition_id'):
                 existing_resting_cids.add(ro.condition_id)
         for det in sweepable:
+            if insufficient_balance:
+                break
             # Issue #5: Skip markets on cooldown
             market_id = getattr(det, 'condition_id', det.question[:30])
             cooldown_until = self._market_cooldown.get(market_id, 0)
