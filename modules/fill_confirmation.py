@@ -118,7 +118,7 @@ class FillConfirmer:
                 try:
                     status = client.get_order(getattr(order, 'order_id', ''))
                     if isinstance(status, dict):
-                        matched = float(status.get('size_matched', 0))
+                        matched = float(status.get('sizeMatched', status.get('size_matched', 0)))
                         if matched > 0:
                             matched_amount = matched
                             tx_hashes = status.get('transactionsHashes', [])

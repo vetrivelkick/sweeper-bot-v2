@@ -344,7 +344,9 @@ class OrderBuilder:
                         trade_ids = response.get("tradeIDs", [])
                         if not order.tx_hash and trade_ids:
                             logger.info(f"[LIVE] Matched, {len(trade_ids)} trades pending hash resolution")
-                        fill = float(response.get("size_matched", 0))
+                        if not order.tx_hash:
+                            order.tx_hash = f"live_fill_{order.order_id[:16]}"
+                        fill = float(response.get("sizeMatched", response.get("size_matched", 0)))
                         if isinstance(order, RestingOrder): order.filled_shares = fill; order.avg_fill_price = order.price
                         else: order.fill_amount = fill
                         self.record_fill(order)
@@ -446,14 +448,25 @@ class OrderBuilder:
                 try:
                     status = client.get_order(order_id)
                     if isinstance(status, dict):
-                        matched = float(status.get("size_matched", 0))
-                        if matched > 0:
+                        # FIX R5: API returns sizeMatched (camelCase), not size_matched
+                        matched = float(status.get("sizeMatched", status.get("size_matched", 0)))
+                        order_status = status.get("status", "")
+                        if matched > 0 or order_status == "MATCHED":
+                            if matched == 0 and order_status == "MATCHED":
+                                matched = float(order.shares)
                             order.filled_shares = matched; order.avg_fill_price = order.price
                             tx_hashes = status.get("transactionsHashes", [])
                             order.tx_hash = tx_hashes[0] if tx_hashes else status.get("txHash", "")
+                            # FIX R5: Fallback tx_hash from associateTrades or placeholder
+                            if not order.tx_hash:
+                                assoc_trades = status.get("associateTrades", [])
+                                if assoc_trades and isinstance(assoc_trades, list):
+                                    order.tx_hash = assoc_trades[0].get("id", "") if isinstance(assoc_trades[0], dict) else str(assoc_trades[0])
+                                if not order.tx_hash:
+                                    order.tx_hash = f"live_fill_{order_id[:16]}"
                             if matched >= order.shares: order.status = OrderStatus.FILLED; self._reserved.pop(order_id, None)
                             else: order.status = OrderStatus.PARTIAL; self._reserved[order_id] = (order.shares - matched) * order.price
-                            logger.info(f"[LIVE] Order fill: {matched}/{order.shares}")
+                            logger.info(f"[LIVE] Order fill: {matched}/{order.shares} shares @ {order.price} for {order.market_question[:40]}")
                 except Exception as e: logger.debug(f"Order poll error: {e}")
         return order
 

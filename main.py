@@ -165,7 +165,7 @@ class SweeperBot:
                 usdc_bal = -1.0
         else:
             usdc_bal = -1.0
-        committed_collateral = 0.0
+        committed_collateral = self.order_builder.reserved_collateral() if not self.config.paper_mode else 0.0
         placed = 0
         trade_size = 100.0
         cycle_ordered = set()  # FIX ISSUE #4: Track condition_ids ordered this cycle
@@ -345,6 +345,15 @@ class SweeperBot:
                 result = self.reconciler.reconcile_orders()
                 if result.filled:
                     logger.info(f"Order reconcile: {len(result.filled)} filled, {result.still_resting} resting")
+                    # FIX R5: Process fills to create positions and track PnL (live mode only)
+                    if not self.config.paper_mode:
+                        self.reconciler.process_fills(result.filled, result.filled)
+                        for fill in result.filled:
+                            if fill.tx_hash:
+                                logger.info(f"[LIVE] Fill processed: {fill.filled_shares} shares @ {fill.price} for {fill.market_question[:40]}")
+                                from types import SimpleNamespace
+                                det = SimpleNamespace(condition_id=fill.condition_id, winning_token_id=fill.token_id, question=fill.market_question)
+                                self._complete_trade(det, fill, True, fill.filled_shares, fill.price)
             except Exception as e:
                 logger.error(f"Order reconcile error: {e}")
 

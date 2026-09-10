@@ -234,13 +234,13 @@ class StartupRecovery:
             if trades:
                 for trade_data in trades:
                     if isinstance(trade_data, dict):
-                        condition_id = trade_data.get('condition_id', '')
+                        condition_id = trade_data.get('conditionId', trade_data.get('condition_id', ''))
                         if condition_id and condition_id not in self.safety.state.open_positions:
                             tx_hashes = trade_data.get('transactionsHashes', [])
                             tx_hash = tx_hashes[0] if tx_hashes else trade_data.get('transaction_hash', '')
                             self.safety.state.open_positions[condition_id] = {
                                 'condition_id': condition_id,
-                                'token_id': trade_data.get('asset_id', trade_data.get('token_id', '')),
+                                'token_id': trade_data.get('asset', trade_data.get('asset_id', trade_data.get('token_id', ''))),
                                 'shares': float(trade_data.get('size', 0)),
                                 'fill_price': float(trade_data.get('price', 0)),
                                 'tx_hash': tx_hash,
