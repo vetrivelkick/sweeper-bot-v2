@@ -25,6 +25,10 @@ def get_wallet_balance(config, order_builder=None):
             client = order_builder._get_client()
             if client:
                 from py_clob_client_v2 import BalanceAllowanceParams, AssetType
+                try:
+                    client.update_balance_allowance(params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL))
+                except Exception:
+                    pass
                 resp = client.get_balance_allowance(params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL))
                 if resp:
                     bal_raw = resp.get('balance', resp.get('Balance', '0')) if isinstance(resp, dict) else str(resp)
@@ -44,6 +48,10 @@ def get_wallet_balance(config, order_builder=None):
             from py_clob_client_v2 import ClobClient, ApiCreds, BalanceAllowanceParams, AssetType
             creds = ApiCreds(api_key=config.clob_api_key, api_secret=config.clob_api_secret, api_passphrase=config.clob_api_passphrase)
             test_client = ClobClient(host="https://clob.polymarket.com", key=config.private_key, chain_id=137, creds=creds, signature_type=configured_sig, funder=config.funder if config.funder else None)
+            try:
+                test_client.update_balance_allowance(params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL))
+            except Exception:
+                pass
             resp = test_client.get_balance_allowance(params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL))
             if resp:
                 bal_raw = resp.get('balance', resp.get('Balance', '0')) if isinstance(resp, dict) else str(resp)
@@ -76,6 +84,10 @@ def get_wallet_balance(config, order_builder=None):
                 signature_type=sig_type,
                 funder=config.funder if config.funder else None,
             )
+            try:
+                test_client.update_balance_allowance(params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL))
+            except Exception:
+                pass
             resp = test_client.get_balance_allowance(params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL))
             if resp:
                 bal_raw = resp.get('balance', resp.get('Balance', '0')) if isinstance(resp, dict) else str(resp)

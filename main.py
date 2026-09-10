@@ -126,10 +126,18 @@ class SweeperBot:
         """Get actual USDC balance for pre-trade logging."""
         if self.config.paper_mode:
             return -1.0
-        if self._skip_balance_refresh and self._cached_usdc_balance is not None:
+        self._cycles_since_balance_check = getattr(self, '_cycles_since_balance_check', 0) + 1
+        if self._skip_balance_refresh and self._cached_usdc_balance is not None and self._cycles_since_balance_check < 5:
             return self._cached_usdc_balance
+        if self._skip_balance_refresh:
+            logger.info(f"[WALLET] Force-refreshing balance after {self._cycles_since_balance_check} cycles")
+        self._cycles_since_balance_check = 0
         bal = get_wallet_balance(self.config, self.order_builder)
         self._cached_usdc_balance = bal
+        if bal >= 0 and bal >= 5 * self.config.buy_price:
+            if self._skip_balance_refresh:
+                logger.info(f"[WALLET] Balance now sufficient: {bal:.2f} pUSD - resuming order placement")
+            self._skip_balance_refresh = False
         return bal
 
     def run_cycle(self):
@@ -150,7 +158,6 @@ class SweeperBot:
             if early_bal >= 0 and early_bal < min_order_cost:
                 logger.warning(f'[WALLET] Insufficient pUSD: {early_bal:.2f} - need {min_order_cost:.2f} for orders')
                 insufficient_balance = True
-                self._skip_balance_refresh = True
         try:
             candidates = self.discovery.discover_candidates(max_markets=100, max_resolution_minutes=self.config.max_resolution_minutes)
             logger.info(f"Discovered {len(candidates)} markets")
