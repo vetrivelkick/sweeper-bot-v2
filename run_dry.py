@@ -12,6 +12,7 @@ P1 #2,#3: Wired rate_limiter to OrderBuilder for 429/425 handling
 
 """
 import sys, os, time, json, logging, random, argparse
+from modules.logging_config import setup_logging
 from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import SweeperConfig, fee_per_share, GAS_PER_SHARE, get_fee_rate  # FIX #10: removed unused net_edge_per_share
@@ -33,7 +34,7 @@ TS = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 MAIN_LOG = os.path.join(LOG_DIR, f"dry_run_{TS}.log")
 TRADE_LOG = os.path.join(LOG_DIR, f"trades_{TS}.log")
 MARKET_LOG = os.path.join(LOG_DIR, f"markets_{TS}.log")
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S", handlers=[logging.FileHandler(MAIN_LOG), logging.StreamHandler()])
+setup_logging(level=INFO, log_file=MAIN_LOG)
 logger = logging.getLogger("sweeper.dryrun")
 
 class AdvancedDryRunner:

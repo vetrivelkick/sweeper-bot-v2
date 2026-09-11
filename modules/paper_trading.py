@@ -22,6 +22,7 @@ Usage:
     python3 run_paper.py [--cycles N] [--sweeps N]
 """
 import sys, os, time, json, logging, random, argparse
+from modules.logging_config import setup_logging
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_DOWN
 from dataclasses import dataclass, field, asdict
@@ -165,11 +166,7 @@ class AdvancedPaperTrader:
         self.TRADE_JSON = os.path.join(LOG_DIR, f"paper_trades_{self.TS}.json")
         self.SUMMARY_JSON = os.path.join(LOG_DIR, f"paper_summary_{self.TS}.json")
 
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-            handlers=[logging.FileHandler(self.MAIN_LOG), logging.StreamHandler()])
+        setup_logging(level=INFO, log_file=self.MAIN_LOG)
         self.logger = logging.getLogger("sweeper.paper")
         self.metrics = MetricsCollector(log_dir=LOG_DIR)
         self.alerts = AlertManager(self.config, self.safety, self.metrics)
