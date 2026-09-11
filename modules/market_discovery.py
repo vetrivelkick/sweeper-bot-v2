@@ -172,7 +172,7 @@ class MarketDiscovery:
                         pr = m.get("outcomePrices", [])
                         if isinstance(pr, str):
                             pr = json.loads(pr)
-                        yp = float(pr[0]) if pr else 0.0
+                            yp = float(pr[0]) if pr else 0.0
                         try:
                             cat = detect_category(m.get("question", ""), m.get("tags") if isinstance(m.get("tags"), list) else None)
                         except:
