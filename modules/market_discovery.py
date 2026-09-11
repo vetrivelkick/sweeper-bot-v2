@@ -172,7 +172,7 @@ class MarketDiscovery:
                         pr = m.get("outcomePrices", [])
                         if isinstance(pr, str):
                             pr = json.loads(pr)
-                            yp = float(pr[0]) if pr else 0.0
+                        yp = float(pr[0]) if pr else 0.0
                         try:
                             cat = detect_category(m.get("question", ""), m.get("tags") if isinstance(m.get("tags"), list) else None)
                         except:
@@ -230,7 +230,7 @@ class MarketDiscovery:
                             pr = m.get("outcomePrices", [])
                             if isinstance(pr, str):
                                 pr = json.loads(pr)
-                             yp = float(pr[0]) if pr else 0.0
+                            yp = float(pr[0]) if pr else 0.0
                             np_val = float(pr[1]) if len(pr) > 1 else 1.0 - yp
                             winning_price = max(yp, np_val)
                             if winning_price < 0.95:
@@ -254,7 +254,7 @@ class MarketDiscovery:
                                 tick_size=float(m.get("minimum_tick_size") or (0.001 if yp >= 0.96 else 0.01)),
                                 min_order_size=float(m.get("minimum_order_size") or 5),
                                  raw=m,
-                            )
+                            ))
 
                         except Exception:
                             continue
