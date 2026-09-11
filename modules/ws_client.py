@@ -116,7 +116,7 @@ class BaseWSClient:
                 self._ws.run_forever(
                     ping_interval=self._ping_interval,
                     ping_timeout=10,
-                    connect_timeout=self._connect_timeout
+                    timeout=self._connect_timeout
                 )
             except Exception as e:
                 logger.error(f"WS connection error: {e}")
