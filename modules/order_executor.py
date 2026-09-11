@@ -4,7 +4,7 @@ Sweeper Bot V2 - Order Builder with GTC Post-Only + Queued Positions
 FIX #2: Standardized fill probability logic (35% fill, 25% partial, 5% ghost, 35% expired)
 FIX #3: Gas cost standardized to 0.001/share
 FIX #5: V2 SDK migration: chain=137 -> chain=137
-FIX #9: Added 425 exponential backoff retry (1s->2s->4s...->30s, max 10 retries)
+FIX #9: Added 425 exponential backoff retry (1s->2s->4s...->30s, max 20 retries)
 FIX #17: plan_entry uses round() instead of int() for tick alignment
 FIX #18: Allow taker fallback when best_ask <= max_entry even if allow_taker is False
 P0 #2: Fixed CLOB V2 constructor: chain=137 -> chain_id=137 (V2 Python SDK uses chain_id)
@@ -313,7 +313,7 @@ class OrderBuilder:
     def _live_place(self, order, is_maker, post_only, order_type):
         client = self._get_client()
         if not client: order.status = OrderStatus.FAILED; order.error = "CLOB V2 client not available"; return False, order
-        max_retries = 10
+        max_retries = 20
         backoff = 1.0
         for attempt in range(max_retries + 1):
             try:
