@@ -83,7 +83,7 @@ def plan_entry(best_ask, tick_size, min_entry, max_entry, prefer_maker=True, all
     max_d = Decimal(str(max_entry))
     taker_max_d = Decimal(str(taker_max)) if taker_max is not None else max_d
     if prefer_maker:
-        maker_ceiling = ask_d - tick
+        maker_ceiling = ask_d
         desired = max(maker_ceiling, min_d)
         price = min(desired, maker_ceiling, max_d)
         price = (price // tick) * tick
