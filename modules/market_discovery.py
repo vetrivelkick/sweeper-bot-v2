@@ -202,6 +202,65 @@ class MarketDiscovery:
             except Exception as ex:
                 print("DEBUG API ERROR: " + str(ex))
                 break
+        # FIX: Also discover closed markets (in UMA dispute window) with high prices
+        # These are markets that have resolved but are in the UMA challenge period
+        # They have prices near 1.0 (winning side) and are sweepable
+        try:
+            closed_url = "https://gamma-api.polymarket.com/markets?limit=50&closed=true&active=false&order=volume24hr&ascending=false"
+            r2 = self._fetch_with_retry(closed_url, timeout=10)
+            if r2 and r2.status_code == 200:
+                closed_data = r2.json()
+                if closed_data:
+                    logger.info(f"[DISCOVERY] Found {len(closed_data)} closed markets (UMA dispute window)")
+                    for m in closed_data:
+                        try:
+                            cid = m.get("conditionId") or m.get("condition_id", "")
+                            if not cid or cid in self._seen_condition_ids:
+                                continue
+                            self._seen_condition_ids.add(cid)
+                            tk = m.get("tokens", [])
+                            if isinstance(tk, str):
+                                tk = json.loads(tk)
+                            if not tk:
+                                cids = m.get("clobTokenIds", [])
+                                if isinstance(cids, str):
+                                    cids = json.loads(cids)
+                                if cids and len(cids) >= 2:
+                                    tk = [{"token_id": cids[0]}, {"token_id": cids[1]}]
+                            pr = m.get("outcomePrices", [])
+                            if isinstance(pr, str):
+                                pr = json.loads(pr)
+                             yp = float(pr[0]) if pr else 0.0
+                            np_val = float(pr[1]) if len(pr) > 1 else 1.0 - yp
+                            winning_price = max(yp, np_val)
+                            if winning_price < 0.95:
+                                continue
+                            try:
+                                cat = detect_category(m.get("question", ""), m.get("tags") if isinstance(m.get("tags"), list) else None)
+                            except:
+                                cat = "other"
+                            markets.append(CandidateMarket(
+                                condition_id=cid, question=m.get("question", ""),
+                                slug=m.get("slug", ""),
+                                yes_token_id=tk[0].get("token_id", "") if tk else "",
+                                no_token_id=tk[1].get("token_id", "") if len(tk) > 1 else "",
+                                yes_price=yp, no_price=np_val,
+                                end_date=m.get("endDate"), volume_4hr=float(m.get("volume24hr") or 0),
+                                liquidity=float(m.get("liquidity") or 0),
+                                neg_risk=bool(m.get("negRisk") or False),
+                                accepting_orders=bool(m.get("acceptingOrders") or False),
+                                sweep_score=yp * float(m.get("volume24hr") or 0),
+                                 category=cat,
+                                tick_size=float(m.get("minimum_tick_size") or (0.001 if yp >= 0.96 else 0.01)),
+                                min_order_size=float(m.get("minimum_order_size") or 5),
+                                 raw=m,
+                            )
+
+                        except Exception:
+                            continue
+        except Exception as e:
+            logger.debug(f"Closed market discovery error: {e}")
+
         hp = sum(1 for m in markets if m.yes_price >= 0.95 or m.no_price >= 0.95)
         logger.debug(f"{hp} markets with price >= 0.95 out of {len(markets)}")
         if markets:
