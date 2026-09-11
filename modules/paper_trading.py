@@ -166,7 +166,7 @@ class AdvancedPaperTrader:
         self.TRADE_JSON = os.path.join(LOG_DIR, f"paper_trades_{self.TS}.json")
         self.SUMMARY_JSON = os.path.join(LOG_DIR, f"paper_summary_{self.TS}.json")
 
-        setup_logging(level=INFO, log_file=self.MAIN_LOG)
+        setup_logging(level=logging.INFO, log_file=self.MAIN_LOG)
         self.logger = logging.getLogger("sweeper.paper")
         self.metrics = MetricsCollector(log_dir=LOG_DIR)
         self.alerts = AlertManager(self.config, self.safety, self.metrics)

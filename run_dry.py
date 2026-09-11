@@ -34,7 +34,7 @@ TS = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 MAIN_LOG = os.path.join(LOG_DIR, f"dry_run_{TS}.log")
 TRADE_LOG = os.path.join(LOG_DIR, f"trades_{TS}.log")
 MARKET_LOG = os.path.join(LOG_DIR, f"markets_{TS}.log")
-setup_logging(level=INFO, log_file=MAIN_LOG)
+setup_logging(level=logging.INFO, log_file=MAIN_LOG)
 logger = logging.getLogger("sweeper.dryrun")
 
 class AdvancedDryRunner:
