@@ -167,7 +167,7 @@ def setup_logging(level: str = "INFO", json_format: bool = False, log_file: str 
     os.makedirs(os.path.dirname(log_file) or '.', exist_ok=True)
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(getattr(logging, level.upper(), logging.INFO))
+    root_logger.setLevel(getattr(logging, level.upper(), logging.INFO) if isinstance(level, str) else level)
 
     # Remove existing handlers
     for handler in root_logger.handlers[:]:
