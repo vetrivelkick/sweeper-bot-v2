@@ -18,6 +18,7 @@ FIX: Added load_dotenv() to automatically load .env file on startup
 import sys, os, time, json, signal, logging, threading
 from datetime import datetime, timezone
 from dotenv import load_dotenv
+from modules.ws_client import MarketWSClient
 load_dotenv()
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import SweeperConfig, fee_per_share, net_edge_per_share, GAS_PER_SHARE, get_fee_rate
@@ -453,6 +454,12 @@ class SweeperBot:
         self._running = True
         logger.info("=" * 60)
         logger.info("SWEEPER BOT V2 - RUNNING")
+        self.ws_client = None
+        try:
+            self.ws_client = MarketWSClient()
+            self.ws_client.start()
+        except Exception:
+            pass
         logger.info(f"  Mode: {'PAPER' if self.config.paper_mode else 'LIVE'}")
         logger.info(f"  Order Method: {'GTC POST-ONLY MAKER' if self.config.prefer_maker else 'FAK TAKER'}")
         logger.info(f"  Taker Fallback: {self.config.allow_taker_fallback}")
