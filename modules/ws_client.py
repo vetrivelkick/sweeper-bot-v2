@@ -283,12 +283,12 @@ class MarketWSClient(BaseWSClient):
     def subscribe(self, asset_ids: list):
         with self._lock:
             self._subscriptions = list(set(self._subscriptions + asset_ids))
-        msg = {"type": "Market", "assets_ids": asset_ids}
+        msg = {"type": "market", "assets_ids": asset_ids}
         self.send(msg)
         logger.info(f"WS subscribed to {len(asset_ids)} assets")
 
     def _do_subscribe(self, asset_ids: list):
-        msg = {"type": "Market", "assets_ids": asset_ids}
+        msg = {"type": "market", "assets_ids": asset_ids}
         self.send(msg)
         logger.info(f"WS re-subscribed to {len(asset_ids)} assets after reconnection")
 
