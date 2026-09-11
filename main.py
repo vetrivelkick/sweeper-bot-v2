@@ -114,6 +114,8 @@ class SweeperBot:
         resting = self.order_builder.list_open_orders()
         if resting:
             logger.info(f"Total resting orders: {len(resting)} (including recovered)")
+            # Fix 6: Cancel old resting orders to release reserved balance
+            self.order_builder.cancel_all()
         gas_status = self.gas.check_balance()
         logger.info(f"Gas: {gas_status.balance_pol} POL | Low: {gas_status.is_low} | Critical: {gas_status.is_critical}")
         if gas_status.is_critical:
