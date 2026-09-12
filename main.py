@@ -205,6 +205,11 @@ class SweeperBot:
                     logger.info(f"  Sweepable: [{det.category}] {det.question[:120]} | price={det.winning_price:.4f}")
         self._last_sweepable_ids = current_ids
         logger.info(f"{len(sweepable)} sweepable markets")
+        if self.ws_client and sweepable:
+            _ws_ids = [d.winning_token_id for d in sweepable if d.winning_token_id][:50]
+            if _ws_ids:
+                self.ws_client.subscribe(_ws_ids)
+                logger.info(str(len(_ws_ids)))
         cat_counts = {}
         for det in sweepable:
             cat_counts[det.category] = cat_counts.get(det.category, 0) + 1
