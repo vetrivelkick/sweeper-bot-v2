@@ -129,8 +129,8 @@ class MarketDiscovery:
             base_url = "https://gamma-api.polymarket.com/markets?limit=" + str(bs) + "&offset=" + str(offset) + "&active=true&closed=false"
             end_min = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
             base_url += "&end_date_min=" + end_min
-            if max_resolution_minutes > 0:
-                end_max = (datetime.now(timezone.utc) + timedelta(minutes=max_resolution_minutes)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            if max_resolution_minutes >= 0:
+                end_max = (datetime.now(timezone.utc) + timedelta(minutes=max_resolution_minutes if max_resolution_minutes > 0 else 1440)).strftime("%Y-%m-%dT%H:%M:%SZ")
                 base_url += "&end_date_max=" + end_max + "&order=endDate&ascending=true"
             else:
                 base_url += "&order=volume24hr&ascending=true"
