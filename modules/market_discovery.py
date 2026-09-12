@@ -133,7 +133,7 @@ class MarketDiscovery:
                 end_max = (datetime.now(timezone.utc) + timedelta(minutes=max_resolution_minutes)).strftime("%Y-%m-%dT%H:%M:%SZ")
                 base_url += "&end_date_max=" + end_max + "&order=endDate&ascending=true"
             else:
-                base_url += "&order=volume24hr&ascending=false"
+                base_url += "&order=volume24hr&ascending=true"
             url = base_url
             try:
                 r = self._fetch_with_retry(url, timeout=10)
