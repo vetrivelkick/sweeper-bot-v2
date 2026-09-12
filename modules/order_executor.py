@@ -354,6 +354,8 @@ class OrderBuilder:
                     elif response.get("orderID"):
                         order.status = OrderStatus.LIVE
                         logger.info(f"[LIVE] GTC post-only RESTING: {order.order_id}")
+                        try: _v = client.get_order(order.order_id); logger.info(str(_v))
+                        except Exception as _e: logger.warning(str(_e))
                     elif response.get("error"):
                         err = response.get("error", "")
                         if "425" in str(err).lower() and attempt < max_retries:
