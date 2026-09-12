@@ -418,7 +418,7 @@ class CapitalRecycler:
             receipt = None
             for merge_attempt in range(self._max_merge_retries):
                 try:
-                    receipt = self._send_signed_tx(w3, adapter.functions.mergePositions("PUSD", b'\x00' * 32, condition_id_bytes, [1, 2], amount_wei), wallet, gas=gas_units)
+                    receipt = self._send_signed_tx(w3, adapter.functions.mergePositions(PUSD, b'\x00' * 32, condition_id_bytes, [1, 2], amount_wei), wallet, gas=gas_units)
                     break
                 except Exception as tx_err:
                     self._merge_retries += 1
