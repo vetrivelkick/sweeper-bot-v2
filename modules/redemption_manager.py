@@ -5,7 +5,7 @@ P0 #14: Post-resolution redemption of winning tokens for pUSD.
          Burns winning outcome tokens via CtfCollateralAdapter.redeemPositions
          after the market has resolved and payouts have been reported.
          - Fixed unsigned .transact() to use signed transactions with private key
-         - Fixed outcome indices [0, 1] (was [1, 2] - 1-indexed was wrong for binary markets)
+         - Fixed outcome indices [1, 2] (was [1, 2] - 1-indexed was wrong for binary markets)
 SECTION 15 AUDIT: Redemption wait verification - block count check after resolution,
                  gas estimation before redeem, receipt event parsing,
                  redemption retry queue, redemption metrics tracking,
@@ -198,8 +198,8 @@ class RedemptionManager:
             cid_hex = condition_id.replace('0x', '')
             condition_id_bytes = bytes.fromhex(cid_hex)
             
-            # P0 #14: Use signed transaction + fix outcome indices [0, 1] (was [1, 2])
-            receipt = self._send_signed_tx(w3, adapter.functions.redeemPositions("0x0000000000000000000000000000000000000000", b'\x00' * 32, condition_id_bytes, [0, 1]), wallet, gas=gas_units)
+            # P0 #14: Use signed transaction + fix outcome indices [1, 2] (was [1, 2])
+            receipt = self._send_signed_tx(w3, adapter.functions.redeemPositions(PUSD, b'\x00' * 32, condition_id_bytes, [1, 2]), wallet, gas=gas_units)
             
             # SECTION 15 AUDIT: Verify redemption receipt
             verified, verified_usdc, verify_msg = self._verify_redemption_receipt(receipt, shares)
